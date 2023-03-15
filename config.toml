@@ -1,0 +1,11 @@
+base_url = "https://tekne.dev"
+title = "tekne.dev"
+
+compile_sass = true
+build_search_index = true
+minify_html = true
+
+[markdown]
+highlight_code = true
+
+[extra]
