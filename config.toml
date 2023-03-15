@@ -1,5 +1,8 @@
 base_url = "https://tekne.dev"
 title = "tekne.dev"
+author = "Jad Ghalayini"
+description = "Jad Ghalayini's devlog"
+theme = "dose"
 
 compile_sass = true
 build_search_index = true
@@ -9,3 +12,8 @@ minify_html = true
 highlight_code = true
 
 [extra]
+social_media = [
+    { name = "gitlab", url = "https://gitlab.com/tekne", icon = "fa-brands fa-gitlab" },
+    { name = "github", url = "https://github.com/imbrem", icon = "fa-brands fa-github" },
+    { name = "email", url = "mailto:jeg74@cl.cam.ac.uk", icon = "fa-solid fa-envelope" }
+]

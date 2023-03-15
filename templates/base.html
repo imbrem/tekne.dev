@@ -1,0 +1,84 @@
+<!--
+MIT License
+
+Copyright (c) 2021 oltdaniel
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+
+<!doctype html>
+<html lang="{{ lang }}">
+    <head>
+        <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+        <meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+        <meta content="width=device-width, initial-scale=1" name="viewport"/>
+
+        {% block site_meta %}
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+
+        <meta name="google" content="nositelinkssearchbox">
+        <meta name="google" content="notranslate">
+        {% endblock site_meta %}
+
+        {% block page_meta %}
+        {% if config.description %}
+        <meta name="description" content="{{ config.description | truncate(length=150) }}">
+        {% endif %}
+        {% endblock page_meta %}
+
+        {% block css %}
+        <link href="{{ get_url(path='style.css', trailing_slash=false) | safe }}" rel="stylesheet"/>
+        {% endblock css %}
+        <title>{% block title %}{{ config.title }}{% endblock title%}</title>
+    </head>
+    <body>
+        <script src="https://kit.fontawesome.com/4ba8b2b240.js" crossorigin="anonymous"></script>
+        <script>
+            function evaluate_prefers_color() {
+                if(localStorage.getItem('prefers-color') === 'dark') {
+                    document.body.classList.add('dark');
+                } else if(localStorage.getItem('prefers-color') === 'light') {
+                    document.body.classList.remove('dark');
+                } else if(window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark');
+                }
+            }
+            evaluate_prefers_color();
+        </script>
+        {% block content %}
+            <p>please fill this with a template</p>
+        {% endblock content %}
+        <footer>
+            <hr text="&copy; Copyright {{ now() | date(format='%Y') }}" />
+            {% if config.extra.social_media and config.extra.social_media | length > 0 %}
+            <div class="footer-social-media">
+                <a onclick="toggle_prefers_color()", aria-label="toggle dark mode"><i class="fas fa-sun" aria-hidden="true", title = "toggle dark mode"></i></a>
+                {% for social in config.extra.social_media %}
+                    <a href="{{ social.url | safe }}" target="_blank", aria-label="{{ social.name }}"><i aria-hidden="true" class="{{ social.icon }}" title = "{{ social.name }}"></i></a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </footer>
+    </body>
+
+    {% block js %}
+        <script src="{{ get_url(path='js/script.js', trailing_slash=false) | safe }}"/></script>
+    {% endblock js %}
+</html>
