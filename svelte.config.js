@@ -28,9 +28,6 @@ const config = {
 					return `{@html \`${html}\` }`
 				}
 			},
-			layout: {
-				blog: 'src/routes/blog/post.svelte'
-			},
 			remarkPlugins: [remarkMath, remarkFootnotes],
 			rehypePlugins: [rehypeKatexSvelte]
 		})
