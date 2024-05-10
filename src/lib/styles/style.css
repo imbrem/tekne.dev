@@ -1,0 +1,45 @@
+@import '@fontsource-variable/recursive';
+
+body {
+    background: #222222;
+    color: white;
+    font-family: 'Fira Code', monospace;
+    font-size: 1.2em;
+}
+
+code {
+    font-family: 'Fira Code', monospace;
+}
+
+/* 
+h1, h2, h3 {
+} */
+
+a {
+    color: cyan
+}
+
+.shiki {
+    padding: 0.5rem;
+    border-radius: 5px;
+    width: 100%;
+}
+
+pre.shiki {
+    white-space: pre-wrap;
+}
+
+code {
+    counter-reset: step;
+    counter-increment: step 0;
+}
+
+code .line::before {
+    content: counter(step);
+    counter-increment: step;
+    width: 1rem;
+    margin-right: 1.5rem;
+    display: inline-block;
+    text-align: right;
+    color: rgba(115, 138, 148, .4)
+}
