@@ -61,6 +61,6 @@ Fun idea: add little copy widget to the top right!
 
 # Header 1 (2)
 
-This is [a link](www.google.com).
+This is [a link](https://www.google.com).
 
 [^1]: this is a footnote

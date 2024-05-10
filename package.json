@@ -36,6 +36,6 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@fontsource-variable/recursive": "^5.0.18"
+		"@fontsource/fira-code": "^5.0.18"
 	}
 }
