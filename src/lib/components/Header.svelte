@@ -14,8 +14,22 @@
 		<div>
 			<ul>
 				<li><a href="/blog">Blog</a></li>
-				<li><a aria-label="github" href="https://github.com/imbrem"><Github /></a></li>
-				<li><a aria-label="gitlab" href="https://gitlab.com/tekne"><Gitlab /></a></li>
+				<li>
+					<a
+						aria-label="github"
+						href="https://github.com/imbrem"
+						target="_blank"
+						rel="noopener noreferrer"><Github /></a
+					>
+				</li>
+				<li>
+					<a
+						aria-label="gitlab"
+						href="https://gitlab.com/tekne"
+						target="_blank"
+						rel="noopener noreferrer"><Gitlab /></a
+					>
+				</li>
 				<li><a aria-label="email" href="mailto:jeg74@cl.cam.ac.uk"><Mail /></a></li>
 			</ul>
 		</div>
