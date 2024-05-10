@@ -16,7 +16,7 @@ const config = {
 			extensions: ['.md'],
 			highlight: {
 				highlighter: async (code, lang = 'text') => {
-					if (bundledLanguages[lang] == undefined) {
+					if (lang == 'lean') {
 						lang = 'text'
 					}
 					const highlighter = await getHighlighter({

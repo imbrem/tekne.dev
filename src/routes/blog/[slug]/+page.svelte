@@ -3,11 +3,11 @@
 
 	export let data;
 
-    const { content, meta } = data;
+	const { content, meta } = data;
 </script>
 
 <svelte:head>
-	<meta name="author" content={meta.author || config.author}>
+	<meta name="author" content={meta.author || config.author} />
 	{#if meta.title}
 		<title>{meta.title}</title>
 		<meta property="og:title" content={meta.title} />
@@ -18,12 +18,15 @@
 <article>
 	{#if meta.title}
 		<h1>{meta.title}</h1>
-		{#if meta.date}
-			<p>Published: <time datetime={meta.date}>{meta.date}</time></p>
+		{#if meta.published}
+			<p>
+				Published: <time datetime={meta.published}>{meta.published}</time>
+				{#if meta.edited}(Edited: <time datetime={meta.edited}>{meta.edited}</time>){/if}
+			</p>
 		{/if}
 		<hr />
 	{/if}
-    <svelte:component this={content} />
+	<svelte:component this={content} />
 </article>
 
 <style>

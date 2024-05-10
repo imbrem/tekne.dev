@@ -8,7 +8,7 @@
 	<title>{config.title}</title>
 </svelte:head>
 
-<h1>Jad Ghalayini's Devlog</h1>
+<h1>Blog</h1>
 
 <ul>
 	{#each data.posts as post}
@@ -17,7 +17,10 @@
 				<a href={post.path}>{post.meta.title}</a>
 			</h2>
 		</li>
-		Published {post.meta.date}
+		Published {post.meta.published}
+        {#if post.meta.edited}
+            (Edited {post.meta.edited})
+        {/if}
 	{/each}
 </ul>
 

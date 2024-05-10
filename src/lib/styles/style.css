@@ -43,3 +43,7 @@ code .line::before {
     text-align: right;
     color: rgba(115, 138, 148, .4)
 }
+
+.footnotes > ol > li {
+    margin: 1em
+}
