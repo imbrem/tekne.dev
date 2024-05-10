@@ -43,4 +43,8 @@
 		text-decoration: none;
 		color: inherit;
 	}
+
+	a:hover {
+		color: cyan;
+	}
 </style>
