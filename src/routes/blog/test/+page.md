@@ -55,6 +55,12 @@ This code has a line which is longer than 100 characters, and so should be wrapp
 ```
 long long long long long long long long long long long long long long long long long long long long long
 ```
+This code is in Lean, which currently doesn't have proper highlighting
+```lean
+inductive MyNat
+| zero
+| succ : MyNat → MyNat
+```
 
 Fun idea: add little copy widget to the top right!
 

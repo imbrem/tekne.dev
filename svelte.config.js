@@ -1,7 +1,7 @@
 import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { mdsvex, escapeSvelte } from 'mdsvex';
-import { getHighlighter } from 'shiki';
+import { bundledLanguages, getHighlighter } from 'shiki';
 import remarkMath from 'remark-math';
 import remarkFootnotes from 'remark-footnotes';
 import rehypeKatexSvelte from 'rehype-katex-svelte';
@@ -16,6 +16,9 @@ const config = {
 			extensions: ['.md'],
 			highlight: {
 				highlighter: async (code, lang = 'text') => {
+					if (bundledLanguages[lang] == undefined) {
+						lang = 'text'
+					}
 					const highlighter = await getHighlighter({
 						themes: ['nord'],
 						langs: [lang]
