@@ -227,6 +227,7 @@ sns.scatterplot(x=vis_dims[:, 0], y=vis_dims[:, 1])
 plt.plot()
 ```
 <img src={tsne_unlabelled} alt="t-SNE projections of the embeddings of the sentences in facts.json"/>
+
 We can make out some clusters that are obvious to the eye, but it’s certainly a lot less clear what is what. One technique we could use, qualitatively, is to pick out random points from each “cluster” and look at what sentence they correspond to. This method can be further enhanced by playing with the hyperparameters of t-SNE, and even by using 3D visualization; in the end, we might be able to come up with the topics we want to later feed our classifier.
 
 Another method is to use unsupervised learning to “discover” topics using only our embedding vectors. There are many methods to attempt this, but, keeping in the spirit of this post, let’s consider one of the simplest to apply, [K-means clustering](https://en.wikipedia.org/wiki/K-means_clustering). To use `scikit-learn`’s `Kmeans` class, we’ll need to provide an `n_clusters` parameter to determine how many clusters it should attempt to find. Let’s start out with 2, since the data in our t-SNE plot seems broadly divided into a left and right hand side: we simply need to run[^3]:
