@@ -27,6 +27,13 @@ a {
 
 pre.shiki {
     white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+@media only screen and (max-width: 600px) {
+    pre.shiki {
+        font-size: 0.7em;
+    }
 }
 
 code {
@@ -44,6 +51,6 @@ code .line::before {
     color: rgba(115, 138, 148, .4)
 }
 
-.footnotes > ol > li {
+.footnotes>ol>li {
     margin: 1em
 }
