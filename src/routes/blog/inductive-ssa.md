@@ -7,7 +7,9 @@ published: '2024-07-15'
 SSA, is the intermediate representation of choice for designing compilers for a vast variety of
 languages and platforms. This article consists of some brief notes on how one might represent SSA
 effectively inside a theorem prover, such as [Lean](https://lean-lang.org/), with a view towards
-proving the correctness of rewrites and optimization passes. 
+proving the correctness of rewrites and optimization passes. In particular, we will cover the data
+structures formalized in the [debruijn-ssa](https://github.com/imbrem/debruijn-ssa) repository and
+some of the tradeoffs and design decisions made within.
 
 - Research context; category theory
 - Warnings
@@ -34,11 +36,18 @@ proving the correctness of rewrites and optimization passes.
 - A basic block is made of _instructions_, and is followed by a _terminator_
 - Fun question: undefined variables?
 
+<img src={basic_blocks}/>
+
+
 ### SSA
 
 - Can be viewed as a property of 3-address code: each variable is defined exactly once
 - so basic blocks need parameters
 - scoping is complicated, and based on _dominator trees_
+
+### Formalization
+
+- Go link to [freyd-ssa](https://github.com/imbrem/freyd-ssa)
 
 ## Inductive SSA
 
@@ -70,6 +79,12 @@ proving the correctness of rewrites and optimization passes.
 - Erase the brackets: no more regions
 - Some notes on what we want to allow as terminators
 - We want cases for Reasons (TM)... this will be important later...
+
+### Formalization
+
+- This is the `BBRegion` data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa);
+  see also `Block`, `Body`, `Terminator`. We use `Term` rather than operations or expressions,
+  though; see `Term` section.
 
 ## Induction Instruction-By-Instruction
 
@@ -104,6 +119,10 @@ proving the correctness of rewrites and optimization passes.
 ### How to Recover SSA
 
 - Rough translation to single-terminator is pretty simple; you nest CFGs for sharing purposes
+
+### Formalization
+
+- This is the `TRegion` data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa)
 
 ## Fusing Regions and Terminators
 
@@ -146,6 +165,10 @@ proving the correctness of rewrites and optimization passes.
 
 - Ye Olde Rewrite Rules
 
+### Formalization
+
+- This is the Region data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa)
+
 ## Next Steps
 
 - Giving an equational theory
@@ -165,3 +188,7 @@ proving the correctness of rewrites and optimization passes.
 - Easier to work with than SSA, maybe
 - Effective effect handlers, maybe
 - Once this paper is done...
+
+<script>
+    import basic_blocks from "$lib/assets/inductive-ssa/basic_blocks.svg"
+</script>
