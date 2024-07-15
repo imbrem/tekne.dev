@@ -1,5 +1,5 @@
 ---
-title: An Inductive Representation of SSA
+title: Towards An Inductive Representation of SSA
 published: '2024-07-15'
 ---
 
@@ -7,11 +7,19 @@ published: '2024-07-15'
 SSA, is the intermediate representation of choice for designing compilers for a vast variety of
 languages and platforms. This article consists of some brief notes on how one might represent SSA
 effectively inside a theorem prover, such as [Lean](https://lean-lang.org/), with a view towards
-proving the correctness of rewrites and optimization passes. In particular, we will cover the data
-structures formalized in the [debruijn-ssa](https://github.com/imbrem/debruijn-ssa) repository and
-some of the tradeoffs and design decisions made within.
+proving the correctness of rewrites and optimization passes. In particular, we will cover the story
+of the [debruijn-ssa](https://github.com/imbrem/debruijn-ssa) project so far and some of the
+tradeoffs and design decisions made within, starting from our original
+[freyd-ssa](https://github.com/imbrem/freyd-ssa) formalization project.
 
 ## Classical SSA
+
+We begin by telling the story of [freyd-ssa](https://github.com/imbrem/freyd-ssa), our attempt to
+formalize classical SSA mostly as is and prove some theorems. This is still very work-in-progress
+and mostly abandoned, but it is `sorry`-free, and while it does not by any means follow best
+practices, designing it was very educational in figuring out what a good representation of SSA for
+use in theorem proving should look like. In general, this section should also lay out the
+terminology we will be using when talking about SSA in the rest of this article.
 
 ### A Type System for 3-address code
 
@@ -336,17 +344,161 @@ and well-typed programs do not necessarily have to be in SSA.
 
 ### Formalizing Substitution
 
-Example: splitting an instruction, substituting in something with variables, etc...
+At this stage, we can define a predicate determining whether a program is in SSA form quite easily:
+all we need to do is check that for every basic block $\Gamma, (x_i : A_i)_i \vdash \beta \rhd
+\mathcal{L}$, $\beta$ does _not_ overwrite any variables which were live on input to $\beta$, i.e.,
+in $\Gamma$ or $\{x_i\}$. What we now want is to _use_ SSA form to prove some useful properties
+about programs. Unfortunately, writing down equations for SSA is still somewhat painful in our
+setting. For example:
+- Propagating a constant binding $\mathsf{let}\;x = c$ knowing that $x$ is not redefined is sound
+  (the program being in SSA implying _no_ variable is redefined), since constants cannot appear as
+  arguments to functions in our simple grammar, we need to instead create many constant bindings
+  $\mathsf{let}\;x_u = c;$ for each use $u$ of $x$ we want to replace, which at least temporarily
+  just seems to make our program more complicated. We also, of course, need to deal with fresh
+  variables.
+- We have to suffer a bit to perform algebraic optimizations such as simplifying $x = y -
+  5; z = x + 5$ to $x = y - 5; z = x$, since we cannot directly rename variables.
+- We don't know which operations we can safely substitute: an `add` is fine, but a call to
+  `print` isn't... and oftentimes, neither is a `div` due to risk of undefined behaviour on division
+  by zero.
+- We might want to detect more complicated multi-layer patterns, using advanced techniques such as
+  E-graph rewriting
 
-Simplification: introduce expression language
+In short, introducing instructions is a pain, and matching patterns of pure operations is a pain.
+This in particular makes writing a formal substitution theorem a pain. To address this, we can
+introduce a simple _expression language_, to replace operations, having the following typing
+judgement
 
-Detail: binary syntax
+$$
+\boxed{\Gamma \vdash_\epsilon a : A}
+$$
 
-Requirement: effects
+In particular, to effectively deal with multiple return values, we can simply ban them and instead
+introduce product types $(A_1 \times ... \times A_n)$, which we will write $\Pi_i A_i$. We also
+_annotate_ each expression with an effect $\epsilon$. In general, our effects form a lattice, but
+for now, it is enough to consider pure expressions with effect $\bot$ and impure expressions with
+effect $\top$. Finally, we can annotate our contexts with effects $\epsilon$ for each variable, to
+allow reasoning about impure rewrites.
 
-Detail: the recursion gadget
+We then obtain typing rules:
 
-And then: this is [freyd-ssa](https://github.com/imbrem/freyd-ssa)
+$$
+\frac{\Gamma(x) \leq (A, \epsilon)}{\Gamma \vdash_\epsilon x : A}
+\qquad
+\frac{\forall i, \Gamma \vdash_\epsilon a_i : A_i}{\Gamma \vdash_\epsilon (a_i)_i : \Pi_iA_i}
+\qquad
+\frac{f : A \to_\epsilon B \qquad \Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon f\;a : B}
+$$
+In particular, constants can be modeled as functions from $\mathbf{1} = \Pi[]$ to $C$.
+
+Now, all that is necessary is to modify our typing judgement for bodies to differentiate between
+binding a variable and unpacking:
+
+$$
+\frac{\Gamma \leq \Delta}{\Gamma \vdash \cdot : \Delta}
+\qquad \qquad
+\frac
+    {
+        \forall i, \Gamma(x_i) = A_i \quad f : (A_i)_i \to (B_j)_j 
+        \quad \Gamma, (y_j : B_j)_j \vdash b : \Delta
+    }{
+        \Gamma \vdash \mathsf{let}\;(y_j)_j = f (a_i)_i;\; b : \Delta
+    }
+$$
+
+and our judgement for blocks and control-flow graphs to deal with the fact that only single 
+arguments are now permitted
+
+$$
+\frac
+    {\Gamma \vdash b : \Delta 
+        \qquad (\Delta, A) \leq \mathcal{L}(\ell) 
+        \qquad \Delta(x) = A}
+    {\Gamma \vdash b ; \mathsf{br}\;\ell\;a \rhd \mathcal{L}}
+\qquad
+\frac
+    {\Gamma \vdash b : \Delta 
+        \qquad \Delta(b) = \mathbf{2} 
+        \qquad \Delta \leq \mathcal{L}(\ell), \mathcal{L}(\ell')}
+    {\Gamma \vdash b ; \mathsf{ite}\;b\;\ell\;\ell' \rhd \mathcal{L}}
+$$
+
+where, of course, label contexts $\mathcal{L}$ are now mappings $\ell \to (\Gamma, A)$.
+
+
+Note that this is isomorphic to our original system: we can simply, always choosing fresh variables,
+perform rewrites like
+$$
+\mathsf{let}\;x = y; \beta \to [y/x]\beta \qquad
+\mathsf{let}\;(x_i)_i = (a_i)_i; \beta \to (\mathsf{let}\;x_i = a_i)_i; \beta;
+$$
+to obtain a program performing only unpackings of operations, just like was originally permitted.[^3]
+
+[^3]: Note, that when not using the fused body-block typing rules, we define $\mathsf{let}\;x = y;
+    (b; t) = (\mathsf{let}\;x = y;b); t$
+
+We have now obtained a system which is essentially the same as that formalized in
+[freyd-ssa](https://github.com/imbrem/freyd-ssa), except for the following details:
+- For simplicity, we only define pairs of types $A \times B$, and an explicit unary type
+  $\mathbf{1}$; these can simulate $n$-ary pairs $\Pi_i A_i$ by defining, e.g., $\Pi_{i = 1}^nA_i =
+  A_1 \times \Pi_{i = 2}A_i$
+- Similarly, we append an explicit Boolean type $\mathbf{2}$ for if-then-else rewrites
+- Our rules for CFGs are a little bit more convoluted: we define $\mathcal{L} \vdash' G \rhd
+  \mathcal{K}$ using the following much less intuitive rules:
+  
+  $$
+  \frac{}{\mathcal{L} \vdash' \cdot \rhd \mathcal{L}} \qquad
+  \frac{
+    \mathcal{L} \vdash' G \rhd \mathcal{K}, (\ell \mapsto \Gamma, A) \quad
+    \ell \notin \mathcal{K} \quad
+    \Gamma, x : A \vdash \beta \rhd \mathcal{L} \quad
+    \mathcal{L} \vdash' G, \ell(x) \Rightarrow \beta \rhd \mathcal{K}
+    }{} \qquad
+  \frac{\mathcal{L} \vdash' G \rhd \mathcal{K}, \quad \ell \notin \mathcal{L}}
+        {\mathcal{L} \vdash' G \rhd \mathcal{K}, (\ell \mapsto \Gamma, A)}
+  $$
+
+  The reason for this had to do with wanting a more inductive semantics; in retrospect, I can't
+  think of why exactly we went for this this at the moment, but that's what was formalized and we
+  have to be honest! This also provides a bit more power, since "dead" code, i.e. $\ell$ not
+  reachable from the entry context, does not need to typecheck.
+
+The main theorem in this development is _substitution_: given a finitely supported map $\sigma$ from
+a variables to terms and a label context $\mathcal{L}'$ with the same labels and parameters as
+$\mathcal{L}$ (but not necessarily the same associated contexts!), if
+ 
+$$
+\forall (\ell, \Delta, A) \in \mathcal{L}, 
+    \mathcal{L}'(\ell) = (\Gamma, A) \land
+    \forall x,
+    \Delta(x) = (B, \epsilon) \implies
+    \Gamma \vdash_\epsilon \sigma(x) : B
+$$
+
+and the CFG $G$ is in SSA, then the obvious substitution
+
+$$
+\mathcal{L}' \vdash' [\sigma]G \rhd \mathcal{K}'
+$$
+
+is well-typed, where $\mathcal{K}'$ denotes $\mathcal{L}'$ restricted to the support of
+$\mathcal{K}$.
+
+That's powerful, and allows a lot of reasoning about rewriting. On paper, we also show that given
+our semantics, every _pure_ such substitution is _sound_, i.e. semantics preserving, where a
+substitution is pure if all $\sigma(x) \neq x$ can be typed with effect $\bot$. It's also
+_incredibly_ cumbersome to state, and even more difficult to use. And hence the beginning of the
+quest for an inductive definition of SSA, where hopefully we can actually state more complicated
+optimizations, such as control-flow rewrites, in a more convenient fashion.
+
+### Alternative Design: Global Label/Variable Name Maps
+
+One alternative point in the design space is to have a global map $\Gamma$ from variable names to
+types and a global map $\mathcal{L}$ from labels to parameter types which we can type programs with
+respect to. Combinators can be used to combine programs while maintaining freshness at a global
+level (say, by using integer indices and storing names only as metadata). This presents various
+difficulties w.r.t scoping, but provides a natural setting to state many analyses, such as some
+dataflow passes. We have not yet explored this portion of the design space.
 
 ## Explicit Scoping and De-Bruijn Indices
 
