@@ -37,6 +37,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@fontsource/fira-code": "^5.0.18"
+		"@fontsource/fira-code": "^5.0.18",
+		"mermaid": "^10.9.1"
 	}
 }

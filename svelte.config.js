@@ -25,6 +25,10 @@ const config = {
 					if (lang == 'lean') {
 						lang = 'text'
 					}
+					if (lang == 'mermaid') {
+						const escaped = escapeSvelte(code)
+						return `{@html \`<pre class="mermaid">${escaped}</pre>\` }`
+					}
 					await highlighter.loadLanguage(lang)
 					const html = escapeSvelte(highlighter.codeToHtml(code, { lang, theme: 'nord' }))
 					return `{@html \`${html}\` }`
