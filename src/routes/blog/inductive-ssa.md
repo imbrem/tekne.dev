@@ -58,6 +58,11 @@ might become
 ^exit:
     ret p
 ```
+or, drawn as a graph,
+
+<img src={program_cfg} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;">
+
 A _basic block_ is defined as a linear sequence of _instructions_, the _body_, followed by a
 _terminator_, which either returns or jumps to the next basic block in program execution. 
 
@@ -73,9 +78,11 @@ $$
 $$
 
 This says that if the variables in the context $\Gamma$ are live on input to $b$, then the variables
-in the context $\Delta$ will be live once the instructions in $b$ are finished executing. 
+in the context $\Delta$ will be live once the instructions in $b$ are finished executing, as
+displayed below:
 
-**TODO: put drawing here**
+<img src={body_live} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;">
 
 A **context**, for now, will just be a (finitely-supported) partial function from variables to
 types; the domain of this function is our _live variable set_.
@@ -113,9 +120,10 @@ $$
 
 Just like before, $\Gamma$ is the set of live variables on entry to the basic block $\beta$. On the
 other hand, $\mathcal{L}$ is a **label context**: a finitely supported map from **labels** $\ell$ to
-contexts $\Gamma$, which represent the variables which must be live on entry to $\ell$.
+contexts $\Gamma$, which represent the variables which must be live on entry to $\ell$, as below:
 
-TODO: insert picture here
+<img src={block_live} 
+    style="max-width:50em;width:100%;display:block;margin-left: auto;margin-right: auto;">
 
 We might give the following simple typing rules for basic blocks
 
@@ -162,7 +170,8 @@ Finally, a **control-flow graph** $G$ can be viewed as a set of mutually-recursi
 taking a label context of entry points $\mathcal{L}$ to a label context of exit points
 $\mathcal{K}$, as in the following picture:
 
-TODO: insert picture here
+<img src={cfg_live} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;">
 
 
 Representing $G$ as a finitely-supported map from labels $\ell$ to basic blocks $\beta$, the
@@ -614,3 +623,10 @@ dataflow passes. We have not yet explored this portion of the design space.
 - Easier to work with than SSA, maybe
 - Effective effect handlers, maybe
 - Once this paper is done...
+
+<script>
+    import program_cfg from "$lib/assets/inductive-ssa/program_cfg.svg"
+    import body_live from "$lib/assets/inductive-ssa/body_live.svg"
+    import block_live from "$lib/assets/inductive-ssa/block_live.svg"
+    import cfg_live from "$lib/assets/inductive-ssa/cfg_live.svg"
+</script>
