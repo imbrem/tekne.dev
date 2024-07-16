@@ -444,14 +444,16 @@ Now, all that is necessary is to modify our typing judgement for bodies to diffe
 binding a variable and unpacking:
 
 $$
-\frac{\Gamma \leq \Delta}{\Gamma \vdash \cdot : \Delta}
-\qquad \qquad
-\frac
-    {
-        \forall i, \Gamma(x_i) = A_i \quad f : (A_i)_i \to (B_j)_j 
-        \quad \Gamma, (y_j : B_j)_j \vdash b : \Delta
+\frac{
+        \Gamma \vdash_\epsilon a : A \qquad \Gamma, x : A_\bot \vdash b : \Delta
     }{
-        \Gamma \vdash \mathsf{let}\;(y_j)_j = f (a_i)_i;\; b : \Delta
+        \Gamma \vdash_\epsilon \mathsf{let}\;x = a; b : \Delta
+    }
+\frac{
+        \Gamma \vdash_\epsilon a : \Pi_iA_i \qquad
+        \quad \Gamma, (x_j : {A_j}_\bot)_j \vdash b : \Delta
+    }{
+        \Gamma \vdash \mathsf{let}\;(x_j)_j = a : \Delta
     }
 $$
 
@@ -474,17 +476,22 @@ $$
 
 where, of course, label contexts $\mathcal{L}$ are now mappings $\ell \to (\Gamma, A)$.
 
+- TODO: "should obviously be isomorphic, since expressions simply introduce anonymous intermediate
+  bindings, and everything else is a renaming/reassociation"
 
 Note that this is isomorphic to our original system: we can simply, always choosing fresh variables,
 perform rewrites like
+
 $$
 \mathsf{let}\;x = y; \beta \to [y/x]\beta \qquad
 \mathsf{let}\;(x_i)_i = (a_i)_i; \beta \to (\mathsf{let}\;x_i = a_i)_i; \beta;
 $$
-to obtain a program performing only unpackings of operations, just like was originally permitted.[^3]
 
-[^3]: Note, that when not using the fused body-block typing rules, we define $\mathsf{let}\;x = y;
-    (b; t) = (\mathsf{let}\;x = y;b); t$
+to obtain a program performing only unpackings of operations, just like was originally
+permitted.[^3]
+
+[^3]: We may define $\mathsf{let}\;x = y; (b; t) = (\mathsf{let}\;x = y;b); t$, if we insist blocks
+    are always written $b; t$
 
 ### Adding a Terminator Language
 
@@ -527,7 +534,26 @@ $$
 - For simplicity, we only define pairs of types $A \times B$, and an explicit unary type
   $\mathbf{1}$; these can simulate $n$-ary pairs $\Pi_i A_i$ by defining, e.g., $\Pi_{i = 1}^nA_i =
   A_1 \times \Pi_{i = 2}A_i$
-- Similarly, we append an explicit Boolean type $\mathbf{2}$ for if-then-else rewrites
+
+$$
+\frac{
+        \Gamma \vdash_\epsilon a : A \qquad \Gamma \vdash_\epsilon b: B
+    }{
+        \Gamma \vdash_\epsilon (a, b) : A \times B
+    } \qquad
+\frac{}{\Gamma \vdash_\epsilon () : \mathbf{1}}
+$$
+
+$$
+\frac{
+        \Gamma \vdash_\epsilon a : A \times B \qquad
+        \quad \Gamma, x : A_\bot, y : B_\bot \vdash b : \Delta
+    }{
+        \Gamma \vdash \mathsf{let}\;(x, y) = a : \Delta
+    }
+$$
+
+TODO: notes about doing this...
 
 - Our rules for CFGs are a little bit more convoluted: we define $\mathcal{L} \vdash' G \rhd
   \mathcal{K}$ using the following much less intuitive rules:
@@ -592,7 +618,7 @@ $$
 $$
 \frac{\Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon \mathsf{inl}\;a : A + B} \qquad
 \frac{\Gamma \vdash_\epsilon b : B}{\Gamma \vdash_\epsilon \mathsf{inr}\;b : A + B} \qquad
-\frac{\Gamma \vdash_\epsilon e : \mathbf{0}}{\Gamma \vdash_\epsilon \mathsf{abort}\;e : \mathbf{0}}
+\frac{\Gamma \vdash_\epsilon e : \mathbf{0}}{\Gamma \vdash_\epsilon \mathsf{abort}\;e : A}
 $$
 
 $$
@@ -850,14 +876,6 @@ $$
 
 And already established that's isomorphic to SSA
 
-### Alternative Design: overloaded `br`
-
-- Closer to MLIR, maybe?
-- Much simpler to explain: `br` to a branch
-- _But_: more painful for expressing certain !FUN! rewrite rules
-- _Also_: actually, more painful to lower, too
-- And introduces spurious basic blocks jumping straight to control flow, very sad...
-
 ### Introducing a Term Language
 
 - Some cool optimizations we might like to do
@@ -954,20 +972,158 @@ $$
 \mathsf{let}\;z = e;\mathsf{case}\;z\;(x \Rightarrow l)\;(y \Rightarrow r)
 $$
 
+### Alternative Design: extended `br`
+
+- Closer to MLIR, maybe?
+
+$$
+\mathsf{reg}\;(\mathsf{reg}\;\beta\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell)
+    \;(\kappa\;x_\kappa \Rightarrow H_\kappa)_\kappa
+\to \mathsf{reg}\;\beta\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell
+    \;(\kappa\;x_\kappa \Rightarrow H_\kappa)_\kappa
+$$
+
+- Much simpler to explain: `br` to a branch
+- _But_: more painful for expressing certain !FUN! rewrite rules
+- _Also_: actually, more painful to lower, too
+- And introduces spurious basic blocks jumping straight to control flow, very sad...
+
+## An Inductive Representation of SSA
+
+- Types: 
+...
+$$
+A, B, C ::= X \;|\; A \times B \;|\; \mathbf{1} \;|\; A + B \;|\; \mathbf{0}
+$$
+...
+- Syntax:
+...
+$$
+a, b, c, d, e ::= x \;|\; \mathsf{let}\;x = a; e \;|\; f\;a 
+    \;|\; (a, b) \;|\; \mathsf{let}\;(x, y) = a; e \;|\; ()
+    \;|\; \mathsf{inl}\;a \;|\; \mathsf{inr}\;b \;|\; 
+    \;|\; \mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r) 
+    \;|\; \mathsf{abort}\;e
+$$
+...
+$$
+l, r ::= \mathsf{br}\;\ell\;a 
+    \;|\; \mathsf{let}\;x = a; r 
+    \;|\; \mathsf{let}\;(x, y) = a; r
+    \;|\; \mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r)
+    \;|\; \mathsf{reg}\;r\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell
+$$
+...
+- Term typing: 
+...
+
+$$
+\frac{
+        \Gamma \vdash_\epsilon a : A \qquad \Gamma \vdash_\epsilon b: B
+    }{
+        \Gamma \vdash_\epsilon (a, b) : A \times B
+    } \qquad
+\frac{}{\Gamma \vdash_\epsilon () : \mathbf{1}} \qquad
+\frac{\Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon \mathsf{inl}\;a : A + B} \qquad
+\frac{\Gamma \vdash_\epsilon b : B}{\Gamma \vdash_\epsilon \mathsf{inr}\;b : A + B} \qquad
+\frac{\Gamma \vdash_\epsilon e : \mathbf{0}}{\Gamma \vdash_\epsilon \mathsf{abort}\;e : A}
+$$
+
+$$
+\frac{
+    \Gamma \vdash_\epsilon a : A \quad
+    \Gamma, x : A_\bot \vdash_\epsilon e : B
+}{
+    \Gamma \vdash_\epsilon \mathsf{let}\;x = a; e : B
+} \quad
+\frac{
+    \Gamma \vdash_\epsilon a : A \times B \quad
+    \Gamma, x : A_\bot, y : B_\bot \vdash_\epsilon e : C 
+}{
+    \Gamma \vdash_\epsilon \mathsf{let}\;(x, y) = a; e : C
+}
+$$
+
+$$
+\frac{\Gamma \vdash_\epsilon e : A + B 
+    \quad \Gamma, x : A_\bot \vdash_\epsilon c_l : C 
+    \quad \Gamma, y : B_\bot \vdash_\epsilon c_r : C
+}{
+    \Gamma \vdash \mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r)
+}
+$$
+
+...
+- Region typing: 
+...
+
+$$
+\frac{
+    \Gamma \vdash r \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+    \forall (ℓ, A) ∈ \mathcal{R}, 
+        \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+    \forall G_\ell, \ell ∈ \mathcal{R}
+}{
+    \Gamma \vdash \mathsf{reg}\;r\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+}
+$$
+$$
+\frac{
+    \Gamma \vdash_\epsilon a : A \quad 
+    \Gamma, x : A_\bot \vdash r \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{let}\;x = a; r \rhd \mathcal{L}
+} \quad
+\frac{
+    \Gamma \vdash_\epsilon a : A \times B \quad
+    \Gamma, x : A_\bot, y : B_\bot \vdash r \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{let}\;(x, y) = a; r \rhd \mathcal{L}
+}
+$$
+$$
+\frac{
+    \mathcal{L}(\ell) = A \quad 
+    \Gamma \vdash_\bot a : A
+}{
+    \Gamma \vdash \mathsf{br}\;\ell\;a \rhd \mathcal{L}
+}
+\qquad
+\frac{
+    \Gamma \vdash_\epsilon e : A + B \quad
+    \Gamma, x: A_\bot \vdash l \rhd \mathcal{L} \quad
+    \Gamma, y: B_\bot \vdash r \rhd \mathcal{L}
+}{
+    \Gamma \vdash_\epsilon \mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r)
+}
+$$
+
+...
+
+### Next Steps:
+
+- Denotational semantics in terms of !FUN! category theory! (done)
+- Exciting models involving weak memory! (done)
+- Equational theory! (done)
+- WIP: proof of completeness for equational theory, implying initiality of model!
+
 ## Future Work
 
-### Linearity
-
-- Working on prototype
-- Have old name-based version
-
-### Fusing Terms and Regions
-
-- Cool idea!
-- Allows advanced structured control flow, e.g. a `for` instruction like MLIR
-- Easier to work with than SSA, maybe
-- Effective effect handlers, maybe
-- Once this paper is done...
+- First: making this $n$-ary
+    - Didn't do at first for simplicity; having second thoughts...
+    - Should allow us to remove $\mathbf{1}$, $\mathbf{0}$, $\mathsf{abort}$, and special case
+      rewrite rules for $\mathbf{1}$
+- Should play more nicely with: Linearity:
+    - Working on prototype
+    - Have old name-based version in failed PLDI submission (paper only)
+    - Thinking of more advanced _resource algebra_ based formalization
+- Mutual recursion
+- Or, fusing terms and regions:
+    - Cool idea!
+    - Allows advanced structured control flow, e.g. a `for` instruction like MLIR
+    - Easier to work with than SSA, maybe
+    - Effective effect handlers, maybe
+    - Once this paper is done...
 
 <script>
     import program_cfg from "$lib/assets/inductive-ssa/program_cfg.svg"
