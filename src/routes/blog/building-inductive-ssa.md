@@ -1,5 +1,5 @@
 ---
-title: Towards An Inductive Representation of SSA
+title: Building An Inductive Representation of SSA
 published: '2024-07-15'
 ---
 
@@ -11,6 +11,24 @@ proving the correctness of rewrites and optimization passes. In particular, we w
 of the [debruijn-ssa](https://github.com/imbrem/debruijn-ssa) project so far and some of the
 tradeoffs and design decisions made within, starting from our original
 [freyd-ssa](https://github.com/imbrem/freyd-ssa) formalization project.
+
+- TODO: this article is a story, going over all the design decisions
+- TODO: no space for much of the rationale, however, which is substitution
+- TODO: next article: Region, which is the final design, and many features/examples
+- TODO: article after that: the rationale, which is substitution. Or do we jam that into this
+  article?
+
+## Roadmap
+
+- Classical 3-address code/SSA
+- Expression language
+- ==> `freyd-ssa` representation
+- Coproducts should be SSA
+- BBRegion ≅ SSA
+- TRegion ≅ BBRegion
+- Region ≅ TRegion
+- Term language, still ≅
+- Region should be our representation of SSA; for an article purely on Region, next in series...
 
 ## Classical SSA
 
@@ -61,7 +79,8 @@ might become
 or, drawn as a graph,
 
 <img src={program_cfg} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;">
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="The above program's CFG drawn as a graph">
 
 A _basic block_ is defined as a linear sequence of _instructions_, the _body_, followed by a
 _terminator_, which either returns or jumps to the next basic block in program execution. 
@@ -82,7 +101,8 @@ in the context $\Delta$ will be live once the instructions in $b$ are finished e
 displayed below:
 
 <img src={body_live} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;">
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of the live variables on entry and exit to a basic block's body">
 
 A **context**, for now, will just be a (finitely-supported) partial function from variables to
 types; the domain of this function is our _live variable set_.
@@ -123,7 +143,8 @@ other hand, $\mathcal{L}$ is a **label context**: a finitely supported map from 
 contexts $\Gamma$, which represent the variables which must be live on entry to $\ell$, as below:
 
 <img src={block_live} 
-    style="max-width:50em;width:100%;display:block;margin-left: auto;margin-right: auto;">
+    style="max-width:50em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of live variables on entry and exit to a basic block">
 
 We might give the following simple typing rules for basic blocks
 
@@ -171,8 +192,8 @@ taking a label context of entry points $\mathcal{L}$ to a label context of exit 
 $\mathcal{K}$, as in the following picture:
 
 <img src={cfg_live} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;">
-
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
 
 Representing $G$ as a finitely-supported map from labels $\ell$ to basic blocks $\beta$, the
 judgement for this might look like the following:
@@ -351,7 +372,7 @@ and well-typed programs do not necessarily have to be in SSA.
 
 [^2]: In reality, dealing with freshness is quite complicated, but can be done
 
-### Formalizing Substitution
+### Adding an Expression Language
 
 At this stage, we can define a predicate determining whether a program is in SSA form quite easily:
 all we need to do is check that for every basic block $\Gamma, (x_i : A_i)_i \vdash \beta \rhd
@@ -367,9 +388,9 @@ setting. For example:
   variables.
 - We have to suffer a bit to perform algebraic optimizations such as simplifying $x = y -
   5; z = x + 5$ to $x = y - 5; z = x$, since we cannot directly rename variables.
-- We don't know which operations we can safely substitute: an `add` is fine, but a call to
-  `print` isn't... and oftentimes, neither is a `div` due to risk of undefined behaviour on division
-  by zero.
+- We don't know which operations we can safely substitute: an `add` is fine, but a call to `print`
+  isn't... and oftentimes, neither is a `div` due to risk of undefined behaviour on division by
+  zero.
 - We might want to detect more complicated multi-layer patterns, using advanced techniques such as
   E-graph rewriting
 
@@ -399,6 +420,25 @@ $$
 \frac{f : A \to_\epsilon B \qquad \Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon f\;a : B}
 $$
 In particular, constants can be modeled as functions from $\mathbf{1} = \Pi[]$ to $C$.
+
+$$
+\frac{
+    (\Gamma, A) \leq \mathcal{L}(\ell) \quad
+    \Gamma \vdash_\bot a : A
+}{\Gamma \vdash \mathsf{br}\;\ell\;a\rhd \mathcal{L}}
+\qquad
+\frac{
+    \Gamma \vdash_\bot e : \mathbf{2} \quad
+    \Gamma \vdash s \rhd \mathcal{L} \quad
+    \Gamma \vdash t \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{ite}\;e\;s\;t \rhd \mathcal{L}
+}
+$$
+
+TODO: explanation for rules...
+
+TODO: clean below text, check rules...
 
 Now, all that is necessary is to modify our typing judgement for bodies to differentiate between
 binding a variable and unpacking:
@@ -446,6 +486,22 @@ to obtain a program performing only unpackings of operations, just like was orig
 [^3]: Note, that when not using the fused body-block typing rules, we define $\mathsf{let}\;x = y;
     (b; t) = (\mathsf{let}\;x = y;b); t$
 
+### Adding a Terminator Language
+
+TODO: text for terminators...
+
+$$
+\boxed{\Gamma \vdash t \rhd \mathcal{L}}
+$$
+
+TODO: text for rules...
+
+TODO: split above...
+
+### Formalization
+
+TODO: segue...
+
 We have now obtained a system which is essentially the same as that formalized in
 [freyd-ssa](https://github.com/imbrem/freyd-ssa), except for the following details:
 - For simplicity, we only define pairs of types $A \times B$, and an explicit unary type
@@ -471,6 +527,8 @@ We have now obtained a system which is essentially the same as that formalized i
   think of why exactly we went for this this at the moment, but that's what was formalized and we
   have to be honest! This also provides a bit more power, since "dead" code, i.e. $\ell$ not
   reachable from the entry context, does not need to typecheck.
+
+<!-- ### Formalizing Substitution
 
 The main theorem in this development is _substitution_: given a finitely supported map $\sigma$ from
 a variables to terms and a label context $\mathcal{L}'$ with the same labels and parameters as
@@ -498,7 +556,11 @@ our semantics, every _pure_ such substitution is _sound_, i.e. semantics preserv
 substitution is pure if all $\sigma(x) \neq x$ can be typed with effect $\bot$. It's also
 _incredibly_ cumbersome to state, and even more difficult to use. And hence the beginning of the
 quest for an inductive definition of SSA, where hopefully we can actually state more complicated
-optimizations, such as control-flow rewrites, in a more convenient fashion.
+optimizations, such as control-flow rewrites, in a more convenient fashion. -->
+
+### Adding Coproducts
+
+...
 
 ### Alternative Design: Global Label/Variable Name Maps
 
@@ -511,32 +573,82 @@ dataflow passes. We have not yet explored this portion of the design space.
 
 ## Explicit Scoping and De-Bruijn Indices
 
+Now that we've seen how difficult it is to state substitution when using names as above, we want to
+develop an inductive representation of SSA which is easier to reason about, while at the same time
+isomorphic to our original language. To do this, we have to think carefully about how variables and
+labels are scoped in SSA.
+
+### Dominator Trees
+
 - Want a sane way to do induction on programs, decomposing them into smaller pieces
 - Want to know exactly what is in scope at any given point
 - These are related problems
 - Let's think carefully about [dominator
   trees](https://en.wikipedia.org/wiki/Dominator_(graph_theory))...
+
+### Scoping Via Dominator Trees
+
 - Bracketing determines variable scoping
 - This is _because_ bracketing determines label scoping
-
-### Formal Typing Rules
-
-- Operations
-- Bodies
-- Blocks
+- Single entrypoint lore...
+- Expressions: same as before
+- Bodies: same as before
 - Terminators
+    $$
+    \boxed{\Gamma \vdash t \rhd \mathcal{L}}
+    $$
+    $$
+    \frac{
+        \mathcal{L}(\ell) = A \quad 
+        \Gamma \vdash_\bot a : A
+    }{
+        \Gamma \vdash \mathsf{br}\;\ell\;a \rhd \mathcal{L}
+    }
+    \qquad
+    \frac{
+        \Gamma \vdash_\epsilon e : A + B \quad
+        \Gamma, x: A_\bot \vdash s \rhd \mathcal{L} \quad
+        \Gamma, y: B_\bot \vdash t \rhd \mathcal{L}
+    }{
+        \Gamma \vdash_\epsilon \mathsf{case}\;e\;(x \Rightarrow s)\;(y \Rightarrow t)
+    }
+    $$
+- Blocks
+    $$
+    \boxed{\Gamma \vdash \beta \rhd \Delta;\mathcal{L}}
+    $$
+    $$
+    \frac{
+        \Gamma \vdash b : \Delta' \quad 
+        \Delta' \vdash t \rhd \mathcal{L} \quad 
+        \Delta' \leq \Delta}{\Gamma \vdash b;t \rhd \Delta;\mathcal{L}}
+    $$
 - _Regions_
-
-### Adding Cases
-
-- Why
-- Pls trust me categories good enums good
+    $$
+    \boxed{\Gamma \vdash r \rhd \mathcal{L}}
+    $$
+    $$
+    \frac{
+        \Gamma \vdash \beta \rhd \Delta;(\mathcal{L} \sqcup \mathcal{R})
+        \quad
+        \forall (ℓ, A) ∈ \mathcal{R}, 
+            \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R}
+        \quad
+        \forall G_\ell, \ell ∈ \mathcal{R}
+    }{
+        \Gamma \vdash \mathsf{reg}\;\beta\;(x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+    }
+    $$
 
 ### De-Bruijn Indices
 
-- So we can introduce de-Bruijn indices for variables...
-- And for labels too!
+- The above rules are compatible with de-Bruijn indices for both variables and labels...
+- So our formalization can just use that
+- Bonus: α-conversion for free
 - But we'll write our typing rules with names, for now!
+- This is the `BBRegion` data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa);
+  see also `Block`, `Body`, `Terminator`. We use `Term` rather than operations or expressions,
+  though; see `Term`
 
 ### How to Recover SSA
 
@@ -544,53 +656,129 @@ dataflow passes. We have not yet explored this portion of the design space.
 - Some notes on what we want to allow as terminators
 - We want cases for Reasons (TM)... this will be important later...
 
-### Formalization
+### Removing Bodies and Blocks
 
-- This is the `BBRegion` data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa);
-  see also `Block`, `Body`, `Terminator`. We use `Term` rather than operations or expressions,
-  though; see `Term` and cases
+TODO: loots of text...
 
-### Removing Bodies
+$$
+\frac{
+    \Gamma \vdash b \rhd \Delta
+    \quad
+    \Delta \vdash t \rhd \mathcal{L} \sqcup \mathcal{R}
+    \quad
+    \forall (ℓ, A) ∈ \mathcal{R}, 
+        \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R}
+    \quad
+    \forall G_\ell, \ell ∈ \mathcal{R}
+}{
+    \Gamma \vdash \mathsf{reg}\;(b;t)\;(x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+}
+$$
 
-- Operations
-- Terminators
-- Regions
-- This gives us the `TRegion` data structure; but again see `Term` and cases
+TODO: text... looots of text...
+
+$$
+\frac{
+    \Gamma \vdash t \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+    \forall (ℓ, A) ∈ \mathcal{R}, 
+        \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+    \forall G_\ell, \ell ∈ \mathcal{R}
+}{
+    \Gamma \vdash \mathsf{reg}\;t\;(x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+}
+$$
+$$
+\frac{
+    \Gamma \vdash_\epsilon a : A \quad 
+    \Gamma, x : A_\bot \vdash r \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{let}\;x = a; r \rhd \mathcal{L}
+} \quad
+\frac{
+    \Gamma \vdash_\epsilon a : A \times B \quad
+    \Gamma, x : A_\bot, y : B_\bot \vdash r \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{let}\;(x, y) = a; r \rhd \mathcal{L}
+}
+$$
+
+TODO: yet more text
+
+This gives us the `TRegion` data structure; but again see `Term`
 
 ### How to Recover SSA
 
-- Every region has a _distinguished_ entry body/block: can trivially be extracted by induction
-- Just make it and go inductively!
+TODO: segue...
+
+- Isomorphic to the above by (trivial)
+- Go over basic-block reconstruction in particular
 
 ## Structured Branching Control-Flow
 
 - MLIR supports it!
-- Let's start by generalizing terms
+- Two features: structured control-flow in terminators and structured control-flow in terms
+- Easier to eliminate the latter into the former, and the former into SSA, so we'll work that way
 
-### Formal Typing Rules
+### Structured Terminators
 
-- Terms
+- Naive way: mutual recursion between terminators and regions needed
 
-### Why Introduce a Term Language
+- Nicer way: fuse terminators and regions
 
-- Many rewrite reasons
-- But!
+$$
+\frac{
+    \Gamma \vdash r \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+    \forall (ℓ, A) ∈ \mathcal{R}, 
+        \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+    \forall G_\ell, \ell ∈ \mathcal{R}
+}{
+    \Gamma \vdash \mathsf{reg}\;r\;(x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+}
+$$
+$$
+\frac{
+    \Gamma \vdash_\epsilon a : A \quad 
+    \Gamma, x : A_\bot \vdash r \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{let}\;x = a; r \rhd \mathcal{L}
+} \quad
+\frac{
+    \Gamma \vdash_\epsilon a : A \times B \quad
+    \Gamma, x : A_\bot, y : B_\bot \vdash r \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{let}\;(x, y) = a; r \rhd \mathcal{L}
+}
+$$
+$$
+\frac{
+    \mathcal{L}(\ell) = A \quad 
+    \Gamma \vdash_\bot a : A
+}{
+    \Gamma \vdash \mathsf{br}\;\ell\;a \rhd \mathcal{L}
+}
+\qquad
+\frac{
+    \Gamma \vdash_\epsilon e : A + B \quad
+    \Gamma, x: A_\bot \vdash l \rhd \mathcal{L} \quad
+    \Gamma, y: B_\bot \vdash r \rhd \mathcal{L}
+}{
+    \Gamma \vdash_\epsilon \mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r)
+}
+$$
 
-### Fusing Regions and Terminators
-
-- Recovering SSA is a tad ugly
-- Mutual induction: very sad :(
-- Can fix that by merging things!
-
-### Formal Typing Rules
-
-- Operators
-- Regions
+- This is the Region data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa), but
+  see `Term`
 
 ### How to Recover SSA
 
-- Can now use ye olde rewrite rules nicely
-- Can just send to nested CFGs for sharing purposes, recovering old ugly rules
+- Nice thing: Region can represent:
+    - Terminators
+    - Blocks
+    - BBRegions
+    - TRegions
+    - That's why these are all written with $\rhd$!
+
+- In particular, can get a `TRegion` pretty easily. And already established that's isomorphic to SSA
 
 ### Alternative Design: overloaded `br`
 
@@ -600,14 +788,15 @@ dataflow passes. We have not yet explored this portion of the design space.
 - _Also_: actually, more painful to lower, too
 - And introduces spurious basic blocks jumping straight to control flow, very sad...
 
-### Formalization
+### Introducing a Term Language
 
-- This is the Region data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa)
+- Some cool optimizations we might like to do
+- What we need; not particularly complicated...
 
-## Next Steps
+### How to Recover SSA
 
-- Giving an equational theory
-- Connecting to categorical semantics
+- Can now use ye olde rewrite rules nicely
+- Can just send to nested CFGs for sharing purposes, recovering old ugly rules
 
 ## Future Work
 
