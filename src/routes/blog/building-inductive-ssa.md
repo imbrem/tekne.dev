@@ -494,9 +494,21 @@ $$
 \boxed{\Gamma \vdash t \rhd \mathcal{L}}
 $$
 
-TODO: text for rules...
+$$
+\frac
+    {\mathcal{L}(\ell) = A \quad \Gamma \vdash_\bot a : A}
+    {\Gamma \vdash \mathsf{br}\;\ell\;a \rhd \mathcal{L}}
+\qquad
+\frac{
+    \Gamma \vdash_\bot e : \mathbf{2} \qquad
+    \Gamma \vdash s \rhd \mathcal{L} \qquad
+    \Gamma \vdash t \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{ite}\;e\;s\;t \rhd \mathcal{L}
+}
+$$
 
-TODO: split above...
+TODO: text for rules...
 
 ### Formalization
 
@@ -504,10 +516,19 @@ TODO: segue...
 
 We have now obtained a system which is essentially the same as that formalized in
 [freyd-ssa](https://github.com/imbrem/freyd-ssa), except for the following details:
+
+TODO: actual inductive type lore:
+
+$$
+A, B, C ::= X \;|\; A \times B \;|\; \mathbf{1} \;|\; \mathbf{2}
+$$
+
+
 - For simplicity, we only define pairs of types $A \times B$, and an explicit unary type
   $\mathbf{1}$; these can simulate $n$-ary pairs $\Pi_i A_i$ by defining, e.g., $\Pi_{i = 1}^nA_i =
   A_1 \times \Pi_{i = 2}A_i$
 - Similarly, we append an explicit Boolean type $\mathbf{2}$ for if-then-else rewrites
+
 - Our rules for CFGs are a little bit more convoluted: we define $\mathcal{L} \vdash' G \rhd
   \mathcal{K}$ using the following much less intuitive rules:
   
@@ -527,6 +548,8 @@ We have now obtained a system which is essentially the same as that formalized i
   think of why exactly we went for this this at the moment, but that's what was formalized and we
   have to be honest! This also provides a bit more power, since "dead" code, i.e. $\ell$ not
   reachable from the entry context, does not need to typecheck.
+
+- TODO: intrinsic vs. extrinsic lore
 
 <!-- ### Formalizing Substitution
 
@@ -560,7 +583,29 @@ optimizations, such as control-flow rewrites, in a more convenient fashion. -->
 
 ### Adding Coproducts
 
-...
+TODO: segue, type lore
+
+$$
+A, B, C ::= X \;|\; A \times B \;|\; \mathbf{1} \;|\; A + B \;|\; \mathbf{0}
+$$
+
+$$
+\frac{\Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon \mathsf{inl}\;a : A + B} \qquad
+\frac{\Gamma \vdash_\epsilon b : B}{\Gamma \vdash_\epsilon \mathsf{inr}\;b : A + B} \qquad
+\frac{\Gamma \vdash_\epsilon e : \mathbf{0}}{\Gamma \vdash_\epsilon \mathsf{abort}\;e : \mathbf{0}}
+$$
+
+$$
+\frac{
+    \Gamma \vdash_\epsilon e : A + B \quad 
+    \Gamma, x : A \vdash s \rhd \mathcal{L} \quad
+    \Gamma, y : B \vdash t \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{case}\;e\;(x \Rightarrow s)\;(y \Rightarrow t) \rhd \mathcal{L}
+}
+$$
+
+- TODO: in particular, note we now allow side effect $\epsilon$ as well... pros and cons here...
 
 ### Alternative Design: Global Label/Variable Name Maps
 
@@ -591,7 +636,7 @@ labels are scoped in SSA.
 - Bracketing determines variable scoping
 - This is _because_ bracketing determines label scoping
 - Single entrypoint lore...
-- Expressions: same as before
+- Expressions: same as before, but see `Term`
 - Bodies: same as before
 - Terminators
     $$
@@ -636,7 +681,7 @@ labels are scoped in SSA.
         \quad
         \forall G_\ell, \ell ∈ \mathcal{R}
     }{
-        \Gamma \vdash \mathsf{reg}\;\beta\;(x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+        \Gamma \vdash \mathsf{reg}\;\beta\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
     }
     $$
 
@@ -671,7 +716,7 @@ $$
     \quad
     \forall G_\ell, \ell ∈ \mathcal{R}
 }{
-    \Gamma \vdash \mathsf{reg}\;(b;t)\;(x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+    \Gamma \vdash \mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
 }
 $$
 
@@ -684,7 +729,7 @@ $$
         \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
     \forall G_\ell, \ell ∈ \mathcal{R}
 }{
-    \Gamma \vdash \mathsf{reg}\;t\;(x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+    \Gamma \vdash \mathsf{reg}\;t\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
 }
 $$
 $$
@@ -732,7 +777,7 @@ $$
         \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
     \forall G_\ell, \ell ∈ \mathcal{R}
 }{
-    \Gamma \vdash \mathsf{reg}\;r\;(x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+    \Gamma \vdash \mathsf{reg}\;r\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
 }
 $$
 $$
@@ -778,7 +823,32 @@ $$
     - TRegions
     - That's why these are all written with $\rhd$!
 
-- In particular, can get a `TRegion` pretty easily. And already established that's isomorphic to SSA
+- In particular, can get a `TRegion` pretty easily, via:
+
+TODO: lowering text...
+
+$$
+\mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r) 
+\to \mathsf{reg}\;(\mathsf{case}
+    \;(x \Rightarrow \mathsf{br}\;\ell_l\;x)
+    \;(y \Rightarrow \mathsf{br}\;\ell_r\;y))
+    \;(ℓ_l\;x \Rightarrow l)
+    \;(ℓ_r\;x \Rightarrow r)
+$$
+
+$$
+\mathsf{br}\;\ell\;x 
+\to \mathsf{reg}\;(\mathsf{br}\;ℓ\;x)
+$$
+
+$$
+\mathsf{reg}\;(\mathsf{reg}\;\beta\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell)
+    \;(\kappa\;x_\kappa \Rightarrow H_\kappa)_\kappa
+\to \mathsf{reg}\;\beta\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell
+    \;(\kappa\;x_\kappa \Rightarrow H_\kappa)_\kappa
+$$
+
+And already established that's isomorphic to SSA
 
 ### Alternative Design: overloaded `br`
 
@@ -793,10 +863,96 @@ $$
 - Some cool optimizations we might like to do
 - What we need; not particularly complicated...
 
+$$
+\frac{
+    \Gamma \vdash_\epsilon a : A \quad
+    \Gamma, x : A_\bot \vdash_\epsilon e : B
+}{
+    \Gamma \vdash_\epsilon \mathsf{let}\;x = a; e : B
+} \quad
+\frac{
+    \Gamma \vdash_\epsilon a : A \times B \quad
+    \Gamma, x : A_\bot, y : B_\bot \vdash_\epsilon e : C 
+}{
+    \Gamma \vdash_\epsilon \mathsf{let}\;(x, y) = a; e : C
+}
+$$
+
+$$
+\frac{\Gamma \vdash_\epsilon e : A + B 
+    \quad \Gamma, x : A_\bot \vdash_\epsilon c_l : C 
+    \quad \Gamma, y : B_\bot \vdash_\epsilon c_r : C
+}{
+    \Gamma \vdash \mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r)
+}
+$$
+
 ### How to Recover SSA
 
-- Can now use ye olde rewrite rules nicely
-- Can just send to nested CFGs for sharing purposes, recovering old ugly rules
+- Can now use ye olde rewrite rules nicely:
+
+TODO: can do using repeated application of
+
+$$
+\mathsf{let}\;y = (\mathsf{let}\;x = a; e); r \to
+\mathsf{let}\;x = a; \mathsf{let}\;y = e; r
+$$
+
+$$
+\mathsf{let}\;z = (\mathsf{let}\;(x, y) = a; e); r \to
+\mathsf{let}\;(x, y) = a; \mathsf{let}\;z = e; r
+$$
+
+$$
+\mathsf{let}\;z = (\mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r)); r \to
+\mathsf{case}\;e\;(x \Rightarrow \mathsf{let}\;z = c_l; r)\;(y \Rightarrow \mathsf{let}\;z = c_r; r)
+$$
+
+TODO: and likewise for let...
+
+$$
+\mathsf{let}\;(y, z) = (\mathsf{let}\;x = a; e); r \to
+\mathsf{let}\;x = a; \mathsf{let}\;(y, z) = e; r
+$$
+
+$$
+\mathsf{let}\;(z, w) = (\mathsf{let}\;(x, y) = a; e); r \to
+\mathsf{let}\;(x, y) = a; \mathsf{let}\;(z, w) = e; r
+$$
+
+$$ \mathsf{let}\;(z, w) = (\mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r)); r \to
+\mathsf{case}\;e\;(x \Rightarrow \mathsf{let}\;(z, w) = c_l; r)\;(y \Rightarrow \mathsf{let}\;(z, w)
+= c_r; r) $$
+
+TODO: and for case...
+
+$$
+\mathsf{case}\;(\mathsf{let}\;x = a; e)\;(y \Rightarrow l)\;(z \Rightarrow r) \to
+\mathsf{let}\;x = a; \mathsf{case}\;e\;(y \Rightarrow l)\;(z \Rightarrow r)
+$$
+
+$$
+\mathsf{case}\;(\mathsf{let}\;(x, y) = a; e)\;(z \Rightarrow l)\;(w \Rightarrow r) \to
+\mathsf{let}\;(x, y) = a; \mathsf{case}\;e\;(z \Rightarrow l)\;(w \Rightarrow r)
+$$
+
+$$
+\mathsf{case}\;(\mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r))
+    \;(z \Rightarrow l)\;(w \Rightarrow r)
+\to
+\mathsf{case}\;e
+    \;(x \Rightarrow \mathsf{case}\;c_l\;(z \Rightarrow l)\;(w \Rightarrow r))
+    \;(y \Rightarrow \mathsf{case}\;c_r\;(z \Rightarrow l)\;(w \Rightarrow r))
+$$
+
+TODO: which may be derived from the validity of the $\eta$-expansions...
+
+$$
+\mathsf{let}\;(x, y) = e \to \mathsf{let}\;z = e;\mathsf{let}\;(x, y) = z
+\qquad
+\mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r) \to
+\mathsf{let}\;z = e;\mathsf{case}\;z\;(x \Rightarrow l)\;(y \Rightarrow r)
+$$
 
 ## Future Work
 
