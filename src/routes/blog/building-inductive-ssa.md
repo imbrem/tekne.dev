@@ -42,7 +42,7 @@ terminology we will be using when talking about SSA in the rest of this article.
 ### A Type System for 3-address code
 
 In _3 address code_, a program is decomposed into a _control-flow graph_ made up of _basic blocks_.
-For example, this:
+For example, this C program:
 ```c
 int f(int a, int b, int c) {
     int p = a + 5;
@@ -82,10 +82,16 @@ or, drawn as a graph,
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="The above program's CFG drawn as a graph">
 
+TODO: segue
+
 A _basic block_ is defined as a linear sequence of _instructions_, the _body_, followed by a
 _terminator_, which either returns or jumps to the next basic block in program execution. 
 
-More formally, let's consider instructions $f: A_1 \times ... \times A_n \to B_1 \times ... \times
+TODO: lay out "grammar"
+
+TODO: segue
+
+Let's consider instructions $f: A_1 \times ... \times A_n \to B_1 \times ... \times
 B_m$ taking in $n$ parameters $a_1,...,a_n$ and returning $m$ outputs of type $B_1,..., B_m$. For
 convenience, we will simply write such bundles of parameters as $f : (A_i)_i \to (B_j)_j$.
 
@@ -114,10 +120,10 @@ $$
 \qquad \qquad
 \frac
     {
-        \forall i, \Gamma(x_i) = A_i \quad f : (A_i)_i \to (B_j)_j 
+        \forall i. \Gamma(x_i) = A_i \quad f : (A_i)_i \to (B_j)_j 
         \quad \Gamma, (y_j : B_j)_j \vdash b : \Delta
     }{
-        \Gamma \vdash \mathsf{let}\;(y_j)_j = f (a_i)_i;\; b : \Delta
+        \Gamma \vdash \mathsf{let}\;(y_j)_j = f (x_i)_i;\; b : \Delta
     }
 $$
 
@@ -129,6 +135,8 @@ Let's break this down:
     the second rule says that if $b$ takes inputs $\Gamma, (y_j : B_j)_j$ to $\Delta$, then first
     updating $(y_j)_j$ to be the outputs of $f (x_i)_i$ and then executing $b$ takes $\Gamma$ to 
     $\Delta$, assuming that $\Gamma$ types each $x_i$ correctly to be an input of $f$.
+
+TODO: notes on weakening
 
 A **basic block**, given a set of live variables on input, executes its body and then jumps to
 another basic block via its **terminator** (for simplicity, we can model returns as jumping to a
@@ -160,7 +168,12 @@ $$
     {\Gamma \vdash b ; \mathsf{ite}\;b\;\ell\;\ell' \rhd \mathcal{L}}
 $$
 
-TODO: Explanation
+In other words, as one would expect, a basic block consists of a _body_ followed by a _terminator_;
+with the latter being either an _unconditional branch_ ($\mathsf{br}$) or a _conditional branch_
+($\mathsf{ite}$). The body transforms the variables required live on input, $\Gamma$, into the
+variables guaranteed live on output, $\Delta$; the conditions for terminators state that, for all
+possible output labels $\ell$, $\Delta$ is a weakening of the variables required for a branch to
+that label, that is, $\mathcal{L}(\ell)$
 
 The astute reader might notice that it would be perfectly equivalent, up to isomorphism, to elide
 the syntactic category of bodies altogether, and give typing rules for basic blocks as follows:
@@ -177,7 +190,7 @@ $$
 \qquad
 \frac
     {
-        \forall i, \Gamma(x_i) = A_i \quad f : (A_i)_i \to (B_j)_j 
+        \forall i. \Gamma(x_i) = A_i \quad f : (A_i)_i \to (B_j)_j 
         \quad \Gamma, (y_j : B_j)_j \vdash b \rhd \mathcal{L}
     }{
         \Gamma \vdash \mathsf{let}\;(y_j)_j = f (a_i)_i;\; \beta \rhd \mathcal{L}
@@ -187,8 +200,10 @@ $$
 It can often be useful to switch between these two ways of reasoning about basic blocks, as we will
 see throughout this article.
 
-Finally, a **control-flow graph** $G$ can be viewed as a set of mutually-recursive basic blocks
-taking a label context of entry points $\mathcal{L}$ to a label context of exit points
+TODO: notes on weakening, label-weakening
+
+We can now finally define a **control-flow graph** $G$ can be viewed as a set of mutually-recursive
+basic blocks taking a label context of entry points $\mathcal{L}$ to a label context of exit points
 $\mathcal{K}$, as in the following picture:
 
 <img src={cfg_live} 
@@ -205,32 +220,49 @@ $$
 with a typing rule of the form
 
 $$
-\frac{\exists \mathcal{R} \geq \mathcal{L}, [\forall \ell \in G, 
-    \mathcal{R}(\ell) \vdash G(\ell) \rhd \mathcal{R}] 
-    \land [\forall \ell \in \mathcal{R}, \ell \notin G 
-        \implies \mathcal{R}(\ell) \leq \mathcal{K}(\ell)]}
+\frac{
+    \mathcal{L} \leq \mathcal{R} \qquad 
+    \forall \ell \in G.
+        \mathcal{R}(\ell) \vdash G(\ell) \rhd \mathcal{R} \qquad
+    \forall \ell \notin G.
+        \mathcal{R}(\ell) = \mathcal{K}(\ell)}
     {\mathcal{L} \vdash G \rhd \mathcal{K}}
 $$
 
 This rule is a bit complex, so let's break it down:
-- The existential... Here, $\mathcal{L}$ weakens $\mathcal{R}$ when...
-- The first $\forall$...
-- The second $\forall$...
+- We postulate the existence of a _recursive label context_ $\mathcal{R}$ such that:
+- $\mathcal{L}$ weakens $\mathcal{R}$, i.e. for every label $\ell \in \mathcal{L}$,
+  $\mathcal{L}(\ell) \leq \mathcal{R}(\ell)$. In particular, $\mathcal{R}$ is allowed to map labels
+  not in $\mathcal{L}$ to *arbitrary* contexts.
+- For every $ℓ$ in $G$, if $\mathcal{R}(\ell)$ are live on entry to $G(\ell)$ then all branches out
+  of $G(\ell)$ have the appropriate contexts in $\mathcal{R}$ live.
+- For every $ℓ$ in $\mathcal{R}$ not in $G$, $\mathcal{R}(\ell)$ is just a weakening of the
+  corresponding output label $\mathcal{K}(\ell)$. Note the rule would be equally powerful if we
+  required an equality $\mathcal{R}(\ell) = \mathcal{K}(\ell)$
 
-In particular, we can break this into two rules by defining $\mathcal{R} \vdash' G \rhd \mathcal{K}$
-as follows:
+TODO: but why?
+
+TODO: notes on label weakening
+
+We can trivially break this into two rules, defining $\mathcal{R} \vdash' G \rhd
+\mathcal{K}$ as follows:
 
 $$
-\frac{[\forall \ell \in G, \mathcal{R}(\ell) \vdash G(\ell) \rhd \mathcal{R}] 
-    \land [\forall \ell \in \mathcal{R}, \ell \notin G 
-        \implies \mathcal{R}(\ell) \leq \mathcal{K}(\ell)]}{\mathcal{R} \vdash' G \rhd \mathcal{K}}
+\frac{
+        \forall \ell \in G.
+            \mathcal{R}(\ell) \vdash G(\ell) \rhd \mathcal{R} \qquad
+        \forall \ell \notin G.
+            \mathcal{R}(\ell) = \mathcal{K}(\ell)
+    }{
+        \mathcal{R} \vdash' G \rhd \mathcal{K}
+    }
 \qquad
 \frac{\mathcal{L} \leq \mathcal{R} \qquad \mathcal{R} \vdash' G \rhd \mathcal{K}}
      {\mathcal{L} \vdash G \rhd \mathcal{K}}
 $$
 
 
-#### A Note on Scoping
+<!-- #### A Note on Scoping
 
 Note that every well-typed program in the above system never uses a variable in an ill-typed way,
 including using a variable before it has been initialized with a value of the appropriate type,
@@ -255,12 +287,14 @@ can use to describe what programs we accept as well-formed in perhaps a more int
 is slightly difficult when the types of variables are allowed to change, as in the above language,
 but a program with SSA form does not have this issue, allowing us to trivially introduce _dominance
 tree based scoping_, which we will do in later sections as part of our quest for an inductive
-representation of SSA.
+representation of SSA. -->
 
 ### SSA
 
-We can now define _SSA form_ as a property of 3-address code: a piece of 3-address code is said to
-be in _SSA form_ if every variable is assigned to exactly once. 
+So far, our type system and grammar applies to 3-address code in general, rather than SSA
+specifically, and in particular much of our semantics work and optimizations work in this setting as
+well. We can now define _SSA form_ as a property of 3-address code: a piece of 3-address code is
+said to be in _SSA form_ if every variable is assigned to exactly once. 
 
 Conversion to SSA form, for straight-line code, is just variable renaming: 
 ```
@@ -276,10 +310,12 @@ y0 = x1 + 2;
 x2 = 3 + y0;
 y1 = x2 + y0;
 ```
-This property allows for _substitution_: we can safely substitute all occurences of `x2` with `3 +
-y0`, for example, whereas previously we would have to keep control-flow in mind. In general, the
-ability to analyze the previous values of variables, and do algebra with them, makes a huge class
-of analysis passes and optimizations _much_ easier to implement.
+
+The reason we are interested in SSA is that this property allows for _substitution_: we can safely
+substitute all occurences of `x2` with `3 + y0`, for example, whereas previously we would have to
+keep control-flow in mind. In general, the ability to analyze the previous values of variables, and
+do algebra with them, makes a huge class of analysis passes and optimizations _much_ easier to
+implement.
 
 In the presence of branching, however, converting to SSA gets a bit more complicated: given
 ```
@@ -310,7 +346,8 @@ trying to simply number our variables leaves us with the following:
     x3 = 3 + x?
 ```
 In particular, it is dependent on control-flow whether `x1` or `x2` is used in the definition of
-`x3`. The solution to this issue is to introduce _parameters_ for basic blocks, as follows [^1]
+`x3`. The solution to this issue is to introduce _parameters_ for basic blocks, as follows
+[^1]
 ```
 ^entry:
     x0 = 5;    
@@ -324,6 +361,10 @@ In particular, it is dependent on control-flow whether `x1` or `x2` is used in t
 ^end(x3):
     x4 = 3 + x3?
 ```
+
+[^1]: Traditionally, this is implemented using a
+    [Φ-node](https://www.llvmpy.org/llvmpy-doc/dev/doc/llvm_concepts.html) to carry the argument,
+    but this is isomorphic to the more modern basic-blocks-with-arguments approach.
 
 To take into account parameters, we can change our definition of label contexts to map labels $\ell$
 to pairs $(\Gamma, (A_i)_i)$ of contexts $\Gamma$ and tuples of parameters $A_i$.
@@ -348,37 +389,31 @@ Here, we define $(\Gamma, (A_i)_i) \leq (\Delta, (B_i)_i) \iff \Gamma \leq \Delt
 A_i = B_i$.
 
 Similarly, control flow graphs must be modified to map labels $\ell$ to pairs $((x_i)_i, \beta)$ of
-fresh variable names $x_i$ and basic blocks $\beta$.[^2]
+tuples of variable names $(x_i)_i$ and basic blocks $\beta$ parametrized the $x_i$s.
 
-The typing rule then looks roughly like:
+Our typing rule for CFGs then becomes
 
 $$
-\frac{[\forall (\ell, (x_i)_i, \beta) \in G, 
-    \mathcal{R}(\ell) = (\Gamma, (A_i)_i) \land \Gamma, (x_i : A_i)_i \vdash \beta \rhd \mathcal{R}] 
-    \land [\forall \ell \in \mathcal{R}, 
-        \ell \notin G \implies \mathcal{R}(\ell) \leq \mathcal{K}(\ell)]}
+\frac{
+        \forall (\ell, (x_i)_i, \beta) \in G.
+            \exists (\Gamma, (A_i)_i) = \mathcal{R}(\ell).
+            \Gamma, (x_i : A_i)_i \vdash \beta \rhd \mathcal{R}
+        \qquad 
+        \forall \ell \notin G. \mathcal{R}(\ell) \leq \mathcal{K}(\ell)
+    }
     {\mathcal{R} \vdash' G \rhd \mathcal{K}}
-\qquad
-\frac{\mathcal{L} \leq \mathcal{R} \qquad \mathcal{R} \vdash' G \rhd \mathcal{K}}
-    {\mathcal{L} \vdash G \rhd \mathcal{K}}
 $$
 
 Note that these typing rules are still for 3-address code (extended with basic block parameters),
 and well-typed programs do not necessarily have to be in SSA.
 
-[^1]: Traditionally, this is implemented using a
-    [Φ-node](https://www.llvmpy.org/llvmpy-doc/dev/doc/llvm_concepts.html) to carry the argument,
-    but this is isomorphic to the more modern basic-blocks-with-arguments approach.
-
-[^2]: In reality, dealing with freshness is quite complicated, but can be done
-
 ### Adding an Expression Language
 
-At this stage, we can define a predicate determining whether a program is in SSA form quite easily:
-all we need to do is check that for every basic block $\Gamma, (x_i : A_i)_i \vdash \beta \rhd
-\mathcal{L}$, $\beta$ does _not_ overwrite any variables which were live on input to $\beta$, i.e.,
-in $\Gamma$ or $\{x_i\}$. What we now want is to _use_ SSA form to prove some useful properties
-about programs. Unfortunately, writing down equations for SSA is still somewhat painful in our
+At this stage, we can define a predicate determining whether a control-flow graph is in SSA form
+quite easily: all we need to do is check that for every basic block $\Gamma, (x_i : A_i)_i \vdash
+\beta \rhd \mathcal{L}$, $\beta$ does _not_ overwrite any variables which were live on input to
+$\beta$, i.e., in $\Gamma$ or $\{x_i\}$. Unfortunately, writing down equations about substitutions
+and rewrites, which was the point of moving to SSA in the first place, is still quite a pain in our
 setting. For example:
 - Propagating a constant binding $\mathsf{let}\;x = c$ knowing that $x$ is not redefined is sound
   (the program being in SSA implying _no_ variable is redefined), since constants cannot appear as
@@ -403,14 +438,22 @@ $$
 \boxed{\Gamma \vdash_\epsilon a : A}
 $$
 
-In particular, to effectively deal with multiple return values, we can simply ban them and instead
-introduce product types $(A_1 \times ... \times A_n)$, which we will write $\Pi_i A_i$. We also
-_annotate_ each expression with an effect $\epsilon$. In general, our effects form a lattice, but
-for now, it is enough to consider pure expressions with effect $\bot$ and impure expressions with
-effect $\top$. Finally, we can annotate our contexts with effects $\epsilon$ for each variable, to
-allow reasoning about impure rewrites.
+This judgement says that, in the context $\Gamma$, the _expression_ $a$ has type $A$ and _effect_
+$\epsilon$.  In general, our effects form a lattice, but for now, it is enough to consider pure
+expressions with effect $\bot$ and impure expressions with effect $\top$; only substitutions of the
+latter are semantically sound! We will also extend contexts $\Gamma$ to map variables $x$ to pairs
+$(A, \epsilon)$ of a type and an effect: this allows us to reason about terms, bodies, blocks, and
+CFGs with free variables of impure type, allowing us to reason about the syntactic soundness of
+rewrites. [^2]
 
-We then obtain typing rules:
+[^2]: We could also use terms with holes, which are more general, however there are some potential
+advantages to supporting _both_.
+
+Note that, to effectively deal with multiple return values, we simply ban them, instead introducing
+product types $(A_1 \times ... \times A_n)$, which we will write $\Pi_i A_i$. We also _annotate_
+each expression with an effect $\epsilon$.
+
+We postulate the expected typing rules:
 
 $$
 \frac{\Gamma(x) \leq (A, \epsilon)}{\Gamma \vdash_\epsilon x : A}
@@ -419,28 +462,8 @@ $$
 \qquad
 \frac{f : A \to_\epsilon B \qquad \Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon f\;a : B}
 $$
-In particular, constants can be modeled as functions from $\mathbf{1} = \Pi[]$ to $C$.
 
-$$
-\frac{
-    (\Gamma, A) \leq \mathcal{L}(\ell) \quad
-    \Gamma \vdash_\bot a : A
-}{\Gamma \vdash \mathsf{br}\;\ell\;a\rhd \mathcal{L}}
-\qquad
-\frac{
-    \Gamma \vdash_\bot e : \mathbf{2} \quad
-    \Gamma \vdash s \rhd \mathcal{L} \quad
-    \Gamma \vdash t \rhd \mathcal{L}
-}{
-    \Gamma \vdash \mathsf{ite}\;e\;s\;t \rhd \mathcal{L}
-}
-$$
-
-TODO: explanation for rules...
-
-TODO: clean below text, check rules...
-
-Now, all that is necessary is to modify our typing judgement for bodies to differentiate between
+We must now modify our typing judgement for bodies to differentiate between
 binding a variable and unpacking:
 
 $$
@@ -474,28 +497,32 @@ $$
     {\Gamma \vdash b ; \mathsf{ite}\;b\;\ell\;\ell' \rhd \mathcal{L}}
 $$
 
-where, of course, label contexts $\mathcal{L}$ are now mappings $\ell \to (\Gamma, A)$.
-
-- TODO: "should obviously be isomorphic, since expressions simply introduce anonymous intermediate
-  bindings, and everything else is a renaming/reassociation"
-
-Note that this is isomorphic to our original system: we can simply, always choosing fresh variables,
-perform rewrites like
+Note that label contexts $\mathcal{L}$ are now mappings $\ell \mapsto (\Gamma, A)$, i.e., there is
+now only a single parameter type. Similarly, we modify the rules for CFGs as follows:
 
 $$
-\mathsf{let}\;x = y; \beta \to [y/x]\beta \qquad
-\mathsf{let}\;(x_i)_i = (a_i)_i; \beta \to (\mathsf{let}\;x_i = a_i)_i; \beta;
+\frac{
+        \forall (\ell, x, \beta) \in G.
+            \exists (\Gamma, A) = \mathcal{R}(\ell).
+            \Gamma, x : A \vdash \beta \rhd \mathcal{R}
+        \qquad 
+        \forall \ell \notin G. \mathcal{R}(\ell) \leq \mathcal{K}(\ell)
+    }
+    {\mathcal{R} \vdash' G \rhd \mathcal{K}}
 $$
 
-to obtain a program performing only unpackings of operations, just like was originally
-permitted.[^3]
+where control-flow graphs $G$ are now mappings $\ell \mapsto (x, \beta)$.
 
-[^3]: We may define $\mathsf{let}\;x = y; (b; t) = (\mathsf{let}\;x = y;b); t$, if we insist blocks
-    are always written $b; t$
+Note that this system is obviously isomorphic to the original, with expressions just introducing
+anonymous temporary variable bindings and renamings.
 
 ### Adding a Terminator Language
 
-TODO: text for terminators...
+Similarly, it greatly simplifies _label substitutions_ if we also have a language for _terminators_;
+this also allows us to avoid introducing spurious basic blocks consisting only of conditional
+branches, especially since we do not, in our simple language, have a switch-statement. In
+particular, we introduce the following judgement, analogous to that for blocks, with the following
+obvious rules:
 
 $$
 \boxed{\Gamma \vdash t \rhd \mathcal{L}}
@@ -515,25 +542,41 @@ $$
 }
 $$
 
-TODO: text for rules...
+TODO: lore on weakening, substitution...
+
+Blocks can then be typed as follows:
+
+$$
+\frac
+    {\Gamma \vdash b : \Delta \quad \Delta \vdash t \rhd \mathcal{L}}
+    {\Gamma \vdash b ; t \rhd \mathcal{L}}
+$$
+
+TODO: lore on weakening, substitution...
+
+Once again, this change doesn't add any new expressive power to our system: we can convert a CFG in
+the new system to a CFG in the old system by just introducing basic blocks with temporary names to
+the CFG in the obvious way. One other useful property this system has is that it typechecks a strict
+superset of the syntax the previous system does.
 
 ### Formalization
 
-TODO: segue...
-
 We have now obtained a system which is essentially the same as that formalized in
-[freyd-ssa](https://github.com/imbrem/freyd-ssa), except for the following details:
+[freyd-ssa](https://github.com/imbrem/freyd-ssa), except for a few small details, which we will go
+over now.
 
-TODO: actual inductive type lore:
-
+[freyd-ssa](https://github.com/imbrem/freyd-ssa) defines types inductively as follows:
 $$
 A, B, C ::= X \;|\; A \times B \;|\; \mathbf{1} \;|\; \mathbf{2}
 $$
 
+In particular, types are generated freely from a set of base types $X$. For simplicity, we only
+define pairs of types $A \times B$, and an explicit unary type $\mathbf{1}$; these can simulate
+$n$-ary pairs $\Pi_i A_i$ by defining, e.g., $\Pi_{i = 1}^nA_i = A_1 \times \Pi_{i = 2}A_i$. We
+also include a builtin boolean type $\mathbf{2}$.
 
-- For simplicity, we only define pairs of types $A \times B$, and an explicit unary type
-  $\mathbf{1}$; these can simulate $n$-ary pairs $\Pi_i A_i$ by defining, e.g., $\Pi_{i = 1}^nA_i =
-  A_1 \times \Pi_{i = 2}A_i$
+Hence, in particular, our term language only defines binary pairs and a constant $()$ of type
+$\mathbf{1}$:
 
 $$
 \frac{
@@ -544,6 +587,8 @@ $$
 \frac{}{\Gamma \vdash_\epsilon () : \mathbf{1}}
 $$
 
+Similarly, our grammar for bodies only allows binary destructuring:
+
 $$
 \frac{
         \Gamma \vdash_\epsilon a : A \times B \qquad
@@ -553,29 +598,35 @@ $$
     }
 $$
 
-TODO: notes about doing this...
-
-- Our rules for CFGs are a little bit more convoluted: we define $\mathcal{L} \vdash' G \rhd
-  \mathcal{K}$ using the following much less intuitive rules:
+One other change is that our rules for CFGs are a little bit more convoluted: we define $\mathcal{L}
+\vdash' G \rhd \mathcal{K}$ using the following much less intuitive rules:
   
-  $$
-  \frac{}{\mathcal{L} \vdash' \cdot \rhd \mathcal{L}} \qquad
-  \frac{
-    \mathcal{L} \vdash' G \rhd \mathcal{K}, (\ell \mapsto \Gamma, A) \quad
-    \ell \notin \mathcal{K} \quad
-    \Gamma, x : A \vdash \beta \rhd \mathcal{L} \quad
+$$
+\frac{}{\mathcal{L} \vdash' \cdot \rhd \mathcal{L}} \qquad
+\frac{
+\mathcal{L} \vdash' G \rhd \mathcal{K}, (\ell \mapsto \Gamma, A) \quad
+\ell \notin \mathcal{K} \quad
+\Gamma, x : A \vdash \beta \rhd \mathcal{L} \quad
+}{
     \mathcal{L} \vdash' G, \ell(x) \Rightarrow \beta \rhd \mathcal{K}
-    }{} \qquad
-  \frac{\mathcal{L} \vdash' G \rhd \mathcal{K}, \quad \ell \notin \mathcal{L}}
-        {\mathcal{L} \vdash' G \rhd \mathcal{K}, (\ell \mapsto \Gamma, A)}
-  $$
+} \qquad
+\frac{\mathcal{L} \vdash' G \rhd \mathcal{K}, \quad \ell \notin \mathcal{L}}
+    {\mathcal{L} \vdash' G \rhd \mathcal{K}, (\ell \mapsto \Gamma, A)}
+$$
 
-  The reason for this had to do with wanting a more inductive semantics; in retrospect, I can't
-  think of why exactly we went for this this at the moment, but that's what was formalized and we
-  have to be honest! This also provides a bit more power, since "dead" code, i.e. $\ell$ not
-  reachable from the entry context, does not need to typecheck.
+where $G, \ell(x) \Rightarrow \beta$, as expected, denotes changing $G(\ell)$ from undefined to $(x,
+\beta)$, with CFG well-typedness then given by
 
-- TODO: intrinsic vs. extrinsic lore
+$$
+\frac{\mathcal{L} \leq \mathcal{R} \quad \mathcal{R} \vdash' G \rhd \mathcal{K}}
+{\mathcal{L} \vdash G \rhd \mathcal{K}}
+$$
+
+The reason for this had to do with wanting a more inductive semantics; in retrospect, I can't think
+of why exactly we went for this this at the moment, but that's what was formalized and we have to be
+honest! This is roughly equivalent to the formulation given above, though it provides a bit more
+power, since "dead" code, i.e. $\ell$ not reachable from the entry context, does not need to
+typecheck.
 
 <!-- ### Formalizing Substitution
 
@@ -713,14 +764,13 @@ labels are scoped in SSA.
     $$
     $$
     \frac{
-        \Gamma \vdash \beta \rhd \Delta;(\mathcal{L} \sqcup \mathcal{R})
-        \quad
+        \Gamma \vdash b : \Delta \quad
+        \Delta \vdash t \rhd (\mathcal{L} \sqcup \mathcal{R}) \quad
         \forall (ℓ, A) ∈ \mathcal{R}, 
-            \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R}
-        \quad
+            \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
         \forall G_\ell, \ell ∈ \mathcal{R}
     }{
-        \Gamma \vdash \mathsf{reg}\;\beta\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+        \Gamma \vdash \mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
     }
     $$
 
@@ -747,21 +797,6 @@ labels are scoped in SSA.
 ### Removing Bodies and Blocks
 
 TODO: loots of text...
-
-$$
-\frac{
-    \Gamma \vdash b \rhd \Delta
-    \quad
-    \Delta \vdash t \rhd \mathcal{L} \sqcup \mathcal{R}
-    \quad
-    \forall (ℓ, A) ∈ \mathcal{R}, 
-        \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R}
-    \quad
-    \forall G_\ell, \ell ∈ \mathcal{R}
-}{
-    \Gamma \vdash \mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
-}
-$$
 
 TODO: text... looots of text...
 
