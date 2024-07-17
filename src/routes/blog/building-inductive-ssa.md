@@ -143,7 +143,7 @@ other hand, $\mathcal{L}$ is a **label context**: a finitely supported map from 
 contexts $\Gamma$, which represent the variables which must be live on entry to $\ell$, as below:
 
 <img src={block_live} 
-    style="max-width:50em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of live variables on entry and exit to a basic block">
 
 We might give the following simple typing rules for basic blocks
@@ -192,7 +192,7 @@ taking a label context of entry points $\mathcal{L}$ to a label context of exit 
 $\mathcal{K}$, as in the following picture:
 
 <img src={cfg_live} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    style="max-width:30em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
 Representing $G$ as a finitely-supported map from labels $\ell$ to basic blocks $\beta$, the
@@ -657,6 +657,47 @@ labels are scoped in SSA.
 - Let's think carefully about [dominator
   trees](https://en.wikipedia.org/wiki/Dominator_(graph_theory))...
 
+
+<img src={dominance_cfg} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+<img src={dominance_cfg_annotated} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+<img src={dominance_tree_explainer} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+<img src={dominance_tree_cfg} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+<img src={dominance_tree_add_good} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+<img src={dominance_tree_add_rec_good} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+<img src={dominance_tree_add_bad} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+<img src={dominance_scope_diagram} 
+    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+<img src={dominance_scope_annotated} 
+    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+<img src={region_diagram} 
+    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
 ### Scoping Via Dominator Trees
 
 - Bracketing determines variable scoping
@@ -664,36 +705,8 @@ labels are scoped in SSA.
 - Single entrypoint lore...
 - Expressions: same as before, but see `Term`
 - Bodies: same as before
-- Terminators
-    $$
-    \boxed{\Gamma \vdash t \rhd \mathcal{L}}
-    $$
-    $$
-    \frac{
-        \mathcal{L}(\ell) = A \quad 
-        \Gamma \vdash_\bot a : A
-    }{
-        \Gamma \vdash \mathsf{br}\;\ell\;a \rhd \mathcal{L}
-    }
-    \qquad
-    \frac{
-        \Gamma \vdash_\epsilon e : A + B \quad
-        \Gamma, x: A_\bot \vdash s \rhd \mathcal{L} \quad
-        \Gamma, y: B_\bot \vdash t \rhd \mathcal{L}
-    }{
-        \Gamma \vdash_\epsilon \mathsf{case}\;e\;(x \Rightarrow s)\;(y \Rightarrow t)
-    }
-    $$
-- Blocks
-    $$
-    \boxed{\Gamma \vdash \beta \rhd \Delta;\mathcal{L}}
-    $$
-    $$
-    \frac{
-        \Gamma \vdash b : \Delta' \quad 
-        \Delta' \vdash t \rhd \mathcal{L} \quad 
-        \Delta' \leq \Delta}{\Gamma \vdash b;t \rhd \Delta;\mathcal{L}}
-    $$
+- Terminators: same as before
+- Blocks: same as before
 - _Regions_
     $$
     \boxed{\Gamma \vdash r \rhd \mathcal{L}}
@@ -722,6 +735,10 @@ labels are scoped in SSA.
   though; see `Term`
 
 ### How to Recover SSA
+
+<img src={dominance_cfg_scoped} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
 
 - Erase the brackets: no more regions
 - Some notes on what we want to allow as terminators
@@ -795,6 +812,10 @@ TODO: segue...
 - Naive way: mutual recursion between terminators and regions needed
 
 - Nicer way: fuse terminators and regions
+
+<img src={region_diagram_gen} 
+    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
 
 $$
 \frac{
@@ -974,19 +995,50 @@ $$
 
 ### Alternative Design: extended `br`
 
+
+$$
+\frac{
+    (\mathcal{L} \sqcup \mathcal{R})(ℓ) = A \quad
+    \Gamma \vdash_\bot a : A \quad
+    \forall (ℓ, B) ∈ \mathcal{R}, 
+        \Delta, x_\ell : B \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+    \forall G_\ell, \ell ∈ \mathcal{R}
+}{
+    \Gamma \vdash \mathsf{br}\;\ell\;a\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+}
+$$
+
 - Closer to MLIR, maybe?
 
+- Much simpler to explain: `br` to a branch
+- _But_: more painful for expressing certain !FUN! rewrite rules, e.g.
+
 $$
-\mathsf{reg}\;(\mathsf{reg}\;\beta\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell)
-    \;(\kappa\;x_\kappa \Rightarrow H_\kappa)_\kappa
-\to \mathsf{reg}\;\beta\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell
-    \;(\kappa\;x_\kappa \Rightarrow H_\kappa)_\kappa
+\mathsf{br}\;\ell\;a\;(\ell_1\;x \Rightarrow G_1)\;(\ell_2\;y \Rightarrow G_2)
+\to \mathsf{let}\;x = a; G_1'
 $$
 
-- Much simpler to explain: `br` to a branch
-- _But_: more painful for expressing certain !FUN! rewrite rules
-- _Also_: actually, more painful to lower, too
-- And introduces spurious basic blocks jumping straight to control flow, very sad...
+where $G'$ is $G$ with all occurences of $\mathsf{br}\;\ell_i\;e\;(\kappa\;y \Rightarrow
+J_\kappa)_\kappa$ are replaced with
+
+$$
+\mathsf{br}\;\ell_i\;e
+    \;(\ell_1\;x \Rightarrow G_1)\;(\ell_2\;y \Rightarrow G_2)
+    \;(\kappa\;y \Rightarrow J_\kappa)_\kappa
+$$
+
+This is both irritating to state and manipulate, and blows up the size of the program exponentially.
+This representation also turns out to be more painful to lower, and often introduces spurious basic
+blocks jumping straight to more control flow, especially when we try to address the aforementioned
+blowup.
+
+- Conclusion: not now, maybe later. And our representation is more general, since this can be
+emulated precisely with
+
+$$
+\mathsf{br}\;\ell\;a\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell 
+:= \mathsf{reg}\;(\mathsf{br}\;\ell\;a)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell
+$$
 
 ## An Inductive Representation of SSA
 
@@ -1130,4 +1182,29 @@ $$
     import body_live from "$lib/assets/inductive-ssa/body_live.svg"
     import block_live from "$lib/assets/inductive-ssa/block_live.svg"
     import cfg_live from "$lib/assets/inductive-ssa/cfg_live.svg"
+    import dominance_cfg from "$lib/assets/inductive-ssa/dominance_cfg.excalidraw.svg"
+    import dominance_cfg_annotated from 
+        "$lib/assets/inductive-ssa/dominance_cfg_annotated.excalidraw.svg"
+    import dominance_tree_explainer from 
+        "$lib/assets/inductive-ssa/dominance_tree_explainer.excalidraw.svg"
+    import dominance_tree_cfg from 
+        "$lib/assets/inductive-ssa/dominance_tree_cfg.excalidraw.svg"
+    import dominance_tree_add_good from 
+        "$lib/assets/inductive-ssa/dominance_tree_add_good.excalidraw.svg"
+    import dominance_tree_add_rec_good from 
+        "$lib/assets/inductive-ssa/dominance_tree_add_rec_good.excalidraw.svg"
+    import dominance_tree_add_bad from 
+        "$lib/assets/inductive-ssa/dominance_tree_add_bad.excalidraw.svg"
+    import dominance_scope_diagram from 
+        "$lib/assets/inductive-ssa/dominance_scope_diagram.excalidraw.svg"
+    import dominance_scope_annotated from 
+        "$lib/assets/inductive-ssa/dominance_scope_annotated.excalidraw.svg"
+    import region_diagram from 
+        "$lib/assets/inductive-ssa/region_diagram.excalidraw.svg"
+    import dominance_cfg_scoped from 
+        "$lib/assets/inductive-ssa/dominance_cfg_scoped.excalidraw.svg"
+    import region_diagram_gen from 
+        "$lib/assets/inductive-ssa/region_diagram_gen.excalidraw.svg"
 </script>
+
+<!-- TODO: fix annotations -->
