@@ -5,30 +5,14 @@ published: '2024-07-15'
 
 [Static Single Assignment form](https://en.wikipedia.org/wiki/Static_single-assignment_form), or
 SSA, is the intermediate representation of choice for designing compilers for a vast variety of
-languages and platforms. This article consists of some brief notes on how one might represent SSA
-effectively inside a theorem prover, such as [Lean](https://lean-lang.org/), with a view towards
-proving the correctness of rewrites and optimization passes. In particular, we will cover the story
-of the [debruijn-ssa](https://github.com/imbrem/debruijn-ssa) project so far and some of the
-tradeoffs and design decisions made within, starting from our original
-[freyd-ssa](https://github.com/imbrem/freyd-ssa) formalization project.
-
-- TODO: this article is a story, going over all the design decisions
-- TODO: no space for much of the rationale, however, which is substitution
-- TODO: next article: Region, which is the final design, and many features/examples
-- TODO: article after that: the rationale, which is substitution. Or do we jam that into this
-  article?
-
-## Roadmap
-
-- Classical 3-address code/SSA
-- Expression language
-- ==> `freyd-ssa` representation
-- Coproducts should be SSA
-- BBRegion ≅ SSA
-- TRegion ≅ BBRegion
-- Region ≅ TRegion
-- Term language, still ≅
-- Region should be our representation of SSA; for an article purely on Region, next in series...
+languages and platforms. SSA, however, is usually cast in a very "imperative" style, making it
+difficult to take advantage of functional programming when writing optimizations and analyses, and
+extremely cumbersome to reason about effectively in a theorem prover. In this article, we discuss
+how we might work towards a more "functional," and in particular _inductive_, representation of SSA.
+In particular, we will discuss representations of SSA inside the [Lean](https://lean-lang.org/)
+theorem prover which I have developed over the course of my research, from a formalization of
+"vanilla" 3-address code and SSA in [freyd-ssa](https://github.com/imbrem/freyd-ssa) to my work on
+inductive representations of SSA in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa).
 
 ## Classical SSA
 
@@ -82,36 +66,31 @@ or, drawn as a graph,
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="The above program's CFG drawn as a graph">
 
-TODO: segue
+In general, a program in three-adress code is composed of:
+- A **control-flow graph**, composed from a set of entries, exists, and
+- **Basic blocks**, which are defined as a linear sequence of **instructions** (the **body**)
+  followed by a **terminator**.
 
-A _basic block_ is defined as a linear sequence of _instructions_, the _body_, followed by a
-_terminator_, which either returns or jumps to the next basic block in program execution. 
-
-TODO: lay out "grammar"
-
-TODO: segue
-
-Let's consider instructions $f: A_1 \times ... \times A_n \to B_1 \times ... \times
+More formally, let's consider instructions $f: A_1 \times ... \times A_n \to B_1 \times ... \times
 B_m$ taking in $n$ parameters $a_1,...,a_n$ and returning $m$ outputs of type $B_1,..., B_m$. For
 convenience, we will simply write such bundles of parameters as $f : (A_i)_i \to (B_j)_j$.
 
-We might begin a formal account of three-address code by defining the following typing judgement for
-a **body**:
+We might begin by giving a typing judgement for **bodies**:
 
 $$
 \boxed{\Gamma \vdash b : \Delta}
 $$
 
-This says that if the variables in the context $\Gamma$ are live on input to $b$, then the variables
-in the context $\Delta$ will be live once the instructions in $b$ are finished executing, as
-displayed below:
+$\Gamma \vdash b : \Delta$ means that if the variables in the context $\Gamma$ are live on input to
+$b$, then the variables in the context $\Delta$ will be live once the instructions in $b$ are
+finished executing.
 
 <img src={body_live} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of the live variables on entry and exit to a basic block's body">
 
-A **context**, for now, will just be a (finitely-supported) partial function from variables to
-types; the domain of this function is our _live variable set_.
+Here, a **context** is just a (finitely-supported) partial function from variables to types; the
+domain of this function is our _live variable set_.
 
 We can give typing rules
 
@@ -136,7 +115,19 @@ Let's break this down:
     updating $(y_j)_j$ to be the outputs of $f (x_i)_i$ and then executing $b$ takes $\Gamma$ to 
     $\Delta$, assuming that $\Gamma$ types each $x_i$ correctly to be an input of $f$.
 
-TODO: notes on weakening
+For a quick sanity check, we can verify that this definition satisfies _weakening_ on both the
+left and right:
+
+$$
+\frac{\Gamma' \leq \Gamma \quad \Gamma \vdash b : \Delta \quad \Delta \leq \Delta'}
+    {\Gamma' \vdash b : \Delta'}
+$$
+
+We can also prove a variant of the _frame rule_ (assuming all variables in $\Xi$ are fresh!):
+
+$$
+\frac{\Gamma \vdash b : \Delta}{(\Gamma \sqcup \Xi) \vdash b : (\Delta \sqcup \Xi)}
+$$
 
 A **basic block**, given a set of live variables on input, executes its body and then jumps to
 another basic block via its **terminator** (for simplicity, we can model returns as jumping to a
@@ -200,10 +191,28 @@ $$
 It can often be useful to switch between these two ways of reasoning about basic blocks, as we will
 see throughout this article.
 
-TODO: notes on weakening, label-weakening
+Similarly, we can sanity-check our typing rules here by making sure weakenings hold. In particular,
+we can define 
 
-We can now finally define a **control-flow graph** $G$ can be viewed as a set of mutually-recursive
-basic blocks taking a label context of entry points $\mathcal{L}$ to a label context of exit points
+$$
+\mathcal{L} \leq \mathcal{K} 
+\iff \forall (\ell, \Gamma) \in \mathcal{L}. \Gamma \leq \mathcal{K}(\ell)
+$$
+
+Note that here $\mathcal{K}$ is allowed to have _more_ labels than $\mathcal{L}$ (but not less),
+however it must have _less_ variables in the contexts associated with shared labels (whereas labels
+not in $\mathcal{L}$ may be mapped to arbitrary contexts!) We then have the following theorem:
+
+$$
+\frac{
+        \Gamma' \leq \Gamma \quad 
+        \Gamma \vdash \beta \rhd \mathcal{L} 
+        \quad \mathcal{L} \leq \mathcal{L}'
+    }{\Gamma' \vdash \beta \rhd \mathcal{L}'}
+$$
+
+Finally, a **control-flow graph** $G$ can be viewed as a set of mutually-recursive basic blocks
+taking a label context of entry points $\mathcal{L}$ to a label context of exit points
 $\mathcal{K}$, as in the following picture:
 
 <img src={cfg_live} 
@@ -240,27 +249,27 @@ This rule is a bit complex, so let's break it down:
   corresponding output label $\mathcal{K}(\ell)$. Note the rule would be equally powerful if we
   required an equality $\mathcal{R}(\ell) = \mathcal{K}(\ell)$
 
-TODO: but why?
-
-TODO: notes on label weakening
-
-We can trivially break this into two rules, defining $\mathcal{R} \vdash' G \rhd
-\mathcal{K}$ as follows:
+We can similarly state a weakening lemma
 
 $$
 \frac{
-        \forall \ell \in G.
-            \mathcal{R}(\ell) \vdash G(\ell) \rhd \mathcal{R} \qquad
-        \forall \ell \notin G.
-            \mathcal{R}(\ell) = \mathcal{K}(\ell)
+        \mathcal{L}' \leq \mathcal{L} \quad 
+        \mathcal{L} \vdash G \rhd \mathcal{K} \quad
+        \mathcal{K} \leq \mathcal{K}'
     }{
-        \mathcal{R} \vdash' G \rhd \mathcal{K}
+        \mathcal{L}' \vdash G \rhd \mathcal{K}' \quad
     }
-\qquad
-\frac{\mathcal{L} \leq \mathcal{R} \qquad \mathcal{R} \vdash' G \rhd \mathcal{K}}
-     {\mathcal{L} \vdash G \rhd \mathcal{K}}
 $$
 
+and frame rule (assuming all labels in $\mathcal{N}$ are fresh!)
+
+$$
+\frac{
+    \mathcal{L} \vdash G \rhd \mathcal{K}
+}{
+    (\mathcal{L} \sqcup \mathcal{N}) \vdash G \rhd (\mathcal{K} \sqcup \mathcal{N})
+}
+$$
 
 <!-- #### A Note on Scoping
 
@@ -463,6 +472,13 @@ $$
 \frac{f : A \to_\epsilon B \qquad \Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon f\;a : B}
 $$
 
+These satisfy the expected weakening lemma
+
+$$
+\frac{\Gamma' \leq \Gamma \quad \Gamma \vdash_\epsilon a : A \quad \epsilon \leq \epsilon'}
+     {\Gamma' \vdash_{\epsilon'} a : A }
+$$
+
 We must now modify our typing judgement for bodies to differentiate between
 binding a variable and unpacking:
 
@@ -511,7 +527,8 @@ $$
     {\mathcal{R} \vdash' G \rhd \mathcal{K}}
 $$
 
-where control-flow graphs $G$ are now mappings $\ell \mapsto (x, \beta)$.
+where control-flow graphs $G$ are now mappings $\ell \mapsto (x, \beta)$. Weakening and
+label-weakening can be shown to hold exactly as before.
 
 Note that this system is obviously isomorphic to the original, with expressions just introducing
 anonymous temporary variable bindings and renamings.
@@ -542,7 +559,7 @@ $$
 }
 $$
 
-TODO: lore on weakening, substitution...
+TODO: lore on weakening, label-weakening...
 
 Blocks can then be typed as follows:
 
@@ -552,12 +569,108 @@ $$
     {\Gamma \vdash b ; t \rhd \mathcal{L}}
 $$
 
-TODO: lore on weakening, substitution...
+TODO: lore on weakening, label-weakening...
 
 Once again, this change doesn't add any new expressive power to our system: we can convert a CFG in
 the new system to a CFG in the old system by just introducing basic blocks with temporary names to
 the CFG in the obvious way. One other useful property this system has is that it typechecks a strict
 superset of the syntax the previous system does.
+
+### Substitution
+
+Now that we have an expression language, we can attempt to formalize _substitution_, which can then
+be used to formalize a wide variety of optimizations such as loop hoisting and constant propagation.
+
+We begin by defining a _substitution_ $\sigma : \Gamma \to \Delta$ to be a map from variables to
+terms such that $\forall (x, A, \epsilon) \in \Delta. \Gamma \vdash_\epsilon \sigma(x) : A$. In
+particular, we say $\sigma$ is _pure_ if $\forall (x, A, \epsilon) \in \Delta. \Gamma \vdash_\bot
+\sigma(x) : A$.
+
+Stating substitution for expressions is quite straightforward: if $\sigma : \Gamma \to \Delta$,
+then
+
+$$
+\Delta \vdash_\epsilon a : A \implies \Gamma \vdash_\epsilon [\sigma]a : A
+$$
+
+with this substitution _semantically_ sound if $\sigma$ is pure. Unfortunately, even graduating to
+bodies makes things a lot more complicated. One issue is that, since we are working in a named
+setting, it is nontrivial implement capture-avoiding substitution, since the usual approach of
+renaming bound variables to fresh names won't work if implemented  as the names of bound variables
+are visible on the right-hand side of the judgement for bodies. More concretely, given the body
+
+```rust
+let z = 3;
+let x = y;
+```
+
+and the substitution $y \mapsto 3 + z$, we might try writing the substitution as
+
+```rust
+let z0 = 3;
+let x = y + z;
+```
+
+except now $z$ does not have the appropriate value ($3$) at the end of the body! So we instead need
+to write something like
+
+```rust
+let z0 = 3;
+let x = y + z;
+let z = z0;
+```
+
+Instead, we'll do what real SSA-based compilers often do and simply use naive, _non_-capture
+avoiding substitutions. This of course mans that a substitution is only valid if
+
+$$
+\forall x \in \mathsf{defs}(b), \sigma(x) = x
+$$
+
+Another complication is, considering the case where $\sigma : \Gamma' \to \Gamma$, it is unclear
+what $\Delta'$ should be in
+
+$$
+\Gamma \vdash b : \Delta \implies \Gamma' \vdash [\sigma]b : \Delta'
+$$
+
+This is because some variables in $x \in \Delta$ may come from $\Gamma$ (rather than being newly
+defined in the body), but not be contained in $\Gamma'$, being instead defined as $\sigma(x)$. 
+
+We hence introduce a _new_ judgement
+
+$$
+\boxed{\Gamma \vdash' b : \Delta}
+$$
+
+where $\Delta$ consists of exactly the variables defined by $b$, with rules
+
+$$
+\frac{}{\Gamma \vdash' \cdot : \cdot} \qquad
+\frac{\Gamma \vdash_\epsilon a : A \quad \Gamma, x : A \vdash' b : \Delta}
+     {\Gamma \vdash' \mathsf{let}\;x = a; b : x : A, \Delta} \qquad
+\frac{\Gamma \vdash_\epsilon a : \Pi_iA_i \quad \Gamma, (x_i : A_i)_i \vdash' b : \Delta}
+     {\Gamma \vdash' \mathsf{let}\;x = a; b : (x_i : A_i)_i, \Delta}
+$$
+
+and note that
+
+$$
+\Gamma \vdash b : \Delta \iff \exists \Delta', 
+    \Gamma \vdash' b : \Delta' \land
+    \Gamma \sqcup \Delta' \leq \Delta 
+$$
+
+_This_ new judgement then respects substitution, with substitution lemma
+
+$$
+\Gamma \vdash' b : \Delta \implies \Gamma' \vdash [\sigma]b : \Delta
+$$
+
+We can proceed similarly for basic blocks and CFGs, but we have to do a whole lot more fiddling with
+names, taking thousands of lines of Lean to formalize! It seems clear that, should we want to be
+able to effectively state this and more complicated theorems (such as label-substitution), we will
+need a more convenient representation of SSA.
 
 ### Formalization
 
@@ -584,7 +697,9 @@ $$
     }{
         \Gamma \vdash_\epsilon (a, b) : A \times B
     } \qquad
-\frac{}{\Gamma \vdash_\epsilon () : \mathbf{1}}
+\frac{}{\Gamma \vdash_\epsilon () : \mathbf{1}} \qquad
+\frac{}{\Gamma \vdash_\epsilon \mathsf{tt} : \mathbf{2}} \qquad
+\frac{}{\Gamma \vdash_\epsilon \mathsf{ff} : \mathbf{2}}
 $$
 
 Similarly, our grammar for bodies only allows binary destructuring:
@@ -628,49 +743,31 @@ honest! This is roughly equivalent to the formulation given above, though it pro
 power, since "dead" code, i.e. $\ell$ not reachable from the entry context, does not need to
 typecheck.
 
-<!-- ### Formalizing Substitution
-
-The main theorem in this development is _substitution_: given a finitely supported map $\sigma$ from
-a variables to terms and a label context $\mathcal{L}'$ with the same labels and parameters as
-$\mathcal{L}$ (but not necessarily the same associated contexts!), if
- 
-$$
-\forall (\ell, \Delta, A) \in \mathcal{L}, 
-    \mathcal{L}'(\ell) = (\Gamma, A) \land
-    \forall x,
-    \Delta(x) = (B, \epsilon) \implies
-    \Gamma \vdash_\epsilon \sigma(x) : B
-$$
-
-and the CFG $G$ is in SSA, then the obvious substitution
-
-$$
-\mathcal{L}' \vdash' [\sigma]G \rhd \mathcal{K}'
-$$
-
-is well-typed, where $\mathcal{K}'$ denotes $\mathcal{L}'$ restricted to the support of
-$\mathcal{K}$.
-
-That's powerful, and allows a lot of reasoning about rewriting. On paper, we also show that given
-our semantics, every _pure_ such substitution is _sound_, i.e. semantics preserving, where a
-substitution is pure if all $\sigma(x) \neq x$ can be typed with effect $\bot$. It's also
-_incredibly_ cumbersome to state, and even more difficult to use. And hence the beginning of the
-quest for an inductive definition of SSA, where hopefully we can actually state more complicated
-optimizations, such as control-flow rewrites, in a more convenient fashion. -->
-
 ### Adding Coproducts
 
-TODO: segue, type lore
+One of the design goals for  [freyd-ssa](https://github.com/imbrem/freyd-ssa) was to keep things as
+conventional as possible. Hence, we did not support coproducts, and instead only provided a Boolean
+type $\mathbf{2}$. However, effectively reasoning about coproducts can not only allow us to perform
+various interesting optimizations, especially when the source language supports them, but also makes
+it a lot easier to prove category-theoretic properties of our semantics. So, in
+[debruijn-ssa](https://github.com/imbrem/debruijn-ssa), we choose to support them.
+
+In particular, our types are now given by the grammar
 
 $$
 A, B, C ::= X \;|\; A \times B \;|\; \mathbf{1} \;|\; A + B \;|\; \mathbf{0}
 $$
+
+and terms are extended in the obvious manner:
 
 $$
 \frac{\Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon \mathsf{inl}\;a : A + B} \qquad
 \frac{\Gamma \vdash_\epsilon b : B}{\Gamma \vdash_\epsilon \mathsf{inr}\;b : A + B} \qquad
 \frac{\Gamma \vdash_\epsilon e : \mathbf{0}}{\Gamma \vdash_\epsilon \mathsf{abort}\;e : A}
 $$
+
+For control-flow, we replace $\mathsf{ite}$ with a $\mathsf{case}$ terminator, which binds
+variables, similarly to pattern-matching:
 
 $$
 \frac{
@@ -682,16 +779,14 @@ $$
 }
 $$
 
-- TODO: in particular, note we now allow side effect $\epsilon$ as well... pros and cons here...
+Note that we can easily simulate booleans in this setting by defining
 
-### Alternative Design: Global Label/Variable Name Maps
-
-One alternative point in the design space is to have a global map $\Gamma$ from variable names to
-types and a global map $\mathcal{L}$ from labels to parameter types which we can type programs with
-respect to. Combinators can be used to combine programs while maintaining freshness at a global
-level (say, by using integer indices and storing names only as metadata). This presents various
-difficulties w.r.t scoping, but provides a natural setting to state many analyses, such as some
-dataflow passes. We have not yet explored this portion of the design space.
+$$
+\mathbf{2} = \mathbf{1} + \mathbf{1} \qquad
+\mathbf{tt} = \mathbf{inl}\;() \qquad
+\mathbf{ff} = \mathbf{inr}\;() \qquad
+\mathsf{ite}\;e\;s\;t = \mathsf{case}\;e\;(\cdot \Rightarrow s)\;(\cdot \Rightarrow t)
+$$
 
 ## Explicit Scoping and De-Bruijn Indices
 
@@ -1211,6 +1306,12 @@ $$
     - Easier to work with than SSA, maybe
     - Effective effect handlers, maybe
     - Once this paper is done...
+
+## Edge Cases
+
+### Jumps to the entry block
+
+- can be done, just need to put things in a nested CFG
 
 <script>
     import program_cfg from "$lib/assets/inductive-ssa/program_cfg.svg"
