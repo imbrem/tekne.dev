@@ -559,8 +559,6 @@ $$
 }
 $$
 
-TODO: lore on weakening, label-weakening...
-
 Blocks can then be typed as follows:
 
 $$
@@ -568,8 +566,6 @@ $$
     {\Gamma \vdash b : \Delta \quad \Delta \vdash t \rhd \mathcal{L}}
     {\Gamma \vdash b ; t \rhd \mathcal{L}}
 $$
-
-TODO: lore on weakening, label-weakening...
 
 Once again, this change doesn't add any new expressive power to our system: we can convert a CFG in
 the new system to a CFG in the old system by just introducing basic blocks with temporary names to
@@ -797,77 +793,107 @@ labels are scoped in SSA.
 
 ### Dominator Trees
 
-- Want a sane way to do induction on programs, decomposing them into smaller pieces
-- Want to know exactly what is in scope at any given point
-- These are related problems
-- Let's think carefully about [dominator
-  trees](https://en.wikipedia.org/wiki/Dominator_(graph_theory))...
 
+Consider the control-flow graph below:
 
 <img src={dominance_cfg} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="A simple control-flow graph">
+
+Here, the entry block, $A$, defines variables $x, y$, and then jumps to either $B$ or $D$. $B$
+defines $z$ and then jumps to $C$ unconditionally, which then jumps to $E$, whereas $D$ defines $w$
+and then jumps straight to $E$.
+
+We might want to ask ourself which variables can be used, i.e. are _live_, at each point in the
+program. We can perform a _liveness analysis_ as follows:
 
 <img src={dominance_cfg_annotated} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="The results of a liveness analysis on the control-flow graph above">
 
-<img src={dominance_tree_explainer} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+- At the very beginning of the program, the definition of $x$ in $A$, no variables are yet live
+- Immediately afterwards, at the definition of $y$, only $x$ is live
+- On entry to $B$, at the definition of $z$, $x, y$ are live, while on entry to $C$, $x, y, z$ are
+  live
+- Similarly, on entry to $D$, at the definition of $w$, $x, y$ are live
+- On the other hand, only $x, y$ are live on entry to $E$. This is because
+    - $z$ cannot be live, since if we came from $D$, it would be undefined
+    - $w$ cannot be live, since if we came from $C$, it would be undefined
+
+In other words, the live variables on entry to any basic block are the intersection of the live
+variables on exit from any basic block which _jumps_ to that basic block. This gives us a recipe for
+building a dataflow analysis to compute live-variable sets, one of the fundamental building blocks
+of classical techniques for building compilers for 3-address code.
+
+If our program is additionally in SSA, however, things are a bit simpler, and more interesting.
+
+...
 
 <img src={dominance_tree_cfg} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
+It's always a tree because...
+
+<img src={dominance_tree_explainer} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+We can safely add edges to children, siblings, and uncles...
+
 <img src={dominance_tree_add_good} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
+
+As well as to parents, grandparents, and ourselves
 
 <img src={dominance_tree_add_rec_good} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
+But edges to our grandchildren would violate the dominance structure!
+
 <img src={dominance_tree_add_bad} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
-<img src={dominance_scope_diagram} 
-    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+This points to an organization of our program into scopes, as follows
 
 <img src={dominance_scope_annotated} 
     style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
+Now, the correctness rule becomes very simple: "every control-flow edge going from outside a region
+to inside a region must target the entry-block of that region." This naturally points to the data
+structure
+
 <img src={region_diagram} 
     style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
-### Scoping Via Dominator Trees
+In particular, we may introduce the syntactic class of regions $l, r$ to implement this as follows
+$$
+\boxed{\Gamma \vdash r \rhd \mathcal{L}}
+$$
+$$
+\frac{
+    \Gamma \vdash b : \Delta \quad
+    \Delta \vdash t \rhd (\mathcal{L} \sqcup \mathcal{R}) \quad
+    \forall (ℓ, A) ∈ \mathcal{R}, 
+        \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+    \forall G_\ell, \ell ∈ \mathcal{R}
+}{
+    \Gamma \vdash \mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+}
+$$
 
-- Bracketing determines variable scoping
-- This is _because_ bracketing determines label scoping
-- Single entrypoint lore...
-- Expressions: same as before, but see `Term`
-- Bodies: same as before
-- Terminators: same as before
-- Blocks: same as before
-- _Regions_
-    $$
-    \boxed{\Gamma \vdash r \rhd \mathcal{L}}
-    $$
-    $$
-    \frac{
-        \Gamma \vdash b : \Delta \quad
-        \Delta \vdash t \rhd (\mathcal{L} \sqcup \mathcal{R}) \quad
-        \forall (ℓ, A) ∈ \mathcal{R}, 
-            \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
-        \forall G_\ell, \ell ∈ \mathcal{R}
-    }{
-        \Gamma \vdash \mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
-    }
-    $$
+Let's break this rule down...
+
+Recovering a control-flow graph from a region is simple: ...
+
+<img src={dominance_cfg_scoped} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
 
 ### De-Bruijn Indices
 
@@ -878,16 +904,6 @@ labels are scoped in SSA.
 - This is the `BBRegion` data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa);
   see also `Block`, `Body`, `Terminator`. We use `Term` rather than operations or expressions,
   though; see `Term`
-
-### How to Recover SSA
-
-<img src={dominance_cfg_scoped} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
-
-- Erase the brackets: no more regions
-- Some notes on what we want to allow as terminators
-- We want cases for Reasons (TM)... this will be important later...
 
 ### Removing Bodies and Blocks
 
