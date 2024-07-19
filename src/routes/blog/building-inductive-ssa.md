@@ -825,23 +825,76 @@ variables on exit from any basic block which _jumps_ to that basic block. This g
 building a dataflow analysis to compute live-variable sets, one of the fundamental building blocks
 of classical techniques for building compilers for 3-address code.
 
-If our program is additionally in SSA, however, things are a bit simpler, and more interesting.
+If our program is additionally in SSA, however, things are a bit simpler, and more interesting. Note
+that a variable $x$ is live at the entry to a given basic block $B$ if and only if _all_ paths to
+that block through the control-flow graph reaching $B$ go through at least _one_ place where the $x$
+is defined. If our program is in SSA, each variable $x$ is defined at exactly one point $A$, so a
+$x$ is live if and only if all paths reaching $B$ through the control-flow graph go through $A$,
+i.e., in graph-theory speak, if $A$ _dominates_ $B$. Note that dominance is a transitive and
+reflexive relation.
 
-...
+Of course, since in general $x$ is not visible in its own definition (or for variables defined
+before $x$ in the same basic block $A$!), we want to consider whether $A$ _strictly_ dominates $B$,
+i.e., whether $A$ dominates $B$ and $A ≠ B$; if this is the case, we can be certain _all_ variables
+defined in $A$ are live on reaching $B$.
+
+In general, the _dominance tree_ of a control-flow graph encodes this relation; it has:
+- Nodes for each basic block in the control-flow graph
+- An edge from node $A$ to $B$ if $A$ strictly dominates $B$ _and_ there is no intermediate node
+  $A'$ such that $A$ dominates $A'$ and $A'$ dominates $B$.
+
+For example, the dominance tree of the example control-flow graph from before can be written:
 
 <img src={dominance_tree_cfg} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="The control-flow graph above's dominance tree">
 
-It's always a tree because...
+As long as all nodes in the control-flow graph are reachable (in the graph-theoretic sense, even if
+control flow will never actually reach them!) from the program entry point, this is indeed always a
+tree; this property always holds after unreachable code elimination. To see why, consider the case
+where $A$ and $B$ both strictly dominate $C$. It suffices to show that $A$ dominates $B$ or $B$
+dominates $A$. Assume that $A$ does _not_ dominate $B$ and $B$ does _not_ dominate $A$. Then there
+exists a path $p_A$ from the entry point to $A$ which does not reach $B$, and a path $p_B$ from the
+entry point to $B$ which does not reach $A$. It follows that all paths from $B$ to $C$ must reach
+$A$, as if there was a path $q$ which did not do so, then $p_B; q$ (where $;$ denotes path
+composition) would go from the entry point to $C$ without reaching $A$, yielding a contradiction. By
+symmetry, all paths $q$ from $A$ to $C$ must reach $B$.
+
+We wish to show that there is no path $q$ from $A$ to $C$ or from $B$ to $C$. To do show, we prove
+that any such path must be infinitely long, i.e., for all $n$, it must be longer than $n$. We
+proceed by induction:
+- Inductive hypothesis $P(n) := ∀k \leq n.$ "the path cannot be of length $\leq n$"
+- $P(0)$: The path cannot be of length 0, since $A, B ≠ C$
+- $P(n) \implies P(n + 1)$: if the path is of length $n + 1$, then it must go through either $A$ or
+  $B$ after $0 < k < n + 1$ steps. But the sub-path from this point to $C$ is of length $(n + 1) - k
+  \leq n$, yielding a contradiction.
 
 <img src={dominance_tree_explainer} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="An illustration of why the dominance tree is a tree">
+
+Going back to the dominance tree we drew, we can add our control-flow edges back in in grey:
+
+<img src={dominance_tree_control} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="The control-flow graph above's dominance tree, with control edges added back in">
+
+Let's consider what kind of control edges we could add without changing the dominance structure. As
+we would hope, it is always OK to add control edges to direct descendants in the dominance tree:
+
+<img src={dominance_tree_add_child_good} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
-We can safely add edges to children, siblings, and uncles...
+Similarly, control edges between siblings seem to be fine:
 
-<img src={dominance_tree_add_good} 
+<img src={dominance_tree_add_sibling_good} 
+    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="A representation of a control-flow graph">
+
+It also seems to be fine to add control edges to the siblings of our _ancestors_, our "uncles":
+
+<img src={dominance_tree_add_uncle_good} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
@@ -851,27 +904,34 @@ As well as to parents, grandparents, and ourselves
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
-But edges to our grandchildren would violate the dominance structure!
+But edges to our grandchildren would violate the dominance structure, since, for example, adding an
+edge from $A$ to $C$ would create a path from the entry to $C$ which does not reach $B$.
 
 <img src={dominance_tree_add_bad} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
-This points to an organization of our program into scopes, as follows
+This points to an organization of our program into _regions_, such that
+- Each node in the dominance tree is the _entry block_ of its region
+- The children of that node are the region's _children_
+- All a node's descendants, including the node itself, are considered inside that node's region
 
 <img src={dominance_scope_annotated} 
     style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
-Now, the correctness rule becomes very simple: "every control-flow edge going from outside a region
-to inside a region must target the entry-block of that region." This naturally points to the data
-structure
+Now, the correctness rule becomes very simple: "every control-flow edge going from the outside of a
+region to the inside of a region must target the entry-block of that region."
+
+We might hence represent a region as a basic block, followed by a list of child regions which only
+this _entry block_ can call (the entry blocks of)
 
 <img src={region_diagram} 
     style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
-In particular, we may introduce the syntactic class of regions $l, r$ to implement this as follows
+In particular, we may introduce the syntactic class of regions $l, r$ with typing rule
+
 $$
 \boxed{\Gamma \vdash r \rhd \mathcal{L}}
 $$
@@ -887,9 +947,28 @@ $$
 }
 $$
 
-Let's break this rule down...
+Let's break this rule down:
 
-Recovering a control-flow graph from a region is simple: ...
+...
+
+The astute reader may notice that in both this typing rule and the above diagram, the entry block
+cannot necessarily call itself. However, any region other than the root of the CFG will have its own
+address available to jump to as a _sibling_; consequently, the natural way to represent a programs
+CFG is by nesting in a dummy outermost region with an unconditional jump to the program's entry
+point as entry block.
+
+Recovering a standard control-flow graph from such a region is simple: all one needs to do is to
+"flatten" the syntax tree as follows:
+
+$$
+\mathsf{entry}(\mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell) = (b;t)
+$$
+$$
+\mathsf{tocfg}(\mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell)
+    = (\ell\;x_\ell \Rightarrow \mathsf{entry}(G_\ell)) \cup \bigcup_\ell \mathsf{tocfg}(G_\ell)
+$$
+
+Graphically, this simply corresponds to "erasing the region boundaries", here in orange:
 
 <img src={dominance_cfg_scoped} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
@@ -1341,8 +1420,14 @@ $$
         "$lib/assets/inductive-ssa/dominance_tree_explainer.excalidraw.svg"
     import dominance_tree_cfg from 
         "$lib/assets/inductive-ssa/dominance_tree_cfg.excalidraw.svg"
-    import dominance_tree_add_good from 
-        "$lib/assets/inductive-ssa/dominance_tree_add_good.excalidraw.svg"
+    import dominance_tree_control from 
+        "$lib/assets/inductive-ssa/dominance_tree_control.excalidraw.svg"
+    import dominance_tree_add_child_good from 
+        "$lib/assets/inductive-ssa/dominance_tree_add_child_good.excalidraw.svg"
+    import dominance_tree_add_sibling_good from 
+        "$lib/assets/inductive-ssa/dominance_tree_add_sibling_good.excalidraw.svg"
+    import dominance_tree_add_uncle_good from 
+        "$lib/assets/inductive-ssa/dominance_tree_add_uncle_good.excalidraw.svg"
     import dominance_tree_add_rec_good from 
         "$lib/assets/inductive-ssa/dominance_tree_add_rec_good.excalidraw.svg"
     import dominance_tree_add_bad from 
