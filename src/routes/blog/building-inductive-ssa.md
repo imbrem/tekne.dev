@@ -547,7 +547,7 @@ $$
 
 $$
 \frac
-    {\mathcal{L}(\ell) = A \quad \Gamma \vdash_\bot a : A}
+    {(A, \Gamma) \leq \mathcal{L}(\ell) \quad \Gamma \vdash_\bot a : A}
     {\Gamma \vdash \mathsf{br}\;\ell\;a \rhd \mathcal{L}}
 \qquad
 \frac{
@@ -930,11 +930,16 @@ this _entry block_ can call (the entry blocks of)
     style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
     alt="A representation of a control-flow graph">
 
-In particular, we may introduce the syntactic class of regions $l, r$ with typing rule
+In particular, since liveness is now taken care of by the structure of the CFG itself, we no longer
+need to keep track of live variable sets in label contexts, and hence can define them to simply be
+maps $\mathcal{L}$ from labels to parameter types $A$.
+
+We may hence introduce the syntactic class of regions $l, r$ with typing rule
 
 $$
 \boxed{\Gamma \vdash r \rhd \mathcal{L}}
 $$
+
 $$
 \frac{
     \Gamma \vdash b : \Delta \quad
@@ -947,9 +952,33 @@ $$
 }
 $$
 
-Let's break this rule down:
+Let's break this rule down: given that
+- The body $b$, given variables $\Gamma$ live on entry, has variables $\Delta$ live on exit
+- The terminator $t$, given variables $\Delta$ live on entry, jumps to either children $\mathcal{R}$
+  or an external label from $\mathcal{L}$
+- For each child $\ell\;x_\ell \Rightarrow G_\ell$, if $G_\ell$ is a region which, having live
+  variables $\Delta, x_\ell : \mathcal{R}(\ell)$ on entry, jumps to either siblings $\mathcal{R}$
+  or an external label from $\mathcal{L}$
+- Then $\mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell$ is a region which, having live
+  variables $\Gamma$ on entry, jumps to a label in $\mathcal{L}$, with
+    - Entry block $(b;t)$
+    - Children $(\ell\;x_\ell \Rightarrow G_\ell)_\ell$
 
-...
+The rules for terminators are left essentially unchanged:
+
+$$
+\frac
+    {\mathcal{L}(\ell) = A \quad \Gamma \vdash_\bot a : A}
+    {\Gamma \vdash \mathsf{br}\;\ell\;a \rhd \mathcal{L}} \qquad
+\frac{
+    \Gamma \vdash_\epsilon e : A + B \quad 
+    \Gamma, x : A \vdash s \rhd \mathcal{L} \quad
+    \Gamma, y : B \vdash t \rhd \mathcal{L}
+}{
+    \Gamma \vdash \mathsf{case}\;e\;(x \Rightarrow s)\;(y \Rightarrow t) \rhd \mathcal{L}
+}
+$$
+
 
 The astute reader may notice that in both this typing rule and the above diagram, the entry block
 cannot necessarily call itself. However, any region other than the root of the CFG will have its own
@@ -958,7 +987,7 @@ CFG is by nesting in a dummy outermost region with an unconditional jump to the 
 point as entry block.
 
 Recovering a standard control-flow graph from such a region is simple: all one needs to do is to
-"flatten" the syntax tree as follows:
+"flatten" the syntax tree as follows (assuming all labels are fresh for simplicity):
 
 $$
 \mathsf{entry}(\mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell) = (b;t)
@@ -976,19 +1005,30 @@ Graphically, this simply corresponds to "erasing the region boundaries", here in
 
 ### De-Bruijn Indices
 
-- The above rules are compatible with de-Bruijn indices for both variables and labels...
-- So our formalization can just use that
-- Bonus: α-conversion for free
-- But we'll write our typing rules with names, for now!
-- This is the `BBRegion` data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa);
-  see also `Block`, `Body`, `Terminator`. We use `Term` rather than operations or expressions,
-  though; see `Term`
+One of the major advantages of this representation is, having gotten ride of the cumbersome original
+"context of contexts" definition for label contexts $\mathcal{L}$, we now have a clear system of
+variable scoping, following the structure of the dominance tree. This allows us to use de-Bruijn
+indices for variables, rather than names. Since labels _also_ obey this scoping system, we may use
+de-Bruijn indices for them too. For simplicity, however, we will use names to describe the typing
+rules in this article.
 
-### Removing Bodies and Blocks
+At this point we've described the `BBRegion` data structure in
+[debruijn-ssa](https://github.com/imbrem/debruijn-ssa), except that our expression language is
+extended into a _term language_, which we will elaborate on later.
 
-TODO: loots of text...
+### Removing Bodies
 
-TODO: text... looots of text...
+Substitution is much easier to state in this new framework.: in particular, since we now have a
+strict variable scoping discipline, we may use capture-avoiding substitution, such that, in
+particular, for _any_ substitution $\sigma : \Gamma \to \Delta$, we have
+
+$$
+\Delta \vdash r \rhd \mathcal{L} \implies \Gamma \vdash [\sigma]r \rhd \mathcal{L}
+$$
+
+That said, actually _proving_ it is still slightly irritating, since of course our rules for bodies
+remain unchanged. Thankfully, things now become much easier if, analogously to our previous
+transformation for basic blocks, we fuse bodies and regions, as follows:
 
 $$
 \frac{
@@ -1015,16 +1055,49 @@ $$
 }
 $$
 
-TODO: yet more text
-
-This gives us the `TRegion` data structure; but again see `Term`
+This gives us essentially the `TRegion` data structure in
+[debruijn-ssa](https://github.com/imbrem/debruijn-ssa); substitution and weakening hold just as
+before.
 
 ### How to Recover SSA
 
-TODO: segue...
+We can state the isomorphism between `TRegion` and `BBRegion` as follows:
 
-- Isomorphic to the above by (trivial)
-- Go over basic-block reconstruction in particular
+$$
+\mathsf{toBBRegion}(r) = \mathsf{reg}\;(\mathsf{entry}(r))
+    \;(\ell\;x_\ell \Rightarrow \mathsf{toBBRegion}(\mathsf{child}_\ell(r)))_\ell
+$$
+
+where
+
+$$
+\mathsf{entry}(\mathsf{let}\;x = a; r)
+    = (\mathsf{let}\;x = a; \mathsf{entry}(r)) \qquad
+\mathsf{entry}(\mathsf{let}\;(x, y) = a; r)
+    = (\mathsf{let}\;(x, y) = a; \mathsf{entry}(r)) \qquad
+\mathsf{child}_\kappa(...; r) = \mathsf{child}_\kappa(r)
+$$
+
+$$
+\mathsf{entry}(\mathsf{reg}\;t\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell) = t \qquad
+\mathsf{child}_\kappa(\mathsf{reg}\;t\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell)
+= G_\kappa
+$$
+
+and
+
+$$
+\mathsf{toTRegion}(\mathsf{reg}\;(b;t)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell)
+    = b;\mathsf{reg}\;t\;(\ell\;x_\ell \Rightarrow \mathsf{toTRegion}(G_\ell))_\ell)
+$$
+
+where
+
+$$
+\cdot;r = r \qquad 
+((\mathsf{let}\;x = a; b); r) = (\mathsf{let}\;x = a;(b;r)) \qquad
+((\mathsf{let}\;(x, y) = a; b); r) = (\mathsf{let}\;(x, y) = a;(b;r))
+$$
 
 ## Structured Branching Control-Flow
 
