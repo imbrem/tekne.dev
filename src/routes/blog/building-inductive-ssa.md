@@ -1101,19 +1101,14 @@ $$
 
 ## Structured Branching Control-Flow
 
-- MLIR supports it!
-- Two features: structured control-flow in terminators and structured control-flow in terms
-- Easier to eliminate the latter into the former, and the former into SSA, so we'll work that way
+We already have a pretty decent inductive representation for SSA at this point. One additional thing
+we want to be able to reason about effectively, however, is control-flow graph manipulations, such
+as composing control-flow graphs by connecting their inputs and outputs.
 
-### Structured Terminators
-
-- Naive way: mutual recursion between terminators and regions needed
-
-- Nicer way: fuse terminators and regions
-
-<img src={region_diagram_gen} 
-    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+One way to state such rewrites effectively is through _label substitution_, in which branches
+$\mathsf{br}\;\ell\;a$ are replaced with arbitrary code parametrized by $a$. Unfortunately, this is
+a bit unwieldy when terminators can only contain control-flow. Thankfully, it's straightforward to
+generalize this problem away: all we need to do is merge terminators and regions, as follows:
 
 $$
 \frac{
@@ -1156,21 +1151,17 @@ $$
 }
 $$
 
-- This is the Region data structure in [debruijn-ssa](https://github.com/imbrem/debruijn-ssa), but
-  see `Term`
+Doing this gives us the Region data structure in
+[debruijn-ssa](https://github.com/imbrem/debruijn-ssa), but see `Term`. 
 
-### How to Recover SSA
+Intuitively, all we've done is generalize the old region data structure as follows:
 
-- Nice thing: Region can represent:
-    - Terminators
-    - Blocks
-    - BBRegions
-    - TRegions
-    - That's why these are all written with $\rhd$!
+<img src={region_diagram_gen} 
+    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
+    alt="Regions with generalized terminators">
 
-- In particular, can get a `TRegion` pretty easily, via:
-
-TODO: lowering text...
+Note that this grammar typechecks a strict superset of all valid `TRegion`s, which can always be
+reached by semantics-preserving _rewrites_ such as
 
 $$
 \mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r) 
@@ -1193,12 +1184,52 @@ $$
     \;(\kappa\;x_\kappa \Rightarrow H_\kappa)_\kappa
 $$
 
-And already established that's isomorphic to SSA
+For brevity, we will omit the full normalization algorithm.
+
+### Label substitution
+
+We can now define a _label substitution_ $\sigma$ to be given by a map from labels $\ell$ to
+_regions_ $r$ parametrized by a free variable $x_\ell$. We say such a substitution $\sigma :
+\Gamma;\mathcal{L} \to \mathcal{K}$ is _well-typed_ in $\Gamma$ if
+
+$$
+\forall (\ell, A) \in \mathcal{L}, \Gamma, x_\ell : A \vdash \sigma(\ell) \rhd \mathcal{K}
+$$
+
+In this case, we have that
+
+$$
+\Gamma \vdash r \rhd \mathcal{L} \implies \Gamma \vdash [\sigma]r \rhd \mathcal{K}
+$$
+
+where $[\sigma]r$ is _capture-avoiding_ (for both labels and variables; this is much easier to state
+with de-Bruijn indices!) substitution of labels defined as follows:
+
+$$
+[\sigma](\mathsf{br}\;\ell\;a) = [a/x_\ell]\sigma(\ell)
+$$
+$$
+[\sigma](\mathsf{let}\;x = a; r) = (\mathsf{let}\;x = a;([\sigma] r)) \qquad
+[\sigma](\mathsf{let}\;(x, y) = a; r) = (\mathsf{let}\;(x, y) = a;([\sigma] r))
+$$
+
+$$
+[\sigma](\mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r))
+= \mathsf{case}\;e\;(x \Rightarrow [\sigma]l)\;(y \Rightarrow [\sigma]r)
+$$
+
+$$
+[\sigma](\mathsf{reg}\;r\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell)
+= \mathsf{ref}\;[\sigma]r\;(\ell\;x_\ell \Rightarrow [\sigma]G_\ell)_\ell
+$$
 
 ### Introducing a Term Language
 
-- Some cool optimizations we might like to do
-- What we need; not particularly complicated...
+We now come to the final change required for some of the optimizations we would like to do:
+generalizing our _expression language_ to a _term language_. It turns out that sometimes we want to
+splice and merge a control-flow graph based on algebraic rewriting; the simplest way to do this is
+to allow (branching) control-flow to be represented as part of our algebraic expression language, as
+follows:
 
 $$
 \frac{
@@ -1224,11 +1255,9 @@ $$
 }
 $$
 
-### How to Recover SSA
-
-- Can now use ye olde rewrite rules nicely:
-
-TODO: can do using repeated application of
+Again, this grammar can represent strictly _more_ programs than those based on the old expression
+language. Given a region parametrized by terms, we can rewrite it to a region valid in the old
+grammar using obvious semantics-preserving rewrites such as
 
 $$
 \mathsf{let}\;y = (\mathsf{let}\;x = a; e); r \to
@@ -1245,8 +1274,6 @@ $$
 \mathsf{case}\;e\;(x \Rightarrow \mathsf{let}\;z = c_l; r)\;(y \Rightarrow \mathsf{let}\;z = c_r; r)
 $$
 
-TODO: and likewise for let...
-
 $$
 \mathsf{let}\;(y, z) = (\mathsf{let}\;x = a; e); r \to
 \mathsf{let}\;x = a; \mathsf{let}\;(y, z) = e; r
@@ -1260,8 +1287,6 @@ $$
 $$ \mathsf{let}\;(z, w) = (\mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r)); r \to
 \mathsf{case}\;e\;(x \Rightarrow \mathsf{let}\;(z, w) = c_l; r)\;(y \Rightarrow \mathsf{let}\;(z, w)
 = c_r; r) $$
-
-TODO: and for case...
 
 $$
 \mathsf{case}\;(\mathsf{let}\;x = a; e)\;(y \Rightarrow l)\;(z \Rightarrow r) \to
@@ -1282,7 +1307,8 @@ $$
     \;(y \Rightarrow \mathsf{case}\;c_r\;(z \Rightarrow l)\;(w \Rightarrow r))
 $$
 
-TODO: which may be derived from the validity of the $\eta$-expansions...
+which may often be generated from the correctness of a smaller number of rules, such as the
+$\eta$-expansions
 
 $$
 \mathsf{let}\;(x, y) = e \to \mathsf{let}\;z = e;\mathsf{let}\;(x, y) = z
@@ -1291,7 +1317,7 @@ $$
 \mathsf{let}\;z = e;\mathsf{case}\;z\;(x \Rightarrow l)\;(y \Rightarrow r)
 $$
 
-### Alternative Design: extended `br`
+<!-- ### Alternative Design: extended `br`
 
 
 $$
@@ -1336,150 +1362,134 @@ emulated precisely with
 $$
 \mathsf{br}\;\ell\;a\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell 
 := \mathsf{reg}\;(\mathsf{br}\;\ell\;a)\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell
-$$
+$$ -->
 
 ## An Inductive Representation of SSA
 
+We have now finished describing the inductive representation of SSA formalized in
+[debruijn-ssa](https://github.com/imbrem/debruijn-ssa). For convenience and clarity, we restate the
+system in its final form here:
+
 - Types: 
-...
 $$
 A, B, C ::= X \;|\; A \times B \;|\; \mathbf{1} \;|\; A + B \;|\; \mathbf{0}
 $$
-...
 - Syntax:
-...
-$$
-a, b, c, d, e ::= x \;|\; \mathsf{let}\;x = a; e \;|\; f\;a 
-    \;|\; (a, b) \;|\; \mathsf{let}\;(x, y) = a; e \;|\; ()
-    \;|\; \mathsf{inl}\;a \;|\; \mathsf{inr}\;b \;|\; 
-    \;|\; \mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r) 
-    \;|\; \mathsf{abort}\;e
-$$
-...
-$$
-l, r ::= \mathsf{br}\;\ell\;a 
-    \;|\; \mathsf{let}\;x = a; r 
-    \;|\; \mathsf{let}\;(x, y) = a; r
-    \;|\; \mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r)
-    \;|\; \mathsf{reg}\;r\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell
-$$
-...
+    - Terms:
+    $$
+    a, b, c, d, e ::= x \;|\; \mathsf{let}\;x = a; e \;|\; f\;a 
+        \;|\; (a, b) \;|\; \mathsf{let}\;(x, y) = a; e \;|\; ()
+        \;|\; \mathsf{inl}\;a \;|\; \mathsf{inr}\;b \;|\; 
+        \;|\; \mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r) 
+        \;|\; \mathsf{abort}\;e
+    $$
+    - Regions
+    $$
+    l, r ::= \mathsf{br}\;\ell\;a 
+        \;|\; \mathsf{let}\;x = a; r 
+        \;|\; \mathsf{let}\;(x, y) = a; r
+        \;|\; \mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r)
+        \;|\; \mathsf{reg}\;r\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell
+    $$
 - Term typing: 
-...
 
-$$
-\frac{
-        \Gamma \vdash_\epsilon a : A \qquad \Gamma \vdash_\epsilon b: B
+    $$
+    \frac{
+            \Gamma \vdash_\epsilon a : A \qquad \Gamma \vdash_\epsilon b: B
+        }{
+            \Gamma \vdash_\epsilon (a, b) : A \times B
+        } \qquad
+    \frac{}{\Gamma \vdash_\epsilon () : \mathbf{1}} \qquad
+    \frac{\Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon \mathsf{inl}\;a : A + B} \qquad
+    \frac{\Gamma \vdash_\epsilon b : B}{\Gamma \vdash_\epsilon \mathsf{inr}\;b : A + B} \qquad
+    \frac{\Gamma \vdash_\epsilon e : \mathbf{0}}{\Gamma \vdash_\epsilon \mathsf{abort}\;e : A}
+    $$
+
+    $$
+    \frac{
+        \Gamma \vdash_\epsilon a : A \quad
+        \Gamma, x : A_\bot \vdash_\epsilon e : B
     }{
-        \Gamma \vdash_\epsilon (a, b) : A \times B
-    } \qquad
-\frac{}{\Gamma \vdash_\epsilon () : \mathbf{1}} \qquad
-\frac{\Gamma \vdash_\epsilon a : A}{\Gamma \vdash_\epsilon \mathsf{inl}\;a : A + B} \qquad
-\frac{\Gamma \vdash_\epsilon b : B}{\Gamma \vdash_\epsilon \mathsf{inr}\;b : A + B} \qquad
-\frac{\Gamma \vdash_\epsilon e : \mathbf{0}}{\Gamma \vdash_\epsilon \mathsf{abort}\;e : A}
-$$
+        \Gamma \vdash_\epsilon \mathsf{let}\;x = a; e : B
+    } \quad
+    \frac{
+        \Gamma \vdash_\epsilon a : A \times B \quad
+        \Gamma, x : A_\bot, y : B_\bot \vdash_\epsilon e : C 
+    }{
+        \Gamma \vdash_\epsilon \mathsf{let}\;(x, y) = a; e : C
+    }
+    $$
 
-$$
-\frac{
-    \Gamma \vdash_\epsilon a : A \quad
-    \Gamma, x : A_\bot \vdash_\epsilon e : B
-}{
-    \Gamma \vdash_\epsilon \mathsf{let}\;x = a; e : B
-} \quad
-\frac{
-    \Gamma \vdash_\epsilon a : A \times B \quad
-    \Gamma, x : A_\bot, y : B_\bot \vdash_\epsilon e : C 
-}{
-    \Gamma \vdash_\epsilon \mathsf{let}\;(x, y) = a; e : C
-}
-$$
+    $$
+    \frac{\Gamma \vdash_\epsilon e : A + B 
+        \quad \Gamma, x : A_\bot \vdash_\epsilon c_l : C 
+        \quad \Gamma, y : B_\bot \vdash_\epsilon c_r : C
+    }{
+        \Gamma \vdash \mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r)
+    }
+    $$
 
-$$
-\frac{\Gamma \vdash_\epsilon e : A + B 
-    \quad \Gamma, x : A_\bot \vdash_\epsilon c_l : C 
-    \quad \Gamma, y : B_\bot \vdash_\epsilon c_r : C
-}{
-    \Gamma \vdash \mathsf{case}\;e\;(x \Rightarrow c_l)\;(y \Rightarrow c_r)
-}
-$$
-
-...
 - Region typing: 
-...
 
-$$
-\frac{
-    \Gamma \vdash r \rhd \mathcal{L} \sqcup \mathcal{R} \quad
-    \forall (ℓ, A) ∈ \mathcal{R}, 
-        \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
-    \forall G_\ell, \ell ∈ \mathcal{R}
-}{
-    \Gamma \vdash \mathsf{reg}\;r\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
-}
-$$
-$$
-\frac{
-    \Gamma \vdash_\epsilon a : A \quad 
-    \Gamma, x : A_\bot \vdash r \rhd \mathcal{L}
-}{
-    \Gamma \vdash \mathsf{let}\;x = a; r \rhd \mathcal{L}
-} \quad
-\frac{
-    \Gamma \vdash_\epsilon a : A \times B \quad
-    \Gamma, x : A_\bot, y : B_\bot \vdash r \rhd \mathcal{L}
-}{
-    \Gamma \vdash \mathsf{let}\;(x, y) = a; r \rhd \mathcal{L}
-}
-$$
-$$
-\frac{
-    \mathcal{L}(\ell) = A \quad 
-    \Gamma \vdash_\bot a : A
-}{
-    \Gamma \vdash \mathsf{br}\;\ell\;a \rhd \mathcal{L}
-}
-\qquad
-\frac{
-    \Gamma \vdash_\epsilon e : A + B \quad
-    \Gamma, x: A_\bot \vdash l \rhd \mathcal{L} \quad
-    \Gamma, y: B_\bot \vdash r \rhd \mathcal{L}
-}{
-    \Gamma \vdash_\epsilon \mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r)
-}
-$$
-
-...
+    $$
+    \frac{
+        \Gamma \vdash r \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+        \forall (ℓ, A) ∈ \mathcal{R}, 
+            \Delta, x_\ell : A \vdash G_\ell \rhd \mathcal{L} \sqcup \mathcal{R} \quad
+        \forall G_\ell, \ell ∈ \mathcal{R}
+    }{
+        \Gamma \vdash \mathsf{reg}\;r\;(\ell\;x_\ell \Rightarrow G_\ell)_\ell \rhd \mathcal{L}
+    }
+    $$
+    $$
+    \frac{
+        \Gamma \vdash_\epsilon a : A \quad 
+        \Gamma, x : A_\bot \vdash r \rhd \mathcal{L}
+    }{
+        \Gamma \vdash \mathsf{let}\;x = a; r \rhd \mathcal{L}
+    } \quad
+    \frac{
+        \Gamma \vdash_\epsilon a : A \times B \quad
+        \Gamma, x : A_\bot, y : B_\bot \vdash r \rhd \mathcal{L}
+    }{
+        \Gamma \vdash \mathsf{let}\;(x, y) = a; r \rhd \mathcal{L}
+    }
+    $$
+    $$
+    \frac{
+        \mathcal{L}(\ell) = A \quad 
+        \Gamma \vdash_\bot a : A
+    }{
+        \Gamma \vdash \mathsf{br}\;\ell\;a \rhd \mathcal{L}
+    }
+    \qquad
+    \frac{
+        \Gamma \vdash_\epsilon e : A + B \quad
+        \Gamma, x: A_\bot \vdash l \rhd \mathcal{L} \quad
+        \Gamma, y: B_\bot \vdash r \rhd \mathcal{L}
+    }{
+        \Gamma \vdash_\epsilon \mathsf{case}\;e\;(x \Rightarrow l)\;(y \Rightarrow r)
+    }
+    $$
 
 ### Next Steps:
 
-- Denotational semantics in terms of !FUN! category theory! (done)
-- Exciting models involving weak memory! (done)
-- Equational theory! (done)
-- WIP: proof of completeness for equational theory, implying initiality of model!
+There's still a lot more to cover in the isotope project so far, including
+- Denotational semantics using category theory
+- Exciting models, including for [TSO-style weak memory based on Kavanagh and
+  Brookes](https://www.sciencedirect.com/science/article/pii/S1571066118300288)
+- An equational theory satisfied by all models 
+- WIP: a proof of completeness for this equational theory
 
-## Future Work
+There's a whole lot of future work in the wings as well, including:
+- A version of this theory supporting linearity, which has mostly been worked out on paper. This
+  allows applications to fundamentally linear domains such as quantum computing, as well as
+  linearity-dependent rewriting and settings such as probabilistic programming.
+- Work on making the formalized theorem more streamlined, and supporting features such as $n$-ary
+  bindings, tuples, and sums
+- Support for regions as parameters to instructions, like in MLIR
 
-- First: making this $n$-ary
-    - Didn't do at first for simplicity; having second thoughts...
-    - Should allow us to remove $\mathbf{1}$, $\mathbf{0}$, $\mathsf{abort}$, and special case
-      rewrite rules for $\mathbf{1}$
-- Should play more nicely with: Linearity:
-    - Working on prototype
-    - Have old name-based version in failed PLDI submission (paper only)
-    - Thinking of more advanced _resource algebra_ based formalization
-- Mutual recursion
-- Or, fusing terms and regions:
-    - Cool idea!
-    - Allows advanced structured control flow, e.g. a `for` instruction like MLIR
-    - Easier to work with than SSA, maybe
-    - Effective effect handlers, maybe
-    - Once this paper is done...
-
-## Edge Cases
-
-### Jumps to the entry block
-
-- can be done, just need to put things in a nested CFG
+But, I think this article is already long enough! Until next time!
 
 <script>
     import program_cfg from "$lib/assets/inductive-ssa/program_cfg.svg"
