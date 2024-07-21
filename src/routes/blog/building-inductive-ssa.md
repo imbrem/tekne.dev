@@ -19,9 +19,7 @@ inductive representations of SSA in [debruijn-ssa](https://github.com/imbrem/deb
 We begin by telling the story of [freyd-ssa](https://github.com/imbrem/freyd-ssa), our attempt to
 formalize classical SSA mostly as is and prove some theorems. This is still very work-in-progress
 and mostly abandoned, but it is `sorry`-free, and while it does not by any means follow best
-practices, designing it was very educational in figuring out what a good representation of SSA for
-use in theorem proving should look like. In general, this section should also lay out the
-terminology we will be using when talking about SSA in the rest of this article.
+practices, designing it was very educational!
 
 ### A Type System for 3-address code
 
@@ -884,32 +882,32 @@ we would hope, it is always OK to add control edges to direct descendants in the
 
 <img src={dominance_tree_add_child_good} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="Adding control edges targeting a child is fine">
 
 Similarly, control edges between siblings seem to be fine:
 
 <img src={dominance_tree_add_sibling_good} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="Adding control edges targeting a sibling is fine">
 
 It also seems to be fine to add control edges to the siblings of our _ancestors_, our "uncles":
 
 <img src={dominance_tree_add_uncle_good} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="Adding control edges targeting uncles is fine">
 
 As well as to parents, grandparents, and ourselves
 
 <img src={dominance_tree_add_rec_good} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="Adding control edges targeting ourselves and ancestors is fine">
 
 But edges to our grandchildren would violate the dominance structure, since, for example, adding an
 edge from $A$ to $C$ would create a path from the entry to $C$ which does not reach $B$.
 
 <img src={dominance_tree_add_bad} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="We cannot add control edges targeting grandchildren">
 
 This points to an organization of our program into _regions_, such that
 - Each node in the dominance tree is the _entry block_ of its region
@@ -918,7 +916,7 @@ This points to an organization of our program into _regions_, such that
 
 <img src={dominance_scope_annotated} 
     style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="A control flow graph decomposed into regions">
 
 Now, the correctness rule becomes very simple: "every control-flow edge going from the outside of a
 region to the inside of a region must target the entry-block of that region."
@@ -928,7 +926,7 @@ this _entry block_ can call (the entry blocks of)
 
 <img src={region_diagram} 
     style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="A region">
 
 In particular, since liveness is now taken care of by the structure of the CFG itself, we no longer
 need to keep track of live variable sets in label contexts, and hence can define them to simply be
@@ -1001,7 +999,7 @@ Graphically, this simply corresponds to "erasing the region boundaries", here in
 
 <img src={dominance_cfg_scoped} 
     style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+    alt="A control-flow graph with regions marked out">
 
 ### De-Bruijn Indices
 
