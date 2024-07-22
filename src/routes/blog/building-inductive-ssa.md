@@ -1,6 +1,6 @@
 ---
 title: Building An Inductive Representation of SSA
-published: '2024-07-15'
+published: '2024-07-21'
 ---
 
 [Static Single Assignment form](https://en.wikipedia.org/wiki/Static_single-assignment_form), or
