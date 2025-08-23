@@ -457,7 +457,7 @@ It's about 9:43 PM, and I need to fill in the photos and travel bits, give this 
 
 # Conclusion
 
- [L'Emanuella](https://www.lemmanuella.fr/), Isbergues (50.61313, 2.45165)
+_Location_: [L'Emanuella](https://www.lemmanuella.fr/), Isbergues (50.61313, 2.45165)
 
 _Time:_ 2025-08-24T00:04+2
 
