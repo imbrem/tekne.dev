@@ -1,6 +1,6 @@
 ---
 title: Adventures in Type Theory -- Locally Nameless STLC (Part 1)
-published: '2025-08-23'
+published: '2025-08-24'
 ---
 
 It’s been a while. 
