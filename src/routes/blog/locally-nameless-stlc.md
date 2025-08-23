@@ -1,5 +1,5 @@
 ---
-title: Locally Nameless STLC in Lean
+title: Adventures in Type Theory -- Locally Nameless STLC (Part 1)
 published: '2025-08-23'
 ---
 
@@ -93,7 +93,7 @@ import Mathlib.Data.Finset.Lattice.Basic
 and then it's just a matter of writing down the obvious inductive definition
 ```lean
 /-- The set of free variables appearing in an STLC term -/
-def Term.fvs : Tm → Finset String
+def Tm.fvs : Tm → Finset String
 | .fv x => {x}
 | .bv _ => ∅
 | .null => ∅
@@ -117,7 +117,7 @@ So, we begin by defining `wkUnder`, which says "weaken by inserting a bound vari
 binders" as follows:
 ```lean
 /-- Weaken under `n` binders -/
-def Term.wkUnder (n : ℕ) : Tm → Tm
+def Tm.wkUnder (n : ℕ) : Tm → Tm
 | .fv x => .fv x
 | .bv i => if i < n then .bv i else .bv (i + 1)
 | .null => .null
@@ -135,16 +135,16 @@ avoid meta-tangents, too! So, this is a pretty simple function. We note that:
   Here, the only case where this happens is `.abs`
 We'll introduce some syntax sugar $↑_0 t$ for weakening $t$ under no binders:
 ```lean
-prefix:70 "↑0" => Term.wkUnder 0
+prefix:70 "↑₀" => Tm.wkUnder 0
 ```
 And we can now, with just 2 minutes to spare, define substitution under $n$ binders
 as follows:
 ```lean
-def Term.substUnder (n : ℕ) (a : Tm) : Tm → Tm
+def Tm.substUnder (n : ℕ) (a : Tm) : Tm → Tm
 | .fv x => .fv x
 | .bv i => if i < n then .bv i else if i = n then a else .bv (i - 1)
 | .null => .null
-| .abs ty body => .abs ty (substUnder (n + 1) (↑0 a) body)
+| .abs ty body => .abs ty (substUnder (n + 1) (↑₀ a) body)
 | .pair lhs rhs => .pair (substUnder n a lhs) (substUnder n a rhs)
 | .fst p => .fst (substUnder n a p)
 | .snd p => .snd (substUnder n a p)
@@ -175,5 +175,190 @@ inductive Ctx : Type
 | nil
 | cons (Γ : Ctx) (x : String) (A : Ty)
 ```
-Someone's just come by to collect my ticket, so the pressure's on! Let's define a judgement
-for a variable's type, handling shadowing as discussed... and nope, it's time to go! Until next time!
+Someone's just come by to collect my ticket, so the pressure's on! Let's define a judgement for a
+variable's type, handling shadowing as discussed... and nope, it's time to go!
+
+...
+
+As I was saying.
+```lean
+inductive Ctx.Var : Ctx → Ty → String → Type
+| here {Γ : Ctx} {A : Ty} {x : String} : Ctx.Var (Ctx.cons Γ x A) A x
+| there {Γ : Ctx} {A B : Ty} {x y : String}
+  : x ≠ y → Ctx.Var Γ A x → Ctx.Var (Ctx.cons Γ y B) A x
+```
+We make this a _type_ rather than a _proposition_ since we might want to do induction on it later if
+we get to a categorical semantics. But this is _essentially_ a proposition, since it is a
+subsingleton:
+```lean
+instance Ctx.Var.instSubsingleton {Γ A x} : Subsingleton (Var Γ A x) where
+  allEq a b := by
+    induction a with
+    | here => cases b with | here => rfl | there => contradiction
+    | there _ _ I => cases b with
+      | here => contradiction
+      | there => exact (congrArg _ (I _))
+```
+It's also useful to know that every variable has at most one type:
+```lean
+theorem Ctx.Var.disjoint {Γ A B x} (hA : Var Γ A x) (hB : Var Γ B x) : A = B := by
+  induction hA with
+  | here => cases hB with | here => rfl | there => contradiction
+  | there _ _ I => cases hB with 
+    | here => contradiction 
+    | there _ hB => exact I hB
+```
+Note the naming and the somewhat unintuitive parameter order `Var Γ A x`, where the type comes
+first. That's because I'm thinking of this as the set of variables of type $A$ in $Γ$; it in fact
+_be_ a Lean `Set` if we replaced `Type` with `Prop`.
+
+We can now get to our typing rules. We start by, as usual, introducing a spot of notation
+```lean
+instance Tm.instPow : Pow Tm Tm where
+  pow b a := substUnder 0 a b
+```
+and, while we're at it, to avoid typing `.fv` everywhere,
+```lean
+instance Tm.instCoeVar : Coe String Tm where
+  coe x := .fv x
+
+instance Tm.instPowVar : Pow Tm String where
+  pow b x := b^(Tm.fv x)
+```
+Our typing judgement will take the form
+```lean
+inductive Ctx.Deriv : Ctx → Ty → Tm → Type
+```
+Again, we put the type first as we're thinking about "the set of terms of type $A$ in $Γ$", and also
+because we're thinking about "a morphism from $Γ$ to $A$". And we return a `Type`, rather than a
+`Prop`, in case we want to have fun with that aforementioned morphism idea; that's also why we call
+it `Deriv` rather than `HasTy`. Anyways. I see land on the horizon. But we've got 45 minutes, I
+think. So let's continue. 
+
+I'll refer readers to [Charguéraud](https://chargueraud.org/research/2009/ln/main.pdf) for deeper
+explanation of each of these typing rules, for now, just note that:
+- Variables are typed using the obvious rule
+  $$
+  \frac{Γ(x) = A}{Γ ⊢ x : A}
+  $$
+- The unit value $*$ always has type $\mathbf{1}$, regardless of context
+- We type _abstractions_ by using _cofinite quantification_; that is, our rule is
+  $$
+  \frac{∀ x ∉ L . Γ, x : A ⊢ b^x : B}{Γ ⊢ λ A . b : A → B}
+  \qquad
+  \text{where}
+  \qquad
+  L \in \mathcal{P}_{\mathsf{fin}}(\mathsf{String})
+  \quad
+  \text{is an arbitrary finite set}
+  $$
+  Note in particular that:
+  - $b$ is _not_ necessarily locally closed, since we bind the $λ$ using a de-Bruijn index
+  - But, we'll show by induction that $b^x$ _is_ always locally closed
+  - However, the choice of $x$ "doesn't matter" due to quantification
+  - But to deal with shadowing, we allow a finite set of exceptions where this can break
+  - In real life, this is $\mathsf{vars}(Γ)$, but this has a bad induction property
+  - We can equivalently ask the premise for just one _arbitrary_ $x ∉ \mathsf{vars}(Γ)$, but this
+    _also_ has a bad induction property
+  - So we use cofinite quantification, and it will turn out equivalent to what we want!
+- Pairs and projections are typed in the obvious manner:
+  $$
+  \frac{Γ ⊢ a : A \qquad Γ ⊢ b : B}{Γ ⊢ (a, b) : A × B} \qquad
+  \frac{Γ ⊢ p : A × B}{Γ ⊢ \mathsf{fst}(p) : A} \qquad
+  \frac{Γ ⊢ p : A × B}{Γ ⊢ \mathsf{snd}(p) : B}
+  $$
+So, translated to Lean, that becomes
+```lean
+inductive Ctx.Deriv : Ctx → Ty → Tm → Type
+  | var {Γ A x} : Var Γ A x → Deriv Γ A x
+  | null {Γ} : Deriv Γ .unit .null
+  | abs {Γ A B b} {L : Finset String}
+    : (∀x ∉ L, Deriv (cons Γ x A) B (b^x))
+    → Deriv Γ (.arr A B) (.abs A b)
+  | pair {Γ A B a b}
+    : Deriv Γ A a
+    → Deriv Γ B b
+    → Deriv Γ (.prod A B) (.pair a b)
+  | fst {Γ A B p}
+    : Deriv Γ (.prod A B) p
+    → Deriv Γ A (.fst p)
+  | snd {Γ A B p}
+    : Deriv Γ (.prod A B) p
+    → Deriv Γ B (.snd p)
+```
+A spot of notation:
+```
+notation Γ " ⊢ " a " : " A => Ctx.Deriv Γ A a
+```
+I am so glad that, now that I'm back on the boat, I have AI back. I've gotten into the unfortunate
+habit of waiting a split second for a tab-completion, like I'm trying to penetrate a Holtzman shield
+or something. 
+
+But I digress. Our first sanity-check is verifying that well typed terms are always locally closed;
+that is, we want
+```lean
+theorem Ctx.Deriv.lc {Γ a A} (ha : Γ ⊢ a : A) : a.bvi = 0
+```
+To prove this, we'll need some lemmas to relate $\mathsf{bvi}(a^x)$ and $\mathsf{bvi}(a)$. But I'm
+running out of battery. Let's continue at the hotel...
+
+- Rode out of the ship
+- Clutch started slipping
+- Stopped and tightened it, clutch lore is important, yo
+- Rode onwards to hotel
+
+We've arrived at [l'Emmanuella](https://www.lemmanuella.fr/), the host has given us some tea, and
+it's time to get back to it. So.
+```lean
+theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
+  : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
+  := by induction b generalizing n <;> grind [bvi, substUnder, wkUnder]
+
+theorem Tm.pow_def (b : Tm) (a : Tm) : b ^ a = substUnder 0 a b := rfl
+
+theorem Tm.pow_var_def (x : String) (b : Tm) : b ^ x = substUnder 0 x b := rfl
+
+theorem Tm.bvi_le_subst_var (x : String) (b : Tm)
+  : bvi b ≤ bvi (b ^ x) + 1
+  := by convert bvi_le_substUnder_var 0 x b using 1; simp [Tm.pow_var_def]
+
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n <;> grind [bvi, substUnder, wkUnder]
+
+theorem Tm.bvi_subst_var_le (x : String) (b : Tm) : bvi (b ^ x) ≤ bvi b - 1
+  := by convert b.bvi_substUnder_var_le 0 x using 1; simp
+
+theorem Tm.subst_var_lc {x : String} {b : Tm} : bvi (b ^ x) = 0 ↔ bvi b - 1 = 0
+  := by have h := b.bvi_le_subst_var x; have h' := b.bvi_subst_var_le x; omega
+```
+I love the new `grind` tactic. Let's import some utilities to be able to instantiate elements which
+are not members of a finite subset of an infinite set:
+```lean
+import Mathlib.Data.Set.Finite.Basic
+```
+and
+```lean
+theorem Tm.subst_var_lc_cf {L : Finset String} {b : Tm} : (∀x ∉ L, bvi (b ^ x) = 0) ↔ bvi b - 1 = 0
+  := by
+  simp only [subst_var_lc]
+  exact ⟨fun h => have ⟨x, hx⟩ := L.exists_notMem; h x hx, fun h _ _ => h⟩
+
+theorem Ctx.Deriv.lc {Γ a A} (ha : Γ ⊢ a : A) : a.bvi = 0
+  := by induction ha with
+  | _ =>
+    (try simp only [Tm.subst_var_lc_cf] at *)
+    grind [Tm.bvi]
+```
+I _really_ love the new `grind` tactic.
+
+It's about 9:43 PM, and I need to fill in the photos and travel bits, give this article some AI
+✨polish✨ and get to sleep, since I'm attempting to fix my sleep schedule using one of the more
+exciting methodologies. I've also got to look into accomodation for tomorrow, and continue planning
+my journey. So let's.
+
+Our current commit is
+(c97481b)[https://github.com/imbrem/ln-stlc/commit/c97481b5c8d99664b798d9df49b9c68d46e586c9], tagged
+as [`stlc-part-1`](https://github.com/imbrem/ln-stlc/releases/tag/stlc-part-1) on GitHub.
+
+Toodles.
