@@ -42,6 +42,11 @@
 
 <ul>
 	<li>
+		<b>[<a href="https://doi.org/10.48550/arXiv.2411.09347">arXiv</a>]</b>
+		The Denotational Semantics of SSA (J. Ghalayini,
+		<a href="https://www.cl.cam.ac.uk/~nk480/">N. Krishnaswami</a>)
+	</li>
+	<li>
 		<b>[<a href="https://dl.acm.org/doi/10.1145/3607837">ICFP'23</a>]</b>
 		Explicit Refinement Types (J. Ghalayini,
 		<a href="https://www.cl.cam.ac.uk/~nk480/">N. Krishnaswami</a>)
