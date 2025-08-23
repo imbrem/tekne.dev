@@ -3,12 +3,11 @@ title: Adventures in Type Theory -- Locally Nameless STLC (Part 1)
 published: '2025-08-23'
 ---
 
-It's been a long time!
+It’s been a while. 
 
-As my PhD draws to a close, I decided to go on a few adventures while writing up my thesis. I've
-also got a massive backlog of all kinds of other things I've wanted to write over the course of my
-PhD, and while the best time to start was yesterday, the second best time to start is now. Hence,
-_Adventures in Type Theory_.
+As I wrap up my PhD, I decided to take on a few side adventures while writing the thesis. I’ve also
+built up a backlog of things I’ve wanted to write, and while the best time to start was yesterday,
+the second-best is now.
 
 We're beginning with a motorcycle ride from Cambridge to Termini Imerese in Sicily, covering about
 2700 kilometers. It's going to be fun. 
@@ -366,16 +365,16 @@ navigation phone. This would be fun. And no adapters on board. Obviously. I'm su
 try to sell me one, seems like it would be a win-win.
 
 I ride off the ferry and, after filling up, notice that my clutch is slipping again—despite having
-just replaced it. Checking the lever, I find there’s no free play at all, the cable pulled
-completely taut. Easy fix. I stop at a supermarket, pull out my tools, and tighten the cable using
-the inline adjuster near the frame, since the lever adjuster was already maxed out[^3]. Thankfully
-I didn’t need to get at the engine-side adjuster hidden behind a plate. Picture attached.
+just replaced it. The lever had no free play — the cable was taut. Easy fix: I stopped at a
+supermarket and tightened it with the inline adjuster near the frame, since the lever adjuster was
+already maxed out. Thankfully, no need to touch the engine-side adjuster hidden behind a plate.
+Picture attached.
 
 <div style="text-align: center">
 <img src={clutch_adjustment} alt="Adjusting the clutch cable on the Gladius." style="max-width: 40%" />
 </div>
 
-Anyways, I finally arrive at the hotel, and after putting my stuff away, am treated to a nice tea by
+Anyway, I finally arrive at the hotel, and after putting my stuff away, am treated to a nice tea by
 the wonderful host, with whom I practice my French. Definitely getting an excellent review[^4].
 
 So. Type theory.
@@ -410,7 +409,9 @@ theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
   : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
   := by induction b generalizing n <;> grind [bvi, substUnder, wkUnder]
 ```
-Man, I love `grind`. This specializes to $b^x$ in the obvious manner:
+Man, I love `grind`. 
+
+This specializes to $b^x$ in the obvious manner:
 ```lean
 theorem Tm.pow_def (b : Tm) (a : Tm) : b ^ a = substUnder 0 a b := rfl
 
