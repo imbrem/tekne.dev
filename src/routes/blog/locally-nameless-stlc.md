@@ -3,16 +3,27 @@ title: Adventures in Type Theory -- Locally Nameless STLC (Part 1)
 published: '2025-08-23'
 ---
 
-I'm currently riding to Sicily, and, as I'm writing this, sitting in Dover Port waiting for my ferry
-to Dunkirk in about 30 minutes. 
+It's been a long time!
 
-While my body undergoes this physical adventure, my mind has been thinking about
-[`covalence-lean`](https://github.com/imbrem/covalence-lean), a Lean 4 formalization of extensional
-MLTT in the locally-nameless style. Neel says I should write up some of what I learned about
-formalizing locally-nameless type theories in Lean, so here I am, with a poor imitation of
-[Charguéraud's locally nameless tutorial](https://chargueraud.org/research/2009/ln/main.pdf).
+As my PhD draws to a close, I decided to go on a few adventures while writing up my thesis. I've
+also got a massive backlog of all kinds of other things I've wanted to write over the course of my
+PhD, and while the best time to start was yesterday, the second best time to start is now. Hence,
+_Adventures in Type Theory_.
 
-Let's get started.
+We're beginning with a motorcycle ride from Cambridge to Sicily. It's going to be fun. Along the
+way, we'll try to cover how to formalize locally nameless things in Lean in detail, which hopefully
+we'll eventually condense into an ArXiv article or two without the associated travelogue. We're
+starting from the basics with the simply typed lambda calculus, inspired by [Arthur Charguéraud's
+excellent locally nameless tutorial](https://chargueraud.org/research/2009/ln/main.pdf).
+
+To set the stage, this article begins with me sitting in Dover Port around 12:30 UK time, waiting
+for my ferry to Dunkirk, which departed at 14:00. My laptop is open, but I can't find a charging
+port. I am sipping the traditional hazelnut latte, remembering long-ago days in Beirut where I drank
+the same thing at the ABC mall, before looking out a rain-streaked window at the Order of Engineers
+in Tripoli and chipping away at an ever-shifting, perfectionistic implementation of
+[ProTem](https://www.cs.toronto.edu/~hehner/PT.pdf), which is how I got into this mess.
+
+Without further ado, let's get started.
 
 # Project Setup
 
