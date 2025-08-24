@@ -1,5 +1,5 @@
 ---
-title: Adventures in Type Theory -- Locally Nameless STLC (Part 1)
+title: Adventures in Type Theory 1 — Locally Nameless STLC (Part 1)
 published: '2025-08-24'
 ---
 
