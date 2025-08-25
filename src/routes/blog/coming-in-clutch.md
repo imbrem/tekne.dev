@@ -51,15 +51,16 @@ expensive.
 So, the impulse took hold of me, and I spent the next hour preparing for the long haul to Milan.
 
 - I bought an [e-vignette](https://via.admin.ch/shop/) for riding through Switzerland. The official
-  site was suprisingly hard to find through search!
+  site was surprisingly hard to find through search!
 - I made an ill-fated reservation at the [Idea Hotel Milano San Siro](https://sansiro.ideahotel.it/)
 
 Allocating 3 hours time for rest, and pushing the Gladius to the limit, we could make it by 1 AM. So
 be it.
 
-A little moment of research, putting it off, like when there's a heavy weight on the bar and you
-just don't want to lift it. I'm regretting having taken so much time to get started; if I had
-started right away, we could have made it by 11!
+I put it off with a bit of research, like staring at a heavy barbell you don’t want to lift.
+
+I'm regretting having taken so much time to get started; if I had started right away, we could have
+made it by 11!
 
 Alright. This will be !!FUN!!, in the Dwarf Fortress sense.
 
@@ -86,7 +87,7 @@ my first really long trip on the Gladius, and I tend to go slower on UK roads. E
 
 I stop for gas and a snack. My credit cards, which are on my phone, are not accepted by the gas pump
 (but work inside for food!). My other debit card is. After a slight delay, I ride off, but quickly
-notice, _elas_, my clutch is slipping once more. The free play at the clutch lever has disappeared,
+notice, _elas_ [^1], my clutch is slipping once more. The free play at the clutch lever has disappeared,
 so I pull over to the side of the highway and adjust it once more.
 
 <div style="text-align: center">
@@ -138,9 +139,10 @@ The scenery is beautiful, though, and I wish I had brought a GoPro. Low RPM, low
 gear, lower on slopes, which get more common as we head further east. I gaze upon the great works of
 man, 5% and 6% grades carved up and down the rolling hills. 
 
-Stop for gas again at Kekastel, and realize, as it's approaching 10 PM, that it's time to call it a
-night. Find a motel nearby, [hotelF1 Saverne Monswiller](https://maps.app.goo.gl/uNd1P9ximyjQRb788).
-About 35 kilometers left, then, our ride cut short to 475 km. 
+At Kekastel, around 10 PM, I stop for gas and decide to call it a night at [hotelF1 Saverne
+Monswiller](https://maps.app.goo.gl/uNd1P9ximyjQRb788).
+
+About 35 kilometers left. 
 
 Is my bike... dabbing?
 
@@ -198,8 +200,8 @@ _Location_: [hotelF1 Saverne Monswiller](https://maps.app.goo.gl/uNd1P9ximyjQRb7
 
 _Time_: 2025-08-25T10:30+2
 
-I sleep through my alarms, and achieve consciousness at 10:30 AM, 30 minutes before checkout time.
-Put on some electronic metal to time myself, and get out just in time, having double-checked that I
+I sleep through my alarms, and achieve consciousness at 10:30 AM, 30 minutes before checkout time. I
+put on some electronic metal to time myself, and get out just in time, having double-checked that I
 didn't leave anything in the room.
 
 I get downstairs, and call around to see where I can get my bike repaired. Lots of bad luck, little
@@ -279,7 +281,7 @@ Until then, I guess we can walk and enjoy the wonderful scenery.
 <img src={village_view} alt="A beautiful view nearby the patisserie" style="max-width: 70%" />
 </div>
 
-I book accomodation at [Alternative Hôtel Proche
+I book accommodation at [Alternative Hôtel Proche
 Sarreguemines](https://maps.app.goo.gl/4DoHT8c4oCsihPU17), which I walk to, and the room is
 _beautiful_.
 
@@ -308,7 +310,356 @@ myself at [Kebab Le Bosphore](https://maps.app.goo.gl/BZDovZ6r6yfJkxV49), writin
 <img src={bosphorus_setup} alt="Table at Kebab Le Bosphore, with espresso and a carafe of water" style="max-width: 70%" />
 </div>
 
-Until next time!
+And since I'm here and I've eaten, let's start on that locally nameless SSA, then.
+
+# Locally Nameless SSA
+
+We begin by setting up our new repository. There's no Internet here at [Le
+Bosphore](https://maps.app.goo.gl/BZDovZ6r6yfJkxV49), and I want another snack, so, we'll
+copy `ln-stlc` to profit from our already-installed Mathlib:
+```bash
+# In the same directory as ln-stlc, recursively copy its contents into a new directory ln-ssa
+cp -r ln-stlc ln-ssa
+# Open the new directory
+cd ln-ssa
+# Rename files
+mv LnStlc LnSSA
+mv LnStlc.lean LnSSA.lean
+```
+Now we just edit the `lakefile.toml`...
+```toml
+# <snip>
+
+# defaultTargets = ["LnStlc"] -- replace this
+defaultTargets = ["LnSSA"]
+
+# <snip>
+
+[[lean_lib]]
+# name = "LnStlc" -- replace this
+name = "LnSSA" # with this
+```
+And replace the contents of `LnSSA.lean` with
+```lean
+import LnSSA.Basic
+```
+and...
+```bash
+lake build
+```
+I hope the Lean offline experience improves soon. And that we cache dependencies to save disk
+space... but I digress.
+
+Alright, we've now got a copy of the `ln-stlc` project. Let's do a little refactor...
+```bash
+mkdir LnSSA/Expr
+mv LnSSA/Basic.lean LnSSA/Expr/Syntax.lean
+```
+and in `LnSSA.lean`
+```lean
+import LnSSA.Expr.Syntax
+```
+Let's comment out `Ctx.Deriv` and `Ctx.Deriv.lc` for now. We'll move the corrected version to
+another file later.
+
+Recall that our types for STLC were given by
+```lean
+/-- Simple types -/
+inductive Ty : Type
+/-- The unit type. -/
+| unit
+/-- A function type `A → B`. -/
+| arr (A B : Ty)
+/-- A product type `A × B`. -/
+| prod (A B : Ty)
+```
+Let's change these to our types for SSA, ignoring base types for now:
+```lean
+/-- Simple types -/
+inductive Ty : Type
+/-- The unit type. -/
+| unit
+/-- The empty type. -/
+| empty 
+/-- A product type `A × B`. -/
+| prod (A B : Ty)
+/-- A coproduct type `A + B`. -/
+| coprod (A B : Ty)
+```
+So far so good. Now let's change our set of terms to be the set of SSA terms, again, ignoring
+operations for now:
+```lean
+/-- Untyped SSA expressions -/
+inductive Tm : Type
+/-- A named free variable. -/
+| fv (x : String)
+/-- A bound variable, represented using a de Bruijn index. -/
+| bv (i : ℕ)
+/-- A unary let-binding -/
+| let₁ (p e : Tm)
+/-- The unique value of the unit type. -/
+| null
+/-- A pair `(a, b)`. -/
+| pair (lhs rhs : Tm)
+/-- A binary let-binding -/
+| let₂ (p e : Tm)
+/-- A left injection -/
+| inl (e : Tm)
+/-- A right injection -/
+| inr (e : Tm)
+/-- A case expression -/
+| case (e l r : Tm)  
+```
+Note that in SSA we use binary let-bindings, rather than projections. 
+
+Our definitions for `fvs`, `bvi`, `wkUnder`, and `substUnder` are now marked as invalid. Let's start
+with fixing `fvs`:
+```lean
+def Tm.bvi : Tm → ℕ
+| .fv _ => 0
+| .bv i => i + 1
+| .let₁ _ e => bvi e - 1
+| .null => 0
+| .pair lhs rhs => bvi lhs ⊔ bvi rhs
+| .let₂ _ e => bvi e - 2
+| .inl e => bvi e
+| .inr e => bvi e
+| .case e l r => bvi e ⊔ bvi l ⊔ bvi r
+```
+For `bvi`, we need to handle the fact that a binary let-binding binds _two_ variables, rather than
+one. This is straightforward:
+```lean
+def Tm.bvi : Tm → ℕ
+| .fv _ => 0
+| .bv i => i + 1
+| .let₁ _ e => bvi e - 1
+| .null => 0
+| .pair lhs rhs => bvi lhs ⊔ bvi rhs
+| .let₂ _ e => bvi e - 2
+| .inl e => bvi e
+| .inr e => bvi e
+| .case e l r => bvi e ⊔ (bvi l - 1) ⊔ (bvi r - 1)
+```
+And likewise for `wkUnder` and `substUnder`:
+```lean
+def Tm.wkUnder (n : ℕ) : Tm → Tm
+| .fv x => .fv x
+| .bv i => if i < n then .bv i else .bv (i + 1)
+| .let₁ p e => .let₁ (wkUnder n p) (wkUnder (n + 1) e)
+| .null => .null
+| .pair lhs rhs => .pair (wkUnder n lhs) (wkUnder n rhs)
+| .let₂ p e => .let₂ (wkUnder n p) (wkUnder (n + 2) e)
+| .inl e => .inl (wkUnder n e)
+| .inr e => .inr (wkUnder n e)
+| .case e l r => .case (wkUnder n e) (wkUnder (n + 1) l) (wkUnder (n + 1) r)
+
+prefix:70 "↑₀" => Tm.wkUnder 0
+```
+I was expecting the automation to work as-is for everything else, but it turns out, it fails in the
+`case`-case. Factoring it out fixes things:
+```lean
+theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
+  : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
+  := by induction b generalizing n with
+  | case => sorry
+  | _ => grind [bvi, substUnder, wkUnder]
+
+-- snip
+
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n with
+  | case => sorry
+  | _ => grind [bvi, substUnder, wkUnder]
+```
+_But why_? Let's do some detective work. Alright, this works[^2]:
+```lean
+theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
+  : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
+  := by induction b generalizing n with
+  | case =>
+    simp only [bvi, substUnder, wkUnder]
+    simp only [Nat.max_assoc, Nat.add_max_add_right, sup_le_iff, Nat.sub_le_iff_le_add]
+    grind
+  | _ => grind [bvi, substUnder, wkUnder]
+```
+and...
+```lean
+-- DOES NOT COMPILE
+theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
+  : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
+  := by induction b generalizing n with
+  | _ =>
+    simp only [bvi, substUnder, wkUnder]
+    simp only [Nat.max_assoc, Nat.add_max_add_right, sup_le_iff, Nat.sub_le_iff_le_add]
+    grind
+```
+No, the bv case fails...
+```lean
+theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
+  : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
+  := by induction b generalizing n with
+  | _ =>
+    simp only [bvi, substUnder, wkUnder]
+    simp only [Nat.max_assoc, Nat.add_max_add_right, sup_le_iff, Nat.sub_le_iff_le_add]
+    grind [bvi]
+```
+Cool and good!
+```lean
+-- DOES NOT COMPILE
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n with
+  | _ =>
+    simp only [bvi, substUnder, wkUnder]
+    simp only [Nat.max_assoc, Nat.add_max_add_right, sup_le_iff, Nat.sub_le_iff_le_add]
+    grind [bvi]
+```
+Nope. Worth a try... While we're at it, let's clean up the other one
+```lean
+theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
+  : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
+  := by induction b generalizing n with
+  | _ =>
+    simp only [
+      bvi, substUnder, wkUnder, Nat.max_assoc, Nat.add_max_add_right, sup_le_iff, 
+      Nat.sub_le_iff_le_add
+    ]
+    grind [bvi]
+```
+Alright...
+```lean
+-- DOES NOT COMPILE
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n with
+  | case =>
+    simp [bvi, substUnder, wkUnder]
+    simp at *
+    grind
+  | _ => stop grind [bvi, substUnder, wkUnder]
+```
+Nope. Hmm... I see lots of `trash - 1 + 1` in the goal state... and we have the classic lemma (opens
+mathlib docs, furiously search for `sub_add_something`)
+```lean
+theorem Nat.sub_add_eq_max (a b : Nat) :
+  a - b + b = max a b
+```
+and
+```lean
+-- DOES NOT COMPILE
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n with
+  | case =>
+    simp [bvi, substUnder, wkUnder, Nat.sub_add_eq_max]
+    simp at *
+    grind
+  | _ => stop grind [bvi, substUnder, wkUnder]
+```
+Nope. It is doing _something_, though. Let's try rewriting with `le_max_iff`... ah, it doesn't work
+because we have something of the form `trash ≤ (max trash trash) - 1`. So let's pull that minus sign
+in, using
+```lean
+theorem Nat.sub_max_sub_right (a b c : Nat) :
+  max (a - c) (b - c) = max a b - c
+```
+yielding
+```lean
+-- DOES NOT COMPILE
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n with
+  | case =>
+    simp [bvi, substUnder, wkUnder, Nat.sub_add_eq_max, <-Nat.sub_max_sub_right, le_max_iff]
+    simp at *
+    grind
+  | _ => stop grind [bvi, substUnder, wkUnder]
+```
+Huh. And yet.
+```lean
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n with
+  | case =>
+    simp [bvi, substUnder, wkUnder, Nat.sub_add_eq_max]
+    rw [<-Nat.sub_max_sub_right, le_max_iff]
+    simp at *
+    grind
+  | _ => grind [bvi, substUnder, wkUnder]
+```
+Alright, time for a little golf...
+```lean
+-- DOES NOT COMPILE
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n with
+  | _ => 
+    simp [bvi, substUnder, wkUnder, Nat.sub_add_eq_max]
+    repeat rw [<-Nat.sub_max_sub_right, le_max_iff]
+    try simp only [le_sup_iff] at *
+    grind
+```
+says "No goals to be solved" because the first `simp` discharges them, so...
+```lean
+-- DOES NOT COMPILE
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n with
+  | _ =>
+    simp [bvi, substUnder, wkUnder, Nat.sub_add_eq_max] <;> {
+      repeat rw [<-Nat.sub_max_sub_right, le_max_iff]
+      try simp only [le_sup_iff] at *
+      grind
+    }
+```
+fails the `bvi` case, so
+```lean
+theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
+  : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
+  := by induction b generalizing n with
+  | _ =>
+    simp [bvi, substUnder, wkUnder, Nat.sub_add_eq_max] <;> {
+      repeat rw [<-Nat.sub_max_sub_right, le_max_iff]
+      try simp only [le_sup_iff] at *
+      grind [bvi]
+    }
+```
+works.
+
+Alright, I'm tired now! Until next time!
+
+Ah right, let's fix the git repository! Back in `ln-ssa` now,
+```bash
+# remove old git data for ln-stlc
+rm -rf .git
+# new git repo
+git init
+# set origin
+git remote add origin git@github.com:imbrem/ln-ssa.git
+# initial commit
+git add .
+git commit -am "Initial commit"
+```
+Right, need to edit the `README.md`... and...
+```bash
+git commit --amend
+```
+Make the new repo and, in `Settings/Actions/General`, check `Allow GitHub Actions to create and
+approve pull requests`, and 
+```bash
+git push -u origin main
+```
+
+Alright, until next time!
+
+[^1]: this is "alas" in French, so it hits harder.
+
+[^2]: for those wondering how I got this:
+    - `simp[bvi, wkUnder, substUnder]` alone; didn't check grind, but looked ugly
+    - `simp only [bvi, wkUnder, substUnder] ; grind`: nope, `grind` can't see through all the `max`.
+      So let's try to get rid of those...
+    - `simp only [bvi, wkUnder, substUnder] ; simp? ; grind`: yay! Now just expand the `simp?`.
 
 <script>
     import breakfast from "$lib/assets/coming-in-clutch/breakfast.jpg"
