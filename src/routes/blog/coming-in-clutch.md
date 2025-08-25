@@ -646,8 +646,10 @@ Right, need to edit the `README.md`... and...
 ```bash
 git commit --amend
 ```
-Make the new repo and, in `Settings/Actions/General`, check `Allow GitHub Actions to create and
-approve pull requests`, and 
+Make the new repo and set up GitHub by: 
+- In `Settings/Actions/General`, check `Allow GitHub Actions to create and approve pull requests`
+- In `Settings/Pages`, set `Source` to `GitHub Actions`
+And finally 
 ```bash
 git push -u origin main
 ```
