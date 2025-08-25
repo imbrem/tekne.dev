@@ -47,13 +47,23 @@ cd ln-stlc
 # Check everything was set up correctly
 lake build
 ```
+If we look at the generated files in `ln-stlc`, we'll see that the source code for our Lean
+development is stored in a folder `LnStlc`, and specifically, in `LnStlc/Basic.lean`. Let's go ahead
+and rename that to `Syntax.lean`
+```bash
+mv LnStlc/Basic.lean LnStlc/Syntax.lean
+```
+and edit `LnStlc.lean` accordingly
+```lean
+import LnStlc.Syntax
+```
 
 # Syntax
 
 ## Definitions
 
 The ferry is leaving at 14:00; we've got about 15 minutes until we need to rush back over. Let's see
-if we can code up some syntax. Opening up `LnStlc/Basic.lean`, we'll start with our types:
+if we can code up some syntax. Opening up `LnStlc/Syntax.lean`, we'll start with our types:
 ```lean
 /-- Simple types -/
 inductive Ty : Type
@@ -226,6 +236,19 @@ So. Contexts.
 
 Which are just going to be lists of variables mapped to types. 
 
+Let's open a new file, `LnStlc/Deriv.lean`. We'll add it as an import in `LnStlc.lean`:
+```lean
+import LnStlc.Deriv
+```
+
+Now, back to `Deriv.lean`. We are faced with an empty file. What to write? Well, let's start with
+importing our syntax file, as follows:
+```lean
+import LnStlc.Syntax
+```
+
+And now... contexts...
+
 It's an interesting question whether we want to allow duplicating variable names in our contexts or
 not; if we do, we obviously want the _latest_ typing of a variable to hold. Usually, I forbid this
 in the context well-formedness judgement[^2], but this is a simple type system, so there won't be a
@@ -270,9 +293,11 @@ Note the naming and the somewhat unintuitive parameter order `Var Γ A x`, where
 first. That's because I'm thinking of this as the set of variables of type $A$ in $Γ$; it would in
 fact _be_ a Lean `Set` if we replaced `Type` with `Prop`.
 
-We can now get to our typing rules. We start by, as usual, introducing a spot of notation, this time
-using the [`Pow`](https://leanprover-community.github.io/mathlib4_docs/Init/Prelude.html#Pow)
-typeclass to overload the `^` operator:
+We can now get to our typing rules. 
+
+We start by, as usual, introducing a spot of notation, this time using the
+[`Pow`](https://leanprover-community.github.io/mathlib4_docs/Init/Prelude.html#Pow) typeclass to
+overload the `^` operator, back in `Syntax.lean`:
 ```lean
 instance Tm.instPow : Pow Tm Tm where
   pow b a := substUnder 0 a b
@@ -285,7 +310,7 @@ instance Tm.instCoeVar : Coe String Tm where
 instance Tm.instPowVar : Pow Tm String where
   pow b x := b^(Tm.fv x)
 ```
-Our primary typing judgement will take the form
+Back in `Deriv.lean`, our primary typing judgement will take the form
 ```lean
 inductive Ctx.Deriv : Ctx → Ty → Tm → Type
 ```
@@ -404,7 +429,7 @@ We want to prove this by induction, so we want to figure out the corresponding f
   1 = bvi x + 1 = 1`
 - For variables $i < n$, `bvi (substUnder n x b) = bvi b`, which is not $≤$ `bvi b - 1` for 
   `bvi b ≠ 0`
-So, we instead do
+So, back in `Syntax.lean`, we instead do
 ```lean
 theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
   : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
@@ -447,7 +472,7 @@ theorem Tm.subst_var_lc_cf {L : Finset String} {b : Tm} : (∀x ∉ L, bvi (b ^ 
   simp only [subst_var_lc]
   exact ⟨fun h => have ⟨x, hx⟩ := L.exists_notMem; h x hx, fun h _ _ => h⟩
 ```
-The actual theorem is then as simple as
+Back in `Deriv.lean`, the actual theorem is then as simple as
 ```lean
 theorem Ctx.Deriv.lc {Γ a A} (ha : Γ ⊢ a : A) : a.bvi = 0
   := by induction ha with
@@ -468,7 +493,7 @@ _Time:_ 2025-08-24T00:04+2
 
 Next time, we'll begin to tackle weakening and substitutions. This article's code can be found [on
 Github](https://github.com/imbrem/ln-stlc/tree/part-1), at commit
-[065cd64](https://github.com/imbrem/ln-stlc/commit/065cd641b478152892510c428ad3735ebe184859).
+[6907519](https://github.com/imbrem/ln-stlc/commit/69075191d5145131204eed44a8d3e3a6befbee67).
 
 My plan for the _Adventures in Type Theory_ series is:
 - Write each article on the road; you can see the live commits to the text on [my
@@ -481,6 +506,11 @@ Now, it's time to catch up on sleep, perhaps after a bit of polish, because we'v
 planning to do tomorrow! And we've got to find accommodation. Fight perfectionism! Just upload it.
 
 Toodles.
+
+# Changelog
+
+- 2025-08-26: polish text a little bit, refactor into two files `Syntax.lean` and `Deriv.lean`. We
+              should probably improve the narrative to make the flow between these clearer.
 
 [^1]: I tend to write this as `bvi` (*B*ound *V*ariable *I*ndex) in my code
 
