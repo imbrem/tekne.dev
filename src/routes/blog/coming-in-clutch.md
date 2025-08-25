@@ -57,7 +57,7 @@ So, the impulse took hold of me, and I spent the next hour preparing for the lon
 Allocating 3 hours time for rest, and pushing the Gladius to the limit, we could make it by 1 AM. So
 be it.
 
-I put it off with a bit of research, like staring at a heavy barbell you don’t want to lift.
+I put it off with a bit of research -- like staring at a heavy barbell you don’t want to lift.
 
 I'm regretting having taken so much time to get started; if I had started right away, we could have
 made it by 11!
@@ -123,7 +123,7 @@ of my trusty mechanic, ChatGPT, who hopes that it's just the cable being worn.
 </div>
 
 During this kerfuffle, I drop the bike. The bike is fine, but the left mirror takes a hit and needs
-to be straightened, and, more irritatingly, my only charge bank breaks. Up to this point, I was
+to be straightened, and, more irritatingly, my only power bank breaks. Up to this point, I was
 riding with the cable coming out of my jacket pocket, which surprisingly can handle the high speeds,
 since my [navigation phone](https://amzn.eu/d/dhEAsxq) has limited battery capacity.
 
@@ -163,9 +163,10 @@ None of these roads are, individually, _bona fide_ megaprojects, and yet, I am a
 the immense labor it must have required to build these structures _in totality_. There is something
 larger-than-life, _cyclopean_, about highways, sized as they are for cars rather than men.
 
-*They carved hills as hunters carve beast-flesh. Wild Men think they ate stone for food. They went
-through Druádan to Rimmon with great wains. They go no longer.* - Ghân-buri-Ghân, _The Return of the
-King_
+> *They carved hills as hunters carve beast-flesh. Wild Men think they ate stone for food. They went
+through Druádan to Rimmon with great wains. They go no longer.* 
+>
+> -- Ghân-buri-Ghân, _The Return of the King_
 
 And yet we are on those roads. We are those people.
 
@@ -202,7 +203,7 @@ _Time_: 2025-08-25T10:30+2
 
 I sleep through my alarms, and achieve consciousness at 10:30 AM, 30 minutes before checkout time. I
 put on some electronic metal to time myself, and get out just in time, having double-checked that I
-didn't leave anything in the room.
+didn't leave anything behind.
 
 I get downstairs, and call around to see where I can get my bike repaired. Lots of bad luck, little
 in the way of English speakers. While I am nominally fluent in French, this is one _fun_ way to
@@ -262,7 +263,7 @@ nameless style. Excited to start experimenting with that.
 
 I head back to the shop, and the clutch is indeed cooked. I had _just_ gotten a new one installed at
 [Cambridge Motorcycles](https://www.cambridgemotorcycles.co.uk/), and apparently, it was done
-incorrectly, with the plates in the wrong order and the springs far too soft. An oil cable was also
+incorrectly, with the plates in the wrong order and the springs far too soft. An oil line was also
 disconnected, and half the coolant was missing. So that's why there was that misting of oil on the
 engine case. _No bueno_.
 
@@ -415,16 +416,16 @@ Note that in SSA we use binary let-bindings, rather than projections.
 Our definitions for `fvs`, `bvi`, `wkUnder`, and `substUnder` are now marked as invalid. Let's start
 with fixing `fvs`:
 ```lean
-def Tm.bvi : Tm → ℕ
-| .fv _ => 0
-| .bv i => i + 1
-| .let₁ _ e => bvi e - 1
-| .null => 0
-| .pair lhs rhs => bvi lhs ⊔ bvi rhs
-| .let₂ _ e => bvi e - 2
-| .inl e => bvi e
-| .inr e => bvi e
-| .case e l r => bvi e ⊔ bvi l ⊔ bvi r
+def Tm.fvs : Tm → Finset String
+| .fv x => {x}
+| .bv _ => ∅
+| .null => ∅
+| .let₁ p e => fvs p ∪ fvs e
+| .pair lhs rhs => fvs lhs ∪ fvs rhs
+| .let₂ p e => fvs p ∪ fvs e
+| .inl e => fvs e
+| .inr e => fvs e
+| .case e l r => fvs e ∪ fvs l ∪ fvs r
 ```
 For `bvi`, we need to handle the fact that a binary let-binding binds _two_ variables, rather than
 one. This is straightforward:
@@ -653,7 +654,8 @@ git push -u origin main
 
 Alright, until next time!
 
-[^1]: this is "alas" in French, so it hits harder.
+[^1]: hélas is "alas" in French, and round-tripping to English, we get elas, a favorite in my
+    personal lexicon. It hits harder.
 
 [^2]: for those wondering how I got this:
     - `simp[bvi, wkUnder, substUnder]` alone; didn't check grind, but looked ugly
