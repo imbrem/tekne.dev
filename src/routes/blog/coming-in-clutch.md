@@ -5,7 +5,7 @@ published: '2025-08-25'
 
 So, this entry in _Adventures in Type Theory_ has decidedly less type theory, but _not none_. That
 is because my freshly installed clutch has decided to give in; it turns out that it was installed
-incorrectly. 
+incorrectly.
 
 Riding with a slipping clutch is painful, and so we'll be spending the next day or two here in
 Alsace while we await repairs at [Seedz
@@ -21,7 +21,7 @@ _Location_: [L'Emanuella](https://www.lemmanuella.fr/), Isbergues (50.61313, 2.4
 
 _Time_: 2025-08-24T11:49+2
 
-I woke up, and the hosts treated me to a wonderful breakfast. 
+I woke up, and the hosts treated me to a wonderful breakfast.
 
 <div style="text-align: center">
 <img src={breakfast} alt="Some croissants, bread, and jams for breakfast at L'Emanuella" style="max-width: 70%" />
@@ -35,12 +35,14 @@ I see problems on my horizon...
 
 _Narrator: there were problems on the horizon_
 
-It was time for a little change of pace: we needed to: 
-- Sit down and figure out what our next stop is on the way to Termini Imerese 
+It was time for a little change of pace: we needed to:
+
+- Sit down and figure out what our next stop is on the way to Termini Imerese
 - Get some progress in on our [TOPLAS paper](https://arxiv.org/abs/2411.09347)'s
-[revisions](https://github.com/isotope-project/ssa-densem/). 
+  [revisions](https://github.com/isotope-project/ssa-densem/).
 
 There were two primary options for travel:
+
 - Make for Dijon, and cross the Alps the next day
 - Make for Milan, and demonstrate the will of an iron donkey by travelling 1000 kilometers in a day
 
@@ -78,7 +80,7 @@ Well, look who has egg on their face now. Well, insects, actually. I'm sure they
 
 We're off to a roaring start, and I'm getting a real core workout fighting the windblast. I try
 various positions, and find that sitting upright I need to either use my arms or engage my core and
-legs, whereas leaning forwards is more in the legs and head. 
+legs, whereas leaning forwards is more in the legs and head.
 
 The strength of the blast is highly nonlinear, so it's quite relaxing when I'm behind cars just
 cruising, but becomes a serious exertion when speeding past in the fast lane, so much so that I
@@ -133,16 +135,16 @@ stop. It seems that, once more, my freshly installed clutch is cooked.
 So.
 
 We continue the ride eastwards, now with a slipping clutch. We're limited to about 110 km/h, usually
-below 100, before the clutch stops biting. Stop and get some gas, spend a bit too long resting. 
+below 100, before the clutch stops biting. Stop and get some gas, spend a bit too long resting.
 
 The scenery is beautiful, though, and I wish I had brought a GoPro. Low RPM, low throttle, high
 gear, lower on slopes, which get more common as we head further east. I gaze upon the great works of
-man, 5% and 6% grades carved up and down the rolling hills. 
+man, 5% and 6% grades carved up and down the rolling hills.
 
 At Kekastel, around 10 PM, I stop for gas and decide to call it a night at [hotelF1 Saverne
 Monswiller](https://maps.app.goo.gl/uNd1P9ximyjQRb788).
 
-About 35 kilometers left. 
+About 35 kilometers left.
 
 Is my bike... dabbing?
 
@@ -163,8 +165,8 @@ None of these roads are, individually, _bona fide_ megaprojects, and yet, I am a
 the immense labor it must have required to build these structures _in totality_. There is something
 larger-than-life, _cyclopean_, about highways, sized as they are for cars rather than men.
 
-> *They carved hills as hunters carve beast-flesh. Wild Men think they ate stone for food. They went
-through Druádan to Rimmon with great wains. They go no longer.* 
+> _They carved hills as hunters carve beast-flesh. Wild Men think they ate stone for food. They went
+> through Druádan to Rimmon with great wains. They go no longer._
 >
 > -- Ghân-buri-Ghân, _The Return of the King_
 
@@ -187,7 +189,7 @@ I quickly check my bank balance, on both cards. The second is... _almost empty_.
 Huh?
 
 Turns out each gas station was reserving up to _500 €_ to pump gas. And I pumped gas often, for
-safety, and to take a rest from the road, sometimes as little as 4 liters at a time. 
+safety, and to take a rest from the road, sometimes as little as 4 liters at a time.
 
 Let's hope they let go of that quickly, as otherwise, we will need to look for gas stations with
 attendants, which seem rare out here. Like I said, Problems™.
@@ -238,7 +240,7 @@ Palermo](https://www.gnv.it/en/ferries-destinations/sicily/genoa-palermo) depart
 We ride to [Seedz](https://www.facebook.com/people/Seedz-Motorsport/100028842297131/), arriving just
 as they open at 2025-08-25T14:00+2, and they take a quick look. The staff is extremely nice, and let
 me watch as they open up the sprocket cover. Lots of cool bikes around, too, in various states of
-disassembly. 
+disassembly.
 
 <div style="text-align: center">
 <img src={gladius_bench} alt="The Gladius on the workbench" style="max-width: 70%" />
@@ -318,6 +320,7 @@ And since I'm here and I've eaten, let's start on that locally nameless SSA, the
 We begin by setting up our new repository. There's no Internet here at [Le
 Bosphore](https://maps.app.goo.gl/BZDovZ6r6yfJkxV49), and I want another snack, so, we'll
 copy `ln-stlc` to profit from our already-installed Mathlib:
+
 ```bash
 # In the same directory as ln-stlc, recursively copy its contents into a new directory ln-ssa
 cp -r ln-stlc ln-ssa
@@ -327,7 +330,9 @@ cd ln-ssa
 mv LnStlc LnSSA
 mv LnStlc.lean LnSSA.lean
 ```
+
 Now we just edit the `lakefile.toml`...
+
 ```toml
 # <snip>
 
@@ -340,30 +345,40 @@ defaultTargets = ["LnSSA"]
 # name = "LnStlc" -- replace this
 name = "LnSSA" # with this
 ```
+
 And replace the contents of `LnSSA.lean` with
+
 ```lean
 import LnSSA.Basic
 ```
+
 and...
+
 ```bash
 lake build
 ```
+
 I hope the Lean offline experience improves soon. And that we cache dependencies to save disk
 space... but I digress.
 
 Alright, we've now got a copy of the `ln-stlc` project. Let's do a little refactor...
+
 ```bash
 mkdir LnSSA/Expr
 mv LnSSA/Basic.lean LnSSA/Expr/Syntax.lean
 ```
+
 and in `LnSSA.lean`
+
 ```lean
 import LnSSA.Expr.Syntax
 ```
+
 Let's comment out `Ctx.Deriv` and `Ctx.Deriv.lc` for now. We'll move the corrected version to
 another file later.
 
 Recall that our types for STLC were given by
+
 ```lean
 /-- Simple types -/
 inductive Ty : Type
@@ -374,21 +389,25 @@ inductive Ty : Type
 /-- A product type `A × B`. -/
 | prod (A B : Ty)
 ```
+
 Let's change these to our types for SSA, ignoring base types for now:
+
 ```lean
 /-- Simple types -/
 inductive Ty : Type
 /-- The unit type. -/
 | unit
 /-- The empty type. -/
-| empty 
+| empty
 /-- A product type `A × B`. -/
 | prod (A B : Ty)
 /-- A coproduct type `A + B`. -/
 | coprod (A B : Ty)
 ```
+
 So far so good. Now let's change our set of terms to be the set of SSA terms, again, ignoring
 operations for now:
+
 ```lean
 /-- Untyped SSA expressions -/
 inductive Tm : Type
@@ -409,12 +428,14 @@ inductive Tm : Type
 /-- A right injection -/
 | inr (e : Tm)
 /-- A case expression -/
-| case (e l r : Tm)  
+| case (e l r : Tm)
 ```
-Note that in SSA we use binary let-bindings, rather than projections. 
+
+Note that in SSA we use binary let-bindings, rather than projections.
 
 Our definitions for `fvs`, `bvi`, `wkUnder`, and `substUnder` are now marked as invalid. Let's start
 with fixing `fvs`:
+
 ```lean
 def Tm.fvs : Tm → Finset String
 | .fv x => {x}
@@ -427,8 +448,10 @@ def Tm.fvs : Tm → Finset String
 | .inr e => fvs e
 | .case e l r => fvs e ∪ fvs l ∪ fvs r
 ```
+
 For `bvi`, we need to handle the fact that a binary let-binding binds _two_ variables, rather than
 one. This is straightforward:
+
 ```lean
 def Tm.bvi : Tm → ℕ
 | .fv _ => 0
@@ -441,7 +464,9 @@ def Tm.bvi : Tm → ℕ
 | .inr e => bvi e
 | .case e l r => bvi e ⊔ (bvi l - 1) ⊔ (bvi r - 1)
 ```
+
 And likewise for `wkUnder` and `substUnder`:
+
 ```lean
 def Tm.wkUnder (n : ℕ) : Tm → Tm
 | .fv x => .fv x
@@ -456,8 +481,10 @@ def Tm.wkUnder (n : ℕ) : Tm → Tm
 
 prefix:70 "↑₀" => Tm.wkUnder 0
 ```
+
 I was expecting the automation to work as-is for everything else, but it turns out, it fails in the
 `case`-case. Factoring it out fixes things:
+
 ```lean
 theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
   : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
@@ -473,7 +500,9 @@ theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
   | case => sorry
   | _ => grind [bvi, substUnder, wkUnder]
 ```
+
 _But why_? Let's do some detective work. Alright, this works[^2]:
+
 ```lean
 theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
   : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
@@ -484,7 +513,9 @@ theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
     grind
   | _ => grind [bvi, substUnder, wkUnder]
 ```
+
 and...
+
 ```lean
 -- DOES NOT COMPILE
 theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
@@ -495,7 +526,9 @@ theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
     simp only [Nat.max_assoc, Nat.add_max_add_right, sup_le_iff, Nat.sub_le_iff_le_add]
     grind
 ```
+
 No, the bv case fails...
+
 ```lean
 theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
   : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
@@ -505,7 +538,9 @@ theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
     simp only [Nat.max_assoc, Nat.add_max_add_right, sup_le_iff, Nat.sub_le_iff_le_add]
     grind [bvi]
 ```
+
 Cool and good!
+
 ```lean
 -- DOES NOT COMPILE
 theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
@@ -516,19 +551,23 @@ theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
     simp only [Nat.max_assoc, Nat.add_max_add_right, sup_le_iff, Nat.sub_le_iff_le_add]
     grind [bvi]
 ```
+
 Nope. Worth a try... While we're at it, let's clean up the other one
+
 ```lean
 theorem Tm.bvi_le_substUnder_var (n : ℕ) (x : String) (b : Tm)
   : bvi b ≤ (n + 1) ⊔ (bvi (substUnder n x b) + 1)
   := by induction b generalizing n with
   | _ =>
     simp only [
-      bvi, substUnder, wkUnder, Nat.max_assoc, Nat.add_max_add_right, sup_le_iff, 
+      bvi, substUnder, wkUnder, Nat.max_assoc, Nat.add_max_add_right, sup_le_iff,
       Nat.sub_le_iff_le_add
     ]
     grind [bvi]
 ```
+
 Alright...
+
 ```lean
 -- DOES NOT COMPILE
 theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
@@ -540,13 +579,17 @@ theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
     grind
   | _ => stop grind [bvi, substUnder, wkUnder]
 ```
+
 Nope. Hmm... I see lots of `trash - 1 + 1` in the goal state... and we have the classic lemma (opens
 mathlib docs, furiously search for `sub_add_something`)
+
 ```lean
 theorem Nat.sub_add_eq_max (a b : Nat) :
   a - b + b = max a b
 ```
+
 and
+
 ```lean
 -- DOES NOT COMPILE
 theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
@@ -558,14 +601,18 @@ theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
     grind
   | _ => stop grind [bvi, substUnder, wkUnder]
 ```
+
 Nope. It is doing _something_, though. Let's try rewriting with `le_max_iff`... ah, it doesn't work
 because we have something of the form `trash ≤ (max trash trash) - 1`. So let's pull that minus sign
 in, using
+
 ```lean
 theorem Nat.sub_max_sub_right (a b c : Nat) :
   max (a - c) (b - c) = max a b - c
 ```
+
 yielding
+
 ```lean
 -- DOES NOT COMPILE
 theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
@@ -577,7 +624,9 @@ theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
     grind
   | _ => stop grind [bvi, substUnder, wkUnder]
 ```
+
 Huh. And yet.
+
 ```lean
 theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
   : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
@@ -589,19 +638,23 @@ theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
     grind
   | _ => grind [bvi, substUnder, wkUnder]
 ```
+
 Alright, time for a little golf...
+
 ```lean
 -- DOES NOT COMPILE
 theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
   : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
   := by induction b generalizing n with
-  | _ => 
+  | _ =>
     simp [bvi, substUnder, wkUnder, Nat.sub_add_eq_max]
     repeat rw [<-Nat.sub_max_sub_right, le_max_iff]
     try simp only [le_sup_iff] at *
     grind
 ```
+
 says "No goals to be solved" because the first `simp` discharges them, so...
+
 ```lean
 -- DOES NOT COMPILE
 theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
@@ -614,7 +667,9 @@ theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
       grind
     }
 ```
+
 fails the `bvi` case, so
+
 ```lean
 theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
   : bvi (substUnder n x b) ≤ n ⊔ (bvi b - 1)
@@ -626,11 +681,13 @@ theorem Tm.bvi_substUnder_var_le (n : ℕ) (x : String) (b : Tm)
       grind [bvi]
     }
 ```
+
 works.
 
 Alright, I'm tired now! Until next time!
 
 Ah right, let's fix the git repository! Back in `ln-ssa` now,
+
 ```bash
 # remove old git data for ln-stlc
 rm -rf .git
@@ -642,24 +699,31 @@ git remote add origin git@github.com:imbrem/ln-ssa.git
 git add .
 git commit -am "Initial commit"
 ```
+
 Right, need to edit the `README.md`... and...
+
 ```bash
 git commit --amend
 ```
-Make the new repo and set up GitHub by: 
+
+Make the new repo and set up GitHub by:
+
 - In `Settings/Actions/General`, check `Allow GitHub Actions to create and approve pull requests`
 - In `Settings/Pages`, set `Source` to `GitHub Actions`
-And finally 
+  And finally
+
 ```bash
 git push -u origin main
 ```
 
 Alright, until next time!
 
-[^1]: hélas is "alas" in French, and round-tripping to English, we get elas, a favorite in my
+[^1]:
+    hélas is "alas" in French, and round-tripping to English, we get elas, a favorite in my
     personal lexicon. It hits harder.
 
 [^2]: for those wondering how I got this:
+
     - `simp[bvi, wkUnder, substUnder]` alone; didn't check grind, but looked ugly
     - `simp only [bvi, wkUnder, substUnder] ; grind`: nope, `grind` can't see through all the `max`.
       So let's try to get rid of those...

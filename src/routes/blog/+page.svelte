@@ -18,15 +18,15 @@
 			</h2>
 		</li>
 		Published {post.meta.published}
-        {#if post.meta.edited}
-            (Edited {post.meta.edited})
-        {/if}
+		{#if post.meta.edited}
+			(Edited {post.meta.edited})
+		{/if}
 	{/each}
 </ul>
 
 <style>
 	ul {
 		list-style-type: none;
-        padding-left: 0;
+		padding-left: 0;
 	}
 </style>

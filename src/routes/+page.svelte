@@ -19,9 +19,9 @@
 		<p>
 			Hello, I'm Jad! I'm a PhD student at the University of Cambridge supervised by
 			<a href="https://www.cl.cam.ac.uk/~nk480/">Neel Krishnaswami</a>, currently working on
-			rigorous, categorical semantics for SSA form with complex side effects, such as weak
-			memory. In my spare time, I enjoy learning languages, reading lore, and thinking of
-			third items to put in lists. I also write far too much Lean.
+			rigorous, categorical semantics for SSA form with complex side effects, such as weak memory.
+			In my spare time, I enjoy learning languages, reading lore, and thinking of third items to put
+			in lists. I also write far too much Lean.
 		</p>
 
 		My interests include:
@@ -54,28 +54,28 @@
 </ul>
 
 <style>
-    #profile {
-        display: flex;
-    }
+	#profile {
+		display: flex;
+	}
 
-    @media only screen and (max-width: 700px) {
-        #profile {
-            flex-direction: column;
-            align-items: center;
-        }
+	@media only screen and (max-width: 700px) {
+		#profile {
+			flex-direction: column;
+			align-items: center;
+		}
 
-        #photo {
-            width: 300px;
-            max-width: 80%;
-            padding: 3em;
-        }
-    }
+		#photo {
+			width: 300px;
+			max-width: 80%;
+			padding: 3em;
+		}
+	}
 
-    @media only screen and (min-width: 700px) {
-        #photo {
-            min-width: 300px;
-            max-width: 300px;
-            padding: 2em;
-        }
-    }
+	@media only screen and (min-width: 700px) {
+		#photo {
+			min-width: 300px;
+			max-width: 300px;
+			padding: 2em;
+		}
+	}
 </style>

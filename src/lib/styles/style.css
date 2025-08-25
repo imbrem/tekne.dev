@@ -1,14 +1,14 @@
 @import '@fontsource/fira-code';
 
 body {
-    background: #222222;
-    color: white;
-    font-family: 'Fira Code', monospace;
-    font-size: 1.2em;
+	background: #222222;
+	color: white;
+	font-family: 'Fira Code', monospace;
+	font-size: 1.2em;
 }
 
 code {
-    font-family: 'Fira Code', monospace;
+	font-family: 'Fira Code', monospace;
 }
 
 /* 
@@ -16,41 +16,41 @@ h1, h2, h3 {
 } */
 
 a {
-    color: cyan
+	color: cyan;
 }
 
 .shiki {
-    padding: 0.5rem;
-    border-radius: 5px;
-    width: 100%;
+	padding: 0.5rem;
+	border-radius: 5px;
+	width: 100%;
 }
 
 pre.shiki {
-    white-space: pre-wrap;
-    word-wrap: break-word;
+	white-space: pre-wrap;
+	word-wrap: break-word;
 }
 
 @media only screen and (max-width: 600px) {
-    pre.shiki {
-        font-size: 0.7em;
-    }
+	pre.shiki {
+		font-size: 0.7em;
+	}
 }
 
 code {
-    counter-reset: step;
-    counter-increment: step 0;
+	counter-reset: step;
+	counter-increment: step 0;
 }
 
 code .line::before {
-    content: counter(step);
-    counter-increment: step;
-    width: 2rem;
-    margin-right: 1.5rem;
-    display: inline-block;
-    text-align: right;
-    color: rgba(115, 138, 148, .4)
+	content: counter(step);
+	counter-increment: step;
+	width: 2rem;
+	margin-right: 1.5rem;
+	display: inline-block;
+	text-align: right;
+	color: rgba(115, 138, 148, 0.4);
 }
 
-.footnotes>ol>li {
-    margin: 1em
+.footnotes > ol > li {
+	margin: 1em;
 }
