@@ -1,6 +1,7 @@
 ---
 title: Adventures in Type Theory 1 — Locally Nameless STLC (Part 1)
 published: '2025-08-24'
+edited: '2025-08-26'
 ---
 
 It’s been a while. 
@@ -27,11 +28,15 @@ _Location_: [Costa Coffee at Dover Port](https://maps.app.goo.gl/oCjnigXkBzY5CwH
 
 _Time_: 2025-08-23T12:30+1
 
-My laptop is open, but I can't find a charging port. I am sipping the traditional hazelnut latte,
-remembering long-ago days in Beirut where I drank the same thing at the ABC mall, before looking out
-a rain-streaked window at the Order of Engineers in Tripoli and chipping away at an ever-shifting,
-perfectionistic implementation of [ProTem](https://www.cs.toronto.edu/~hehner/PT.pdf), which is how
-I got into this mess.
+My laptop is open, but there’s no charging port in sight. I sip the traditional hazelnut latte.
+
+Long ago, in Beirut, I was drinking the same thing, at the [ABC
+mall](https://maps.app.goo.gl/SZJWHAMUEg9coDLA6), learning about rings from [Dummit and
+Foote](https://a.co/d/eY7nl0P). Soon after, I was looking out a rain-streaked window towards the
+[Order of Engineers](https://maps.app.goo.gl/dWDD6q9FWdmj9B1N8) in Tripoli, trying to implement
+[ProTem](https://www.cs.toronto.edu/~hehner/PT.pdf), which is how I got into this mess.
+
+I do not particularly like _ikan bilis_
 
 The Wi-Fi at the port's Costa is surprisingly good, so we can just go ahead and start with
 ```bash
@@ -92,7 +97,7 @@ inductive Tm : Type
     In particular, the following are equivalent:
     - `t` is locally closed
     - `t` is closed at level 0,  i.e. it does not contain any unbound de Bruijn indices.
-    - `t` has binding depth 0-/
+    - `t` has binding depth 0 -/
 def Tm.bvi : Tm → ℕ
 | .fv _ => 0
 | .bv i => i + 1
@@ -461,9 +466,9 @@ _Location_: [L'Emanuella](https://www.lemmanuella.fr/), Isbergues (50.61313, 2.4
 
 _Time:_ 2025-08-24T00:04+2
 
-Next time, we'll begin to tackle weakening and substitutions. This article's code can be found
-[on Github](https://github.com/imbrem/ln-stlc/releases/tag/stlc-part-1m), at commit
-[c97481b](https://github.com/imbrem/ln-stlc/commit/c97481b5c8d99664b798d9df49b9c68d46e586c9).
+Next time, we'll begin to tackle weakening and substitutions. This article's code can be found [on
+Github](https://github.com/imbrem/ln-stlc/tree/part-1), at commit
+[065cd64](https://github.com/imbrem/ln-stlc/commit/065cd641b478152892510c428ad3735ebe184859).
 
 My plan for the _Adventures in Type Theory_ series is:
 - Write each article on the road; you can see the live commits to the text on [my
