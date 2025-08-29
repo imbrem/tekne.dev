@@ -281,9 +281,15 @@ _Time_: TODO this
 
 - Bikers show up to give advice, cool tricycle thing
 
+- TODO: tricycle photo
+
 - Call _dépannage_
 
 - Guy claims to have crashed. Really.
+
+- Chill with truck driver stranded for the night. Feel like hacking, but battery is low
+
+- TODO: setup photo
 
 - Call again.
 
@@ -291,18 +297,21 @@ _Time_: TODO this
 
 - Call SANEF.
 
-- Tfw they _could_ have sent a repairman. To be fair, no idea if it would have worked. But truckman
-  arrives.
+- Tfw they _could_ have sent a repairman. To be fair, no idea if it would have worked. 
 
-  Strong Alsace accent.
+- Truckman arrives.
 
-  Does _not_ want to ride me back to Seedz.
+  - Strong Alsace accent.
 
-  200 euro bill.
+  - Does _not_ want to ride me back to Seedz.
+
+  - 200 euro bill.
 
 - 400 euro bill from previous truckman to go back to Seedz...
 
 - Find a hotel, talk to Uber driver about van. Doom...
+
+- TODO: hotel photo?
 
 - Plan self-repair with Yufeng; think about where to get Suzuki drain bolt, which is weird
 
@@ -318,15 +327,31 @@ _Time_: TODO this
 
 - Exceedingly exhausted, chat with Yufeng
 
+- Middle of nowhere. No good food, and _yet_. Good bread. Real France hours.
+
+- TODO: bread photo
+
 - Delay in van arrival, _he_ needs to find a Suzuki bolt
 
 - I move cafés, the bolt is found, the van arrives
+
+- We get to the bike and refill
+
+- TODO: refill photo
+
+- Cart it over to a wash station, and give it a rinse
+
+- TODO: wash 
+
+- Then wipe off the remaining oil with brake cleaner
 
 - The bike is repaired, the guy rides off
 
 - I am exhausted. I put off the journey.
 
 - Get some Turkish food. 10/10 stuff. Missed meat.
+
+- TODO: turkish food photo
 
 - Time drags on, it's 7 PM. It is time to face the Alps. We ride! Genoa!
 
@@ -370,7 +395,7 @@ _Time_: TODO this
 
 - And yet that wasn't _the_ tunnel. And now. I _will_ stop and take some photos.
 
-- Look, tunnel
+- TODO: Look, tunnel
 
 - We approach the Italian border, passport control waves me through
 
@@ -382,6 +407,8 @@ _Time_: TODO this
 - I send it.
 
 - We decelerate in Milan, at the idea hotel, only a few days later than planned.
+
+- TODO: hotel room photo
 
 - Hypersleep
 
@@ -420,10 +447,14 @@ _Time_: TODO: this
 - Stop at a Chinese restaurant. Momlet said I should practice my Italian in Italy. And yet, we're
   speaking Chinese. Truly. Good food though. Very reasonable prices.
 
+- TODO: restaurant photos
+
 - We go to the ship. I thought I was early, 20:45 they said, but I am late. There's an entire horde
   of bikers, very different from last time. Guess Sicily makes good biking.
 
 - I meet based old man. He sends me photos his son took.
+
+- TODO: astronomy photos
 
 - We board.
 
@@ -449,7 +480,7 @@ _Time_: TODO: this
  
 - We begin by defining an interface for our database:
 
-```js
+```ts
 export interface DatabaseManager {
   db: number;
   sqlite3: any;
@@ -461,7 +492,7 @@ export interface DatabaseManager {
 
 - Then we create instances of our database:
 
-```js
+```ts
 /**
  * Create a new in-memory database
  */
@@ -521,8 +552,8 @@ export async function createInMemoryDatabase(): Promise<DatabaseManager> {
   file as a `Uint8Array` and then does nothing with it. Just caught this now as we're writing the
   article! So that's fun!
 
-- We're starting simple with the export function:
-```js
+- Likewise, we're starting simple with the export function:
+```ts
 /**
  * Export database to downloadable file
  */
@@ -539,84 +570,35 @@ export async function exportDatabase(dbManager: DatabaseManager, filename: strin
 }
 ```
 
-- And a little Svelte app to exercise them:
+- So I guess we're telling Claude to do import and export next.
+
+- It's also made a little Svelte app to exercise them. 
+
+- Our `<script>` starts by importing our database API:
+
+```ts
+import { createInMemoryDatabase, openExistingDatabase, type DatabaseManager } 
+  from '$lib/database.js';
+```
+
+- For state, we've got
+
+```ts
+/// An open database connection, or null if no DB is opened
+let dbManager: DatabaseManager | null = null;
+/// The current status of our connection as a string
+let status = 'Not connected';
+```
+
+- We also keep track of a file input element for imports
+
+```ts
+let fileInput: HTMLInputElement;
+```
+
+- Our page is a bunch of buttons to do the obvious things:
 
 ```svelte
-<script lang="ts">
-  import { onMount } from 'svelte';
-  import { createInMemoryDatabase, openExistingDatabase, type DatabaseManager } from '$lib/database.js';
-
-  let dbManager: DatabaseManager | null = null;
-  let status = 'Not connected';
-  let fileInput: HTMLInputElement;
-
-  async function createNewDatabase() {
-    try {
-      status = 'Creating in-memory database...';
-      dbManager = await createInMemoryDatabase();
-      status = 'Connected to in-memory database';
-      
-      // Test the database by inserting a sample record
-      await testDatabase();
-    } catch (error) {
-      console.error('Failed to create database:', error);
-      status = `Error: ${error}`;
-    }
-  }
-
-  async function openFileDatabase() {
-    const file = fileInput.files?.[0];
-    if (!file) {
-      alert('Please select a file first');
-      return;
-    }
-
-    try {
-      status = `Opening database from ${file.name}...`;
-      dbManager = await openExistingDatabase(file);
-      status = `Connected to database: ${file.name}`;
-      
-      // Test the database
-      await testDatabase();
-    } catch (error) {
-      console.error('Failed to open database:', error);
-      status = `Error: ${error}`;
-    }
-  }
-
-  async function testDatabase() {
-    if (!dbManager) return;
-
-    try {      
-      // Query the ops table
-      const ops = await dbManager.query('SELECT COUNT(*) as count FROM ops');
-      console.log('Operations in database:', ops);
-      
-      // Query all table names to verify schema
-      const tables = await dbManager.query(`
-        SELECT name FROM sqlite_master WHERE type='table' ORDER BY name
-      `);
-      console.log('Tables in database:', tables);
-      
-    } catch (error) {
-      console.error('Database test failed:', error);
-    }
-  }
-
-  async function closeDatabase() {
-    if (dbManager) {
-      await dbManager.close();
-      dbManager = null;
-      status = 'Disconnected';
-    }
-  }
-
-  onMount(() => {
-    // Auto-create in-memory database on load for demo
-    createNewDatabase();
-  });
-</script>
-
 <main>
   <h1>Scrapebook SPA</h1>
   <p>SQLite Database Test - First Milestone</p>
@@ -660,14 +642,120 @@ export async function exportDatabase(dbManager: DatabaseManager, filename: strin
 </main>
 ```
 
-- But we get dumb SSR errors
+- And, back in `<script>` we've got functions to do each using our database API:
 
-- Internal Svelte issue; happens with default project too. Until that gets fixed, we just
+```ts
+async function createNewDatabase() {
+  try {
+    // If a database is currently open, close it
+    await closeDatabase();
 
-- ...
+    status = 'Creating in-memory database...';
+    dbManager = await createInMemoryDatabase();
+    status = 'Connected to in-memory database';
+    
+    // Test the database by inserting a sample record
+    await testDatabase();
+  } catch (error) {
+    console.error('Failed to create database:', error);
+    status = `Error: ${error}`;
+  }
+}
 
-- But now we need to press `q`. Auto-pressing `q` with `yes` too fast triggers the issue as well.
-  Imagine pressing buttons manually.
+async function openFileDatabase() {
+  const file = fileInput.files?.[0];
+  if (!file) {
+    alert('Please select a file first');
+    return;
+  }
+
+  try {
+    // If a database is currently open, close it
+    await closeDatabase();
+
+    status = `Opening database from ${file.name}...`;
+
+    dbManager = await openExistingDatabase(file);
+    status = `Connected to database: ${file.name}`;
+    
+    // Test the database
+    await testDatabase();
+  } catch (error) {
+    console.error('Failed to open database:', error);
+    status = `Error: ${error}`;
+  }
+}
+
+async function testDatabase() {
+  if (!dbManager) return;
+
+  try {      
+    // Query the ops table
+    const ops = await dbManager.query('SELECT COUNT(*) as count FROM ops');
+    console.log('Operations in database:', ops);
+    
+    // Query all table names to verify schema
+    const tables = await dbManager.query(`
+      SELECT name FROM sqlite_master WHERE type='table' ORDER BY name
+    `);
+    console.log('Tables in database:', tables);
+    
+  } catch (error) {
+    console.error('Database test failed:', error);
+  }
+}
+
+async function closeDatabase() {
+  if (dbManager) {
+    await dbManager.close();
+    dbManager = null;
+    status = 'Disconnected';
+  }
+}
+```
+We also auto-load an in-memory database on initialization
+```ts
+onMount(() => {
+  // Auto-create in-memory database on load for demo
+  createNewDatabase();
+});
+```
+- Note the generated code forgot to close the current database when opening/creating a new one! It's
+  always important to read Claude's outputs!
+
+- Adding this makes the UI flicker a bit when we open a new DB, which is a bit irritating but eh.
+  The correct thing to do is probably to gray out the buttons rather than disappear them, and add
+  some interpolation to the UX. We can do that later.
+
+- Anyways, we get dumb SSR errors
+
+- Internal Svelte issue #16663 (go get link); happens with default project too. Until that gets
+  fixed, we just change the default script in `package.json` from
+
+```json
+"scripts": {
+  // -- snip
+  "test": "npm run test:unit -- --run  && npm run test:e2e",
+},
+```
+
+- to
+
+```json
+"scripts": {
+  // -- snip
+  "test": "npm run test:unit && npm run test:e2e",
+},
+```
+
+- But now we need to press `q`. Let's see if we can get around that...
+
+```bash
+# TODO: this
+```
+
+- Nope, auto-pressing `q` with `yes` too fast triggers the issue as well. Imagine pressing buttons
+  manually.
 
 - I'll live.
 
@@ -680,11 +768,18 @@ export async function exportDatabase(dbManager: DatabaseManager, filename: strin
   the melancholy of the sea.
 
 - I get up. Bar's open. Get a coffee. Do a spot of writing (hi!)
+
+- TODO: sea setup photo
+
 - The dawn rises over the waves. 
+
+- TODO: dawn photo?
 
 - I fall asleep once more, on the much more comfortable bench here.
 
 - It's noon. The sea is literally azure. I spend a bit of time in the spray.
+
+- TODO: azure photo?
 
 - There's the dog from the kennel yesterday. With its owner now, and much happier.
 
@@ -700,7 +795,7 @@ export async function exportDatabase(dbManager: DatabaseManager, filename: strin
 
 - We're arriving in 40 minutes.
 
-- And I've got a lot of bullet points to textify, and a lot of Javascript to fill in...
+- And I've got a lot of bullet points to textify, and a lot of SQL to fill in...
 
 <!-- # GPTisms
 
