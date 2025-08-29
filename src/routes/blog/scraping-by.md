@@ -174,9 +174,11 @@ We'll have the convention that:
 We'll have the further convention that an operation _encapsulates_ it's sub-operations; i.e., the
 ground truth of an observation `id` is `{id}`, regardless of what operations appear in its inputs.
 For a non-observation, we define 
-```math
+
+$$
 \mathsf{ground}(o) = \bigcup_{(i, j) ∈ \mathsf{inputs}(o)}\mathsf{ground}(i)
-```
+$$
+
 It's up to user-code to compute the appropriate hash and, if necessary, update the
 `observation_sets` table. So notice we end up with SQL
 
@@ -275,7 +277,430 @@ _Time_: TODO this
 
 - Oiled up
 
+- I'm stuck
+
+- Bikers show up to give advice, cool tricycle thing
+
+- Call _dépannage_
+
+- Guy claims to have crashed. Really.
+
+- Call again.
+
+- Much later he informs me I'm on the highway, and that he can't come.
+
+- Call SANEF.
+
+- Tfw they _could_ have sent a repairman. To be fair, no idea if it would have worked. But truckman
+  arrives.
+
+  Strong Alsace accent.
+
+  Does _not_ want to ride me back to Seedz.
+
+  200 euro bill.
+
+- 400 euro bill from previous truckman to go back to Seedz...
+
+- Find a hotel, talk to Uber driver about van. Doom...
+
+- Plan self-repair with Yufeng; think about where to get Suzuki drain bolt, which is weird
+
+# Look for me at the first light of dawn
+
+- Call Seedz first thing in the morning
+
+- Call other mechanics in the area
+
+- Seedz will send a man
+
+- Walk off to get food while waiting
+
+- Exceedingly exhausted, chat with Yufeng
+
+- Delay in van arrival, _he_ needs to find a Suzuki bolt
+
+- I move cafés, the bolt is found, the van arrives
+
+- The bike is repaired, the guy rides off
+
+- I am exhausted. I put off the journey.
+
+- Get some Turkish food. 10/10 stuff. Missed meat.
+
+- Time drags on, it's 7 PM. It is time to face the Alps. We ride! Genoa!
+
+- The rain begins
+
+- Needles
+
+- Then bullets on my skin
+
+- Pull over to gas station, coffee, armor
+
+- Now the rain begins in earnest
+
+- _Car senpai_. The darkness falls.
+
+- Waze was taking me the wrong way, on recalculation. We turn back, and switch to Google Maps.
+
+- In the middle of the night, we cross the border with Switzerland and enter Basel.
+
+- The roads are superbly well-maintained, and empty. Winding, tunnel sections. To be honest, it's
+  like a racetrack the size of a country. And given the price of a vignette, versus tolls, it's
+  cheap too!
+
+- That's the only cheap thing in this dark place.
+
+- Tfw. I plan to use a tree, as God intended.
+
+- But I needed to wash my hands. You win this time...
+
+- 50 CHF for a charger. And none available at the station.
+
+- This place seems engineered, with its fun roads, to speed me along to leave it behind. Let's.
+
+- We set course for Milan, as exhaustion is setting in.
+
+- The tunnel makes me proud to be a human being. Men made this. One day, perhaps, among the stars...
+
+- Or will we? I fear obsoletion. Yudkowskypilled. "Big Yud," as Siddharth would say,
+
+- Another tunnel. Now this is truly beautiful. I wish I stopped and took a photo.
+
+- And yet that wasn't _the_ tunnel. And now. I _will_ stop and take some photos.
+
+- Look, tunnel
+
+- We approach the Italian border, passport control waves me through
+
+- The road is straight.
+
+- I may not know Italian. But my heritage speaks to me. My genetic memory sings. For I have an
+  innate understanding of the beautiful language of the Italian road. I was born an Italian driver.
+
+- I send it.
+
+- We decelerate in Milan, at the idea hotel, only a few days later than planned.
+
+- Hypersleep
+
+# Baldassar and the Storm
+
+_Location_: Port of Genoa
+
+_Time_: TODO: this
+
+- One of my favorite books is _Le Periple de Baldassare_
+
+- Soon after reading it, I went to Edinburgh on my KTM125. I came back changed.
+
+- And now, like Baldassar, I recover my heritage, and ride to Genoa through the eye of the storm.
+  It's day 2, another extreme weather warning. Last night was fine.
+
+- Today was not fine.
+
+- The rain picked up. Buffeting winds. Blinding spray.
+
+- I ride next to a truck so that its bulk protects me from the wind. We hardly go 70. I am washed
+  out.
+
+- The two plastic bags around my laptop hold.
+
+- We pass between verdant mountains. I wish I had a GoPro.
+
+- The roads next to the sea turn yellow. An ancient memory. A long time ago, someone said, "you too,
+  go away Gandalf." Look to me at the first light of dawn.
+
+- We arrive in Genoa. I take shelter at the gas station, and dry off my clothes under the hand
+  dryer.
+
+- The rain abates. I do my laundry. Too tired to do much in the way of work, or writing.
+
+- Stop at a Chinese restaurant. Momlet said I should practice my Italian in Italy. And yet, we're
+  speaking Chinese. Truly. Good food though. Very reasonable prices.
+
+- We go to the ship. I thought I was early, 20:45 they said, but I am late. There's an entire horde
+  of bikers, very different from last time. Guess Sicily makes good biking.
+
+- I meet based old man. He sends me photos his son took.
+
+- We board.
+
+- I wrap up my vibe coding:
+
+- Baldassar senpai finds the book of the Hundredth Name, but to read it clouds his vision
+
+- So he just babbles
+
+- The best thing about vibe coding is that I don't even need to babble anymore
+
+- The worst thing about vibe coding is that my job as babbler is taken. Now, thinking only.
+
+- So let's build up something to take our vague ideas above and start getting them into a worthwhile
+  scraping framework. Because I've got a _lot_ of speeches to scrape, and we're _way_ behind
+  schedule. And we'll need a Python library, too...
+
+- Wacky: ship internet costs 7 euros for a GB, needs signin... but Playwright downloads
+
+- Ping and pacman die. Eh. Not worth my time to investigate. Swap to data.
+
+- Back at the cafe, we vibe-coded a few JS functions for our DB
+ 
+- We begin by defining an interface for our database:
+
+```js
+export interface DatabaseManager {
+  db: number;
+  sqlite3: any;
+  close(): Promise<void>;
+  execute(sql: string, params?: any[]): Promise<void>;
+  query(sql: string, params?: any[]): Promise<any[]>;
+}
+```
+
+- Then we create instances of our database:
+
+```js
+/**
+ * Create a new in-memory database
+ */
+export async function createInMemoryDatabase(): Promise<DatabaseManager> {
+  const sqlite3 = await initSQLite();
+  const db = await sqlite3.open_v2(':memory:');
+  
+  // Create schema
+  await sqlite3.exec(db, SCHEMA_SQL);
+  
+  console.log('DB opened successfully (in-memory database)');
+  
+  return {
+    db,
+    sqlite3,
+    async close() {
+      await sqlite3.close(db);
+    },
+    async execute(sql: string, params?: any[]) {
+      if (params && params.length > 0) {
+        for await (const stmt of sqlite3.statements(db, sql)) {
+          sqlite3.bind_collection(stmt, params);
+          await sqlite3.step(stmt);
+        }
+      } else {
+        await sqlite3.exec(db, sql);
+      }
+    },
+    async query(sql: string, params?: any[]) {
+      const results: any[] = [];
+      for await (const stmt of sqlite3.statements(db, sql)) {
+        if (params && params.length > 0) {
+          sqlite3.bind_collection(stmt, params);
+        }
+        const columns = sqlite3.column_names(stmt);
+        while (await sqlite3.step(stmt) === SQLite.SQLITE_ROW) {
+          const row: any = {};
+          columns.forEach((col, i) => {
+            row[col] = sqlite3.column(stmt, i);
+          });
+          results.push(row);
+        }
+      }
+      return results;
+    }
+  };
+}
+```
+
+- We can probably do a bit better than this; in particular, do we need close and execute and such
+  if we have sqlite and db? 
+  
+- Or we can encapsulate sqlite and db... But good enough for now! Need to think about the proper way
+  to do this...
+
+- Claude also generated code to open a database stored in a file, but right now it just opens the
+  file as a `Uint8Array` and then does nothing with it. Just caught this now as we're writing the
+  article! So that's fun!
+
+- We're starting simple with the export function:
+```js
+/**
+ * Export database to downloadable file
+ */
+export async function exportDatabase(dbManager: DatabaseManager, filename: string = 'scrapebook.sqlite'): Promise<void> {
+  const { db, sqlite3 } = dbManager;
+  
+  // For wa-sqlite, we need to serialize the database differently
+  // This is a simplified version - in a real implementation you'd want
+  // to use the proper VFS for file operations
+  
+  // For now, we'll create a simple export by dumping the schema and data
+  console.log(`Export functionality not fully implemented yet for ${filename}`);
+  console.log('Database would be exported here');
+}
+```
+
+- And a little Svelte app to exercise them:
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { createInMemoryDatabase, openExistingDatabase, type DatabaseManager } from '$lib/database.js';
+
+  let dbManager: DatabaseManager | null = null;
+  let status = 'Not connected';
+  let fileInput: HTMLInputElement;
+
+  async function createNewDatabase() {
+    try {
+      status = 'Creating in-memory database...';
+      dbManager = await createInMemoryDatabase();
+      status = 'Connected to in-memory database';
+      
+      // Test the database by inserting a sample record
+      await testDatabase();
+    } catch (error) {
+      console.error('Failed to create database:', error);
+      status = `Error: ${error}`;
+    }
+  }
+
+  async function openFileDatabase() {
+    const file = fileInput.files?.[0];
+    if (!file) {
+      alert('Please select a file first');
+      return;
+    }
+
+    try {
+      status = `Opening database from ${file.name}...`;
+      dbManager = await openExistingDatabase(file);
+      status = `Connected to database: ${file.name}`;
+      
+      // Test the database
+      await testDatabase();
+    } catch (error) {
+      console.error('Failed to open database:', error);
+      status = `Error: ${error}`;
+    }
+  }
+
+  async function testDatabase() {
+    if (!dbManager) return;
+
+    try {      
+      // Query the ops table
+      const ops = await dbManager.query('SELECT COUNT(*) as count FROM ops');
+      console.log('Operations in database:', ops);
+      
+      // Query all table names to verify schema
+      const tables = await dbManager.query(`
+        SELECT name FROM sqlite_master WHERE type='table' ORDER BY name
+      `);
+      console.log('Tables in database:', tables);
+      
+    } catch (error) {
+      console.error('Database test failed:', error);
+    }
+  }
+
+  async function closeDatabase() {
+    if (dbManager) {
+      await dbManager.close();
+      dbManager = null;
+      status = 'Disconnected';
+    }
+  }
+
+  onMount(() => {
+    // Auto-create in-memory database on load for demo
+    createNewDatabase();
+  });
+</script>
+
+<main>
+  <h1>Scrapebook SPA</h1>
+  <p>SQLite Database Test - First Milestone</p>
+  
+  <div class="status">
+    <strong>Status:</strong> {status}
+  </div>
+
+  <div class="controls">
+    <button on:click={createNewDatabase}>Create New In-Memory Database</button>
+    
+    <div class="file-input">
+      <input 
+        bind:this={fileInput}
+        type="file" 
+        accept=".sqlite,.sqlite3,.db" 
+        id="file-input"
+      />
+      <button on:click={openFileDatabase}>Open Existing Database File</button>
+    </div>
+    
+    {#if dbManager}
+      <button on:click={testDatabase}>Test Database</button>
+      <button on:click={closeDatabase}>Close Database</button>
+    {/if}
+  </div>
+
+  <div class="info">
+    <h2>Database Schema</h2>
+    <p>The database includes the following tables:</p>
+    <ul>
+      <li><code>ops</code> - Operations in the pipeline graph</li>
+      <li><code>op_outputs</code> - Output payloads from operations</li>
+      <li><code>op_inputs</code> - Input edges between operations</li>
+      <li><code>composite_ground_truth</code> - Composite ground truth data</li>
+      <li><code>artifacts</code> - Artifact store for GC/deduplication</li>
+    </ul>
+    
+    <p><strong>Check the browser console</strong> for detailed logs about database operations.</p>
+  </div>
+</main>
+```
+
+- But we get dumb SSR errors
+
+- Internal Svelte issue; happens with default project too. Until that gets fixed, we just
+
 - ...
+
+- But now we need to press `q`. Auto-pressing `q` with `yes` too fast triggers the issue as well.
+  Imagine pressing buttons manually.
+
+- I'll live.
+
+- Go for a walk to see the ship. There's a single dog, in the kennel, alone. I wish I had something
+  to give it some water, or something. It's barking, and seems unhappy.
+
+- OK, I'm tired. It is naptime
+
+- It is a long, cold, and somewhat sad night. My arm hurts, sleeping on a row of three seats. I feel
+  the melancholy of the sea.
+
+- I get up. Bar's open. Get a coffee. Do a spot of writing (hi!)
+- The dawn rises over the waves. 
+
+- I fall asleep once more, on the much more comfortable bench here.
+
+- It's noon. The sea is literally azure. I spend a bit of time in the spray.
+
+- There's the dog from the kennel yesterday. With its owner now, and much happier.
+
+- I head back down to fetch my laptop, et al.
+
+- I see based old man again. We attempt to communicate in pidgin Italian. If only he spoke Chinese!
+
+- We get a coffee. Eat some biscuits. He takes his leave.
+
+- I decide to get writing. 
+
+- As we approach the shore, the network once more impinges upon me.
+
+- We're arriving in 40 minutes.
+
+- And I've got a lot of bullet points to textify, and a lot of Javascript to fill in...
 
 <!-- # GPTisms
 
@@ -550,9 +975,11 @@ LEFT JOIN artifacts a USING (artifact_hash)
 GROUP BY s.artifact_hash;
 ```
 
---- -->
+---
 
 Would you like me to also give you a **worked example insertion script** (e.g. `ComplexOp(A,B,C)` aliasing `SimpleOp(SimpleOp2(A,B),C)`) that shows exactly how to populate `ops`, `op_inputs`, `op_outputs` under these rules?
+
+-->
 
 [^1]: It really is amazing just how much of an impact VIC172 had on my life. I thought, like the
     rest of the breadth courses I had to take, it was just a box-filling, essay-generating exercise,
