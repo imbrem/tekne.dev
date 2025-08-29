@@ -32,8 +32,9 @@ It's filled with police and customs officers.
 
 Catching sight of me, they motion me to pull over, wide-eyed.
 
-A cloud of white smoke catches up to me as I pull to a stop. There's oil everywhere, and my rear
-wheel is completely soaked.
+A cloud of white smoke catches up to me as I pull to a stop. There's oil everywhere. 
+
+My rear wheel is completely soaked.
 
 <!-- <div style="text-align: center">
 <img src={oil_spill} alt="The Gladius missing its drain plug" style="max-width: 70%" />
@@ -52,8 +53,9 @@ _Time_: 2025-08-26T15:30+2
 I've spent a solid chunk of my youth thinking about _scraping_. If I ever see a paper copy of the
 newspaper _Miliyet_, I think I'll cry.
 
-Thanks to the influence of a certain Professor Berkovitz[^1], I know just enough about the
-philosophy of science to be dangerous. I promise these are related. Maybe.
+Thanks to the influence of a certain [Professor
+Berkovitz](https://philosophy.utoronto.ca/directory/joseph-berkovitz/)[^1], I know just enough about
+the philosophy of science to be dangerous. I promise these are related. Maybe.
 
 Today we're meditating on an SQL schema for observations on the world, analyses of those
 observations, and transformations on the resulting data. In particular, everything in this section
@@ -470,54 +472,71 @@ _Location_: Port of Genoa
 
 _Time_: TODO: this
 
-- One of my favorite books is _Le Periple de Baldassare_
+One of my favorite books is _Le Periple de Baldassare_. Soon after reading it, I went to Edinburgh
+on my KTM125. I came back changed.
 
-- Soon after reading it, I went to Edinburgh on my KTM125. I came back changed.
+And now, like Baldassar, I recover my heritage, and ride to Genoa. 
 
-- And now, like Baldassar, I recover my heritage, and ride to Genoa through the eye of the storm.
-  It's day 2, another extreme weather warning. Last night was fine.
+It's day 2. Yesterday there was an extreme weather warning, but really, last night was fine.
 
-- Today was not fine.
+Today was not fine.
 
-- The rain picked up. Buffeting winds. Blinding spray.
+The rain picked up. Buffeting winds. Blinding spray.
 
-- I ride next to a truck so that its bulk protects me from the wind. We hardly go 70. I am washed
-  out.
+I ride next to a truck so that its bulk protects me from the wind. We hardly go 70.
 
-- The two plastic bags around my laptop hold.
+The two plastic bags around my laptop hold.
 
-- We pass between verdant mountains. I wish I had a GoPro.
+We pass between verdant mountains. I wish I had a GoPro.
 
-- The roads next to the sea turn yellow.
+The roads next to the sea turn yellow.
 
-- We arrive in Genoa. I take shelter at the gas station, and dry off my clothes under the hand
-  dryer.
+We arrive in Genoa. I take shelter at the gas station, and dry off my clothes under the hand dryer.
 
-- Stop at a Chinese restaurant. Momlet said I should practice my Italian in Italy. And yet, we're
-  speaking Chinese. Truly. Good food though. Very reasonable prices.
+After doing my laundry, I stop at a Chinese restaurant, (INSERT RESTAURANT NAME HERE). The owner
+doesn't speak English, I don't speak Italian, so we manage to have a passable conversation in
+Mandarin, which surprises me. While I've studied for three years, this is actually the first time I
+have a bona-fide organic conversation, unable to simply swap back to English the moment the going
+gets tough. And it goes well! Should do that more often.
 
 - TODO: restaurant photos
 
-- We go to the ship. I thought I was early, 20:45 they said, but I am late. There's an entire horde
-  of bikers, very different from last time. Guess Sicily makes good biking.
+Also, the food's good! Very reasonable prices.
 
-- We board.
+We go to the ship. I thought I was early, 20:45 they said, but I am late. There's an entire horde of
+bikers, very different from last time. Guess Sicily makes good biking.
+
+We board.
 
 - TODO: boarding photo
 
-- I wrap up my vibe coding:
+And now that we're settled in, time for a bit more vibe coding.
 
-- So let's build up something to take our vague ideas above and start getting them into a worthwhile
-  scraping framework. Because I've got a _lot_ of speeches to scrape, and we're _way_ behind
-  schedule. And we'll need a Python library, too...
+Ship internet costs 7 euros for a GB, so we've got to get set up now that we still have data in
+port.
 
-- Wacky: ship internet costs 7 euros for a GB, needs sign-in... but Playwright downloads
+Weirdly enough, when I tried connecting to the ship's internet, though it redirects to a login page,
+Playwright downloads Chromium just fine, with some spurious warnings about TSL.
 
-- Ping and pacman die. Eh. Not worth my time to investigate. Swap to data.
+Everything else is blocked though; `ping` anything fails with 
+```
+From _gateway (172.20.0.1) icmp_seq=1 Destination Net Prohibited
+```
 
-- Back at the cafe, we vibe-coded a few JS functions for our DB
- 
-- We begin by defining an interface for our database:
+Eh. Swap to data.
+
+So last time we generated a Svelte app to go with our SQL. I started by creating a blank app using
+```bash
+npx sv create
+```
+I use `bun` as my package manager, and add support for Vitest and Playwright.
+
+Given our prompt, based on the SQL above, Claude generated
+- A file, `database.ts`, exposing some basic operations on a `wa-sqlite` database with the above
+  schema; currently, just creating one
+- A simple Svelte app to test and exercise this file.
+
+Let's go over `database.ts`. It starts by defining a Typescript interface for our database:
 
 ```ts
 export interface DatabaseManager {
@@ -528,8 +547,7 @@ export interface DatabaseManager {
   query(sql: string, params?: any[]): Promise<any[]>;
 }
 ```
-
-- Then we create instances of our database:
+along with a function to create an in-memory database
 
 ```ts
 /**
@@ -580,18 +598,12 @@ export async function createInMemoryDatabase(): Promise<DatabaseManager> {
   };
 }
 ```
+Claude also generated a function, `openExistingDatabase(file: File)`, to open a database stored in a
+file, but right now it just does exactly the same thing, except it also opens the provided file as a
+`Uint8Array` and then does nothing with it. Just caught this now as we're writing the article! So
+that's fun!
 
-- We can probably do a bit better than this; in particular, do we need close and execute and such
-  if we have sqlite and db? 
-  
-- Or we can encapsulate sqlite and db... But good enough for now! Need to think about the proper way
-  to do this...
-
-- Claude also generated code to open a database stored in a file, but right now it just opens the
-  file as a `Uint8Array` and then does nothing with it. Just caught this now as we're writing the
-  article! So that's fun!
-
-- Likewise, we're starting simple with the export function:
+Likewise, we're starting simple with the export function:
 ```ts
 /**
  * Export database to downloadable file
@@ -609,18 +621,16 @@ export async function exportDatabase(dbManager: DatabaseManager, filename: strin
 }
 ```
 
-- So I guess we're telling Claude to do import and export next.
+So I guess we're telling Claude to do import and export next.
 
-- It's also made a little Svelte app to exercise them. 
-
-- Our `<script>` starts by importing our database API:
+Now, on to our Svelte app. Our `<script>` section starts by importing our database API:
 
 ```ts
 import { createInMemoryDatabase, openExistingDatabase, type DatabaseManager } 
   from '$lib/database.js';
 ```
 
-- For state, we've got
+For state, we've got
 
 ```ts
 /// An open database connection, or null if no DB is opened
@@ -629,14 +639,20 @@ let dbManager: DatabaseManager | null = null;
 let status = 'Not connected';
 ```
 
-- We also keep track of a file input element for imports
+We also keep track of a file input element for imports
 
 ```ts
 let fileInput: HTMLInputElement;
 ```
 
-- Our page is a bunch of buttons to do the obvious things:
+Our page is a bunch of buttons to do the obvious things:
+- Create a new database
+- Open an existing database
+- If a database is opened (`dbManager != null`)
+  - Test the open database
+  - Close the open database
 
+In code,
 ```svelte
 <main>
   <h1>Scrapebook SPA</h1>
@@ -681,7 +697,7 @@ let fileInput: HTMLInputElement;
 </main>
 ```
 
-- And, back in `<script>` we've got functions to do each using our database API:
+And, back in `<script>` we've got functions to do each using our database API:
 
 ```ts
 async function createNewDatabase() {
@@ -759,63 +775,69 @@ onMount(() => {
   createNewDatabase();
 });
 ```
-- Note the generated code forgot to close the current database when opening/creating a new one! It's
-  always important to read Claude's outputs!
+We note the generated code forgot to call `closeDatabase` befor opening/creating a new one! 
 
-- Adding this makes the UI flicker a bit when we open a new DB, which is a bit irritating but eh.
-  The correct thing to do is probably to gray out the buttons rather than disappear them, and add
-  some interpolation to the UX. We can do that later.
+Adding this makes the UI flicker a bit when we open a new DB, which is a bit irritating but eh. We
+can probably change the UI to gray out the buttons rather than disappear them, and add some
+interpolation[^2]. This will hopefully still work if other things affect the DB connection.
 
-- Anyways, we get dumb SSR errors
-
-- Internal Svelte issue #16663 (go get link); happens with default project too. Until that gets
-  fixed, we just change the default script in `package.json` from
-
+So far, so good. But, `npm run test` gives us a spurious SSR error, after all tests pass:
+```
+```
+Turns out this is an internal Svelte issue
+[(#16663)](https://github.com/sveltejs/svelte/issues/16663); this happens with default project too.
+Until that gets fixed, we just change the default script in `package.json` from
 ```json
 "scripts": {
   // -- snip
   "test": "npm run test:unit -- --run  && npm run test:e2e",
 },
 ```
-
-- to
-
+to
 ```json
 "scripts": {
   // -- snip
   "test": "npm run test:unit && npm run test:e2e",
 },
 ```
-
-- But now we need to press `q`. Let's see if we can get around that...
-
+But now we need to press `q`. Let's see if we can get around that...
 ```bash
 # TODO: this
 ```
+Nope, auto-pressing `q` with `yes` too fast triggers the issue as well. Imagine pressing buttons
+manually.
 
-- Nope, auto-pressing `q` with `yes` too fast triggers the issue as well. Imagine pressing buttons
-  manually.
+I'll live.
 
-- I'll live.
-
-- It is a long, cold, and somewhat melancholy night. My arm hurts, sleeping on a row of three seats.
+It is a long, cold, and melancholy night. My arm hurts, sleeping on a row of three seats.
 
 - TODO: seat row photo
 
-- I get up. Bar's open. Get a coffee. Do a spot of writing (hi!)
+I get up. Bar's open. Get a coffee. Do a spot of writing (hi!)
 
 - TODO: sea setup photo
 
-- The dawn rises over the waves. 
+That seat is also a _much_ better sleeping spot.
 
-- Palermo awaits!
+The dawn rises over the waves. 
 
-[^1]: It really is amazing just how much of an impact VIC172 had on my life. I thought, like the
-    rest of the breadth courses I had to take, it was just a box-filling, essay-generating exercise,
-    and at first it was. But, like, two of those readings got engraved into my mind forever.
+Through the sea-spray, Palermo awaits!
+
+- TODO: Palermo blurry photo
+
+[^1]: It really is amazing just how much of an impact
+    [VIC173](https://artsci.calendar.utoronto.ca/course/vic173y1), the wonderfully named _Philosophy
+    of Science for Physical Scientists_, had on my life. I thought, like the rest of the breadth
+    courses I had to take, it was just a box-filling, essay-generating exercise, and at first it
+    was. But, like, two of those readings got engraved into my mind forever.
 
     And it was also my first introduction to Kant. Though _that_ particular reading is long erased.
     "Ancient" thinking about geometry contines to baffle me.
+
+[^2]: We can't close the database with a different function that does not set `dbManager` to `null`;
+  as this creates the potential bug that if we push the test button before re-initialization is
+  complete, we'll get an error, since it will attempt to call `testDatabase` on a closed DB.
+  Likewise for any other DB access we may add in the future!
 
 <!-- 
 <script>
