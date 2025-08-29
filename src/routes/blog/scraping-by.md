@@ -458,6 +458,8 @@ _Time_: TODO: this
 
 - We board.
 
+- TODO: boarding photo
+
 - I wrap up my vibe coding:
 
 - Baldassar senpai finds the book of the Hundredth Name, but to read it clouds his vision
@@ -762,18 +764,20 @@ onMount(() => {
 - Go for a walk to see the ship. There's a single dog, in the kennel, alone. I wish I had something
   to give it some water, or something. It's barking, and seems unhappy.
 
+- TODO: above deck at night
+
 - OK, I'm tired. It is naptime
 
 - It is a long, cold, and somewhat sad night. My arm hurts, sleeping on a row of three seats. I feel
   the melancholy of the sea.
+
+- TODO: seat row photo
 
 - I get up. Bar's open. Get a coffee. Do a spot of writing (hi!)
 
 - TODO: sea setup photo
 
 - The dawn rises over the waves. 
-
-- TODO: dawn photo?
 
 - I fall asleep once more, on the much more comfortable bench here.
 
