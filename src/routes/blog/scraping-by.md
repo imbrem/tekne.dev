@@ -265,152 +265,204 @@ _Location_: Gare de péage de Schwindratzeim
 
 _Time_: TODO this
 
-- I ride off on my freshly repaired motorbike
+I receive the call from Seedz, and walk on over to pick up my freshly repaired motorbike. A brief
+conversation and step towards bankruptcy later, and I'm riding off to Mulhouse. I soon notice,
+however, that the clutch bites a little even when fully pulled in. As I stop to investigate, I get
+stuck in fourth gear on a hill. So I ride it back for them to adjust.
 
-- The clutch bites a little even when fully pulled in, I find myself stuck-ish on a hill
+Weird. But nothing serious. No, say, _oil_ leaking...
 
-- So I ride it back. Weird (TM). They adjust it and send me on my merry way.
+So I go off again on my merry way. Finally, with the clutch repaired, I can once more enjoy the full
+power of the engine.
 
-- I begin the ride to Mulhouse
+Exuberant with this force, I arrive, in a cloud of smoke, to the gare de péage de Schwindratzeim.
 
-- Reach the payment gate
+There shouldn't be smoke, _yaar_.
 
-- Oiled up
+So the customs officers stop me with concern, and I have a nice discussion about French customs as
+my heart sinks, and the engine's lifeblood spills upon the motorway. To turn it back on now would be
+to destroy it.
 
-- I'm stuck
+I'm stuck.
 
-- Bikers show up to give advice, cool tricycle thing
+There's some hope I can just go buy a plug or something... but the wheel is covered in oil. Cleaning
+it out here would be difficult, and risky.
+
+It turns out that _would_ have been possible, maybe, though I'd have to wait till tomorrow to get a
+compatible Suzuki plug.
+
+But anyways. Some bikers show up and point out the oil on the wheel as an extreme danger. I'd rather
+not risk any such things. Which means, for the first time, it's time to call roadside recovery.
+
+At least I get a temporary upgrade to my ride
 
 - TODO: tricycle photo
 
-- Call _dépannage_
+So the first company I call (TODO: INSERT COMPANY NAME HERE) enthusiastically agrees to come pick me
+up, and even says they can take me back to Seedz.
 
-- Guy claims to have crashed. Really.
+I call them repeatedly, since they said the truck driver would call me back in about 20 minutes.
 
-- Chill with truck driver stranded for the night. Feel like hacking, but battery is low
+Apparently he crashed.
+
+There's a truck driver stranded with me here for the night. I get my laptop setup, but my phones are
+running low on battery. I don't have it in me to do much in the way of hacking.
 
 - TODO: setup photo
 
-- Call again.
+I call another recovery company. At first he agrees to come...
 
-- Much later he informs me I'm on the highway, and that he can't come.
+And then informs me that actually, he cannot, because my location counts as the highway, and he does
+not have the necessary government permit.
 
-- Call SANEF.
+So I call SANEF, the French highway authority, and, after a bit of time figuring out who to transfer
+me to, they send over breakdown services. Specifically, (TODO: INSERT COMPANY NAME HERE).
 
-- Tfw they _could_ have sent a repairman. To be fair, no idea if it would have worked. 
+The man is not very happy. And does _not_ want to ride me back all the way to Seedz. So we're going
+to the depot. 
 
-- Truckman arrives.
+10 minute ride, 230 euro bill, and I am brusqely shown the door, since they are closing. Fair, not
+exactly their fault. But not a good start to the night.
 
-  - Strong Alsace accent.
+Nearest hotel is an hour's walk away. 
 
-  - Does _not_ want to ride me back to Seedz.
+The rain begins to fall. 
 
-  - 200 euro bill.
+I call an Uber. We discuss whether he knows anyone with a van that could take me and the bike back
+to Seedz tomorrow morning, since the local recovery companies are charging up to 400 euros. He
+might.
 
-- 400 euro bill from previous truckman to go back to Seedz...
-
-- Find a hotel, talk to Uber driver about van. Doom...
+I arrive at the hotel.
 
 - TODO: hotel photo?
 
-- Plan self-repair with Yufeng; think about where to get Suzuki drain bolt, which is weird
+I'm worried something other than the drain plug may be broken. I fear for the rest of my trip.
+
+Is this defeat?
+
+_Never give up. Never surrender._
+
+I call up my category-theorist-biker-friend, and discuss how I may be able to perform the repair
+myself.
+
+According to him and ChatGPT, I'll need:
+- A Suzuki compatible drain plug, which is apparently the somewhat special (TODO: stick here).
+  Might need a larger one if the threads are stripped and that's why the plug fell out.
+- The associated crush washer (TODO: what's this actually called)
+- A rag
+- Some brake cleaner to get the oil off
+
+An alternative is to call all the local shops and see who has a van.
+
+I steel my resolve, and, around 1 AM, fall into hypersleep, gathering energy to face the dawn.
+
+But my dreams are dark.
 
 # Look for me at the first light of dawn
 
-- Call Seedz first thing in the morning
+_Location_: (the hotel)
 
-- Call other mechanics in the area
+_Time_: 2025-08-27T08:30+2
 
-- Seedz will send a man
+I lie there for a while, my awareness in that liminal space between conscious and subconscious, the
+dawn slowly pulling me forwards, drawing out the memories behind the shapes.
 
-- Walk off to get food while waiting
+And then, with a start, I sit up. I get calling.
 
-- Exceedingly exhausted, chat with Yufeng
+The local mechanics might have availability, but thankfully, Seedz answers right at 9 when they
+open, and confirm they can send over a repairman, and that they'll cover all the bills. Honestly,
+very professional way to handle a mistake.
 
-- Middle of nowhere. No good food, and _yet_. Good bread. Real France hours.
+So we're good. Hopefully.
 
-- TODO: bread photo
+I walk off to get some food. Move cafes a few times, tap away at this article. Van arrives, and we
+ride on over to (TODO: INSERT RECOVERY COMPANY NAME HERE)
 
-- Delay in van arrival, _he_ needs to find a Suzuki bolt
+We go ahead re-attach the drain plug
 
-- I move cafés, the bolt is found, the van arrives
+- TODO: drain plug photo
 
-- We get to the bike and refill
+and refill the oil
 
 - TODO: refill photo
 
-- Cart it over to a wash station, and give it a rinse
+Then we cart the bike over to a wash station, and give it a rinse
 
-- TODO: wash 
+- TODO: wash photo
 
-- Then wipe off the remaining oil with brake cleaner
+Finally, we wipe off the remaining oil with brake cleaner. 
 
-- The bike is repaired, the guy rides off
+The bike is repaired, and it is time to face the Alps.
 
-- I am exhausted. I put off the journey.
+I get some supplies: charge banks, cables, and something to drink. Get some Turkish food. Talk to an
+old man sitting there about his time in England. Interesting guy.
 
-- Get some Turkish food. 10/10 stuff. Missed meat.
+- TODO: Turkish food photo
 
-- TODO: turkish food photo
+Time drags on, I'm exhausted, and it's 19:00. I just want to rest. I think the following sums up my
+attitude at this point:
 
-- Time drags on, it's 7 PM. It is time to face the Alps. We ride! Genoa!
+- TODO: Alpine meme
 
-- The rain begins
+But it will turn out toq be very good that I did not. I set a course for Genoa.
 
-- Needles
+The rain begins.
 
-- Then bullets on my skin
+Needles.
 
-- Pull over to gas station, coffee, armor
+Then bullets.
 
-- Now the rain begins in earnest
+Pull over to gas station, get some coffee, and swap out my T-shirt for my armored jacket.
 
-- _Car senpai_. The darkness falls.
+Now the rain begins in earnest. My visor is covered in droplets.
 
-- Waze was taking me the wrong way, on recalculation. We turn back, and switch to Google Maps.
+For long stretches, I just follow the fastest car on the road, just following the headlights.
 
-- In the middle of the night, we cross the border with Switzerland and enter Basel.
+Waze was started taking me the wrong way, trying to avoid requiring a Swiss vignette, which I had
+already paid for. After a few kilometers on the road to Lyon, we turn back, and switch to Google
+Maps.
 
-- The roads are superbly well-maintained, and empty. Winding, tunnel sections. To be honest, it's
-  like a racetrack the size of a country. And given the price of a vignette, versus tolls, it's
-  cheap too!
+In the middle of the night, we cross the border with Switzerland and enter Basel.
 
-- That's the only cheap thing in this dark place.
+The roads are superbly well-maintained, and empty. Winding tunnel sections. 
 
-- Tfw. I plan to use a tree, as God intended.
+To be honest, it's like a racetrack the size of a country. And given the price of a vignette, versus
+tolls, it's cheap too!
 
-- But I needed to wash my hands. You win this time...
+That's the only cheap thing in this dark place. 
 
-- 50 CHF for a charger. And none available at the station.
+I take a stop, and it's 50 CHF for a charger... and 1 CHF to use the bathroom.
 
-- This place seems engineered, with its fun roads, to speed me along to leave it behind. Let's.
+Exhaustion is setting in; it's around midnight. I set course for Milan. 3 more hours.
 
-- We set course for Milan, as exhaustion is setting in.
+As I speed along the massive tunnels and galleries, I feel truly proud to be human. Men, like me,
+with two arms and two legs and a single mind, made these grand things.
 
-- The tunnel makes me proud to be a human being. Men made this. One day, perhaps, among the stars...
+I hope one day we will make things ever-grander, structures on the scale of stars.
 
-- Or will we? I fear obsoletion. Yudkowskypilled. "Big Yud," as Siddharth would say,
+Or will we simply be obsoleted?
 
-- Another tunnel. Now this is truly beautiful. I wish I stopped and took a photo.
+Another tunnel. Now this is truly beautiful. I wish I stopped and took a photo.
 
-- And yet that wasn't _the_ tunnel. And now. I _will_ stop and take some photos.
+And yet that wasn't _the_ tunnel. And now. I _will_ stop and take some photos.
 
 - TODO: Look, tunnel
 
-- We approach the Italian border, passport control waves me through
+We approach the Italian border, passport control waves me through
 
-- The road is straight.
+The road is straight.
 
-- I may not know Italian. But my heritage speaks to me. My genetic memory sings. For I have an
-  innate understanding of the beautiful language of the Italian road. I was born an Italian driver.
+I may not know Italian. But my heritage speaks to me: I seem to have an innate understanding of the
+beautiful language of the Italian road.
 
-- I send it.
+I send it.
 
-- We decelerate in Milan, at the idea hotel, only a few days later than planned.
+We decelerate in Milan, at the [Idea Hotel Milano San Siro](https://sansiro.ideahotel.it/), only
+three days late.
 
 - TODO: hotel room photo
 
-- Hypersleep
+It's time for hypersleep.
 
 # Baldassar and the Storm
 
