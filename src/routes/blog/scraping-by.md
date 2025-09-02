@@ -63,17 +63,16 @@ Today we're meditating on an SQL schema for observations on the world, analyses 
 observations, and transformations on the resulting data. In particular, everything in this section
 really is a half-baked meditation for a project I'm working on: I hardly know SQL!
 
-The concrete application here is scraping:
-- The _observations_ are opening a page, and seeing what HTML response comes flying back
-- The _transformation_ would be, for example, scraping out the plain-text using a set of
-  deterministic rules
-- The _analysis_ might be using or training a machine-learning model, or asking a human annotator to
-  determine ~something~ about our (potentially transformed) data.
-- And we might further _transform_s the analysis, by, for example, computing a mean, or taking the
-  output of our machine learning model and graphing sentiment.
+_Health warning_: as I said, all the SQL here is vibe-coded, and potentially rife with bugs. This is
+an _extremely_ early stage experiment!
 
-_Health warning_: all the SQL here is vibe-coded, and potentially rife with bugs. This is an
-_extremely_ early stage experiment!
+The concrete application here is scraping:
+- **Observations**: opening a page and seeing what HTML response comes back.
+- **Transformations**: deterministic steps like extracting plain text from HTML.
+- **Analyses**: nondeterministic or open-world steps like ML inference or human labels.
+- And we might further **transform** the analysis, e.g. compute a mean or graph sentiment.
+
+## Basic Schema
 
 So, a basic schema might look like
 ```sql
@@ -87,8 +86,8 @@ CREATE TABLE IF NOT EXISTS ops (
 
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
-  CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
   CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
+  CHECK ( (observed_class = 'analysis') OR (observed_at IS NULL) )
 );
 
 CREATE TABLE IF NOT EXISTS op_outputs (
@@ -106,43 +105,30 @@ CREATE TABLE IF NOT EXISTS op_inputs (
   PRIMARY KEY (op_key, idx)
 );
 ```
+We note the following important design decisions:
 
-- We're using the usual relational pattern for multiple inputs and outputs
-- Every observation, analysis, and transformation has a unique GUID, so we can just merge SQLite
-  files from different databases
-- The _input_ to every operation is a vector of outputs from other operations, plus parameters
+- We use the usual relational pattern for multiple inputs and outputs.
+- Every observation, analysis, and transformation has a unique key, so we can merge SQLite files
+  from different databases.
+- The input to every operation is a vector of outputs from other operations, plus parameters.
 
-Now, this framework is perfectly generic. For example, consider a scientific experiment:
-- We make an _observation_ by recording direct sensor data, say the resistance of a temperature
-  probe
-- We _transform_ it into whatever we want to measure using our calibration data, here this would be
-  the temperature
-- We _analyze_ our transformed observations in a potentially nondeterminisitc way to get our
-  results, perhaps by fitting a linear regression between temperature and the speed of a chemical
-  reaction.
+So, for a scraping experiment, we might have our database containing operations of the form
+- `fetch_http` (observation) with URL/user-agent params; outputs headers and bytes.
+- `extract_text_from_html` (transformation) consumes HTML and outputs text.
+- `split_text_into_sentences` (usually transformation) consumes text; outputs sentences.
+- `embed_sentences` (transformation) outputs embeddings.
+- A manual labeling pass is an analysis (nondeterministic selection), not an observation.
 
-So for our scraping example, we might have
-- An operation `fetch_http` with the URL and some user-agent nonsense as parameters, and the
-  resulting HTTP headers and returned data as results 1 and 2 respectively. This is an
-  _observation_.
-- An operation `extract_text_from_html` consuming the HTML from result 2 and returning the resulting
-  text as its only result. If deterministic, this is a _transformation_, so, e.g., would be
-  deduplicated w.r.t. the inputs.
-- An operation `split_text_into_sentences` consuming the text and returning a list of sentences.
-  Parameters might include language information. This is also, usually, a transformation, unless
-  maybe ML is used.
-- An operation `embed_sentences` consuming the list of sentences and returning a list of embeddings,
-  e.g. using `SentenceTransformers`. Can be either an analysis or transformation; I'd go with
-  transformation since we want to cache the outputs.
-- An analysis might be manually labelling a random subset of the sentences; note that even just
-  selecting a random subset would count as an analysis, since we can't cache it based on just the
-  input.
 
-  Unless we're studying the human labelling pattern itself, though, it's _not_ an observation!
+On the other hand, this framework is perfectly generic. For example, we might apply this framework
+to a lab experiment:
+- Observe raw sensor data (e.g., the voltage in a thermocouple).
+- Transform to the measured quantity via calibration (e.g., the temperature this corresponds to).
+- Analyze the transformed data (e.g., fit a regression).
 
-Since transformations are _pure_, we'd like to deduplicate them so that two equal transformations
-with the same inputs have the same output. We can do this by adding a field `input_digest`. Then
-we'll require that the ID of a transformation is always just the input digest!
+Since transformations are pure, we'd like to deduplicate them: two equal transforms with the same
+inputs produce the same outputs. We can do this by adding a field `input_digest` and requiring that
+a transformation’s key is its digest:
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
@@ -156,10 +142,10 @@ CREATE TABLE IF NOT EXISTS ops (
 
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
-  CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
+  CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
+  CHECK ( (observed_class = 'analysis') OR (observed_at IS NULL) )
   -- NEW: a transformation is keyed by its input
   CHECK ( (op_class <> 'transformation') OR (op_key = input_digest) )
-  CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
 );
 ```
 In general, we want to index on our input digest, so that we can, e.g., query for all observations
@@ -168,9 +154,8 @@ of a given thing, even if each has a unique ID (being an observation rather than
 CREATE INDEX IF NOT EXISTS idx_ops_inputdig     ON ops(input_digest);
 ```
 
-While we're at this deduplication business, we'd like to add an additional table to store cached
-data, so as to be able to deduplicate the results of operations, as well as make versions of the DB
-which don't store intermediate results to save space and bandwidth:
+We also add a content-addressed artifact store for caching large blobs (and the ability to purge
+bytes later):
 ```sql
 /* =======================
    ARTIFACTS (content-addressed bytes)
@@ -184,15 +169,15 @@ CREATE VIEW IF NOT EXISTS artifact_sizes AS
 SELECT artifact_hash, length(bytes) AS size_bytes FROM artifacts;
 ```
 
-Note that we _don't_ change the output of operations to be a potential hash of cached data. It's
-still just data, which might contain hashes. If you want to return cached data, just return its
-hash, and of course stick the data in the cache.
+(We still store operation outputs as raw data. If you want to return cached data, put its hash in
+data and write the bytes to artifacts.)
 
 _Fun exercise_: how could we garbage-collect the `artifacts` table?
 
-Now, another thing we want to do is, given any operation, quickly figure out its _ground truth_: the
-set of observations on which it is based. For a single observation, we can just add a `ground_truth`
-field to our schema:
+## Ground Truth
+
+We want to be able to, for any operation, quickly query the set of observations it ultimately
+depends on. We can do this by adding a `ground_truth` field to our schema:
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
@@ -209,10 +194,15 @@ CREATE TABLE IF NOT EXISTS ops (
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
   CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
-  CHECK ( (op_class <> 'transformation') OR (op_key = input_digest) )
   CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
+  CHECK ( (observed_class = 'analysis') OR (observed_at IS NULL) )
+  CHECK ( (op_class <> 'transformation') OR (op_key = input_digest) )
 );
 ```
+If our operation does not depend on _any_ observation, we obviously want `ground_truth` to be
+`NULL`. On the other hand, for a _single_ observation, it makes sense for `ground_truth` to be the
+`op_key` of that observation.
+
 For _multiple_ observations, however, we need some kind of way of keeping track of the _set_ of
 observations we're working with. We could:
 - Have a separate ground truth table containing records `(operation, observation)`, but the size of
@@ -231,14 +221,11 @@ CREATE TABLE IF NOT EXISTS observation_sets (
 We'll have the convention that: 
 - the set `{observation_id}` is just represented as the observation ID
 - the set `∅` is represented as `NULL`
-
-We'll have the further convention that an operation _encapsulates_ it's sub-operations; i.e., the
-ground truth of an observation `id` is `{id}`, regardless of what operations appear in its inputs.
-For a non-observation, we define 
-
-$$
-\mathsf{ground}(o) = \bigcup_{(i, j) ∈ \mathsf{inputs}(o)}\mathsf{ground}(i)
-$$
+- An operation encapsulates its sub-ops: for an observation id, ground_truth = {id} even if its
+  inputs contain a whole pipeline. For a non-observation,
+  $$
+  \mathsf{ground}(o) = \bigcup_{(i, j) ∈ \mathsf{inputs}(o)}\mathsf{ground}(i)
+  $$
 
 It's up to user-code to compute the appropriate hash and, if necessary, update the
 `observation_sets` table. So notice we end up with SQL
@@ -330,80 +317,90 @@ LEFT JOIN observation_sets AS s
 WHERE o.ground_truth IS NOT NULL;
 ```
 
-Speaking of encapsulation; the final bit of functionality we want is to encapsulate compositions of
-transformations, analyses, and operations. 
+## Aliases
 
-That is, you might notice that our definition of observation above is very direct: it's the raw
-sensor data. _Most_ of the time, however, you'd consider the transformed data the observation.
-Especially since the "raw" sensor data is a somewhat arbitrary concept, and even if defined may not
-be accessible; consider a lab instrument which is calibrated at the factory and displays some
-number, which the internal electronics has computed from raw sensor inputs inaccessible from the
-external interface. Moreover, you often don't care about the raw data, so long as the output is
-well-calibrated; you want to abstract away over _how_ exactly things are measured.
+Sometimes you want to _box_ a whole sub-pipeline behind a single, higher-level operation so you can
+reason with (and share) a simpler graph. That’s what **aliases** are for.
 
-Let's start with composing transformations. Say we define
-```
-ComplexOp(A, B, C) := SimpleOp(SimpleOp2(A, B), C)
-```
-Note I'm writing `OperationResult(Inputs)` here, to make each operation's inputs clear. So, for
-example, `SimpleOp` and `SimpleOp2` might both be invocations of the same `simple_op`. Here, `A, B,
-C` can be anything, and in particular observations. But, if `SimpleOp` and `SimpleOp2` are
-transformations, we want `ComplexOp` to be a transformation as well!
+- An alias operation has its own inputs/params/key but delegates semantics to an existing op’s outputs.
+- Aliasing is **orthogonal** to class: an op can be a transform, analysis, or observation **and** be
+  an alias. You still classify via `input_digest` and `ground_truth`.
+- We **materialize** aliases by copying the target’s outputs into the alias at creation time (no
+  alias chasing on reads).
+- Later, you can drop the inner subgraph in exports/snapshots and keep only the alias rows + their
+  copied outputs if you don’t need the full trace.
 
-A simple solution is to add an `alias` field to our schema, and say that `ComplexOp` has inputs
-`A, B, C` and _aliases_ `SimpleOp`. Then `ComplexOp` is a transformation iff all dependencies of
-`ComplexOp` which are not also dependencies of `A, B, C` are transformations.
-
-And, of course, if we specify the inclusions
-```
-Transformations ⊆ Analyses ⊆ Observations
-```
-then we want to say the same about analyses and observations. And this gives us the expected results
-for compound measurements; for example,
-```
-MeasureTemperature() := ComputeTemperature(MeasureResistance(), GetCalibration())
-```
-And, if we want to, we can always _discard_ the alias data to save space. So we can encapsulate
-complex measurements with simple ones.
-
-And we can do the same, e.g., with a machine-learning pipeline:
-```
-(TestData(InputData), TrainData(InputData)) := TrainTestSplit(InputData)
-TrainModel(InputData) := TrainNN(NormalizeData(TrainData(InputData), SampleRandomWeights()))
-TestModel(InputData) := TestNN(TrainModel(InputData), NormalizeData2(TestData(InputData)))
-```
-Here,
-- `TrainTestSplit` is an _analysis_, since it's making a nondeterministic choice of split. Of
-  course, we _could_ make it a transformation with the seed as its parameter, but that's just
-  storing an analysis in a more compressed way. Conceptually, it's an analysis.
-
-  `TestData` and `TrainData` would be outputs 0 and 1
-- `NormalizeData` is a _transformation, as would `NormalizeData2`.
-- `SampleRandomWeights` is an analysis as well
-- `TrainNN` would usually be an analysis if the gradient descent used is nondeterministic
-- `TestNN` would usually be a transformation
-
-So, we implement this by simply having an `alias` field:
+To support this, add `alias`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
-  op_key        BLOB PRIMARY KEY,   -- 32B unique key (random for run-addressed)
-  op_type       TEXT NOT NULL,      -- e.g. 'http_fetch','html_to_text','llm_infer','human_label'
-  tool_id       TEXT NOT NULL,      -- e.g. 'requests_v1','bs4_v1','rules_v2'
-  params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
-
-  input_digest  BLOB NOT NULL,      -- 32B
-
-  ground_truth  BLOB,               -- 32B; NULL only if synthetic / no provenance
-  observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
-
-  alias         BLOB,               -- NEW: nullable: op_key this row *encapsulates*
-
+  op_key        BLOB PRIMARY KEY,
+  op_type       TEXT NOT NULL,
+  tool_id       TEXT NOT NULL,
+  params_json   TEXT,
+  -- SHA-256 of (op_type || 0x00 || tool_id || 0x00 || canon(params_json) || 0x00 ||
+  --              concat(raw_input_bytes_in_slot_order))
+  input_digest  BLOB NOT NULL,
+  ground_truth  BLOB,       -- 32B; NULL only if synthetic
+  observed_at   TEXT,       -- MUST be NULL unless observation
+  alias         BLOB,       -- op_key this row encapsulates (outputs are copied)
   CHECK ( (observed_at IS NULL) OR (ground_truth = op_key) )
 );
 ```
-Note that we just copy the outputs; to remove alias information, we can just delete the appropriate
-entries in `ops` and the IO tables, having `alias` point to a dangling `op_key`.
+
+This matters because what you call an “observation” is often a **calibrated** result rather than raw
+sensor bytes (e.g. cleaned HTTP responses, factory-calibrated instruments). Aliasing lets you
+publish the calibrated result as *the* observation while the raw steps remain optional but still
+machine-readable when present.
+
+In general:
+
+* An alias operation can always be an **observation**.
+* An alias operation can be an **analysis** if all of its *internal-only dependencies* (those not
+  already implied by the alias' the inputs) are analyses.
+* An alias operation can be a **transformation** if all of its internal-only dependencies are
+  transformations.
+
+We use the inclusions
+
+```
+Transformations ⊆ Analyses ⊆ Observations
+```
+
+and classify each alias by the minimal class consistent with its dependencies.
+
+### Example: boxing a two-step transform
+
+```
+ComplexOp(A, B, C) := SimpleOp( SimpleOp2(A, B), C )
+```
+
+Here `A, B, C` can be anything (including observations). Then:
+
+* `ComplexOp` can always be an observation.
+* `ComplexOp` can be an analysis if `SimpleOp` and `SimpleOp2` are both analyses.
+* `ComplexOp` can be a transformation if `SimpleOp` and `SimpleOp2` are both transformations.
+
+Edge cases:
+
+* If an operation appears both as a direct dependency of `ComplexOp` and inside one of its inputs’
+  transitive dependencies, it still counts toward classification (because it is directly required by
+  the alias).
+* Every operation is considered a transitive dependency of itself.
+
+### Example: calibrated temperature as the observation
+
+```
+MeasureTemperature() := ComputeTemperature( MeasureResistance(), GetCalibration() )
+```
+
+* `MeasureResistance` = observation (hardware).
+* `GetCalibration` + `ComputeTemperature` = transformations.
+
+Here we define `MeasureTemperature` as an **alias** of `ComputeTemperature`. This lets us query
+temperature measurements directly, abstracting away the raw resistance reading. It also makes
+heterogeneous measurements comparable: e.g. `MeasureTemperature` from a resistance probe can be
+queried alongside thermocouple-based temperatures (which are derived from a voltage measurement).
 
 # The Gate of Schwindratzeim
 
