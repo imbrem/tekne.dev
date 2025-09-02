@@ -72,11 +72,14 @@ The concrete application here is scraping:
 - And we might further _transform_s the analysis, by, for example, computing a mean, or taking the
   output of our machine learning model and graphing sentiment.
 
+_Health warning_: all the SQL here is vibe-coded, and potentially rife with bugs. This is an
+_extremely_ early stage experiment!
+
 So, a basic schema might look like
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
-  op_kind       TEXT NOT NULL,
+  op_class       TEXT NOT NULL,     -- This op is a transformation, analysis, or an observation
 
   op_type       TEXT NOT NULL,      -- e.g. 'http_fetch','html_to_text','llm_infer','human_label'
   tool_id       TEXT NOT NULL,      -- e.g. 'requests_v1','bs4_v1','rules_v2'
@@ -85,7 +88,7 @@ CREATE TABLE IF NOT EXISTS ops (
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
   CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
-  CHECK ( op_kind IN ('transformation', 'analysis', 'observation')  )
+  CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
 );
 
 CREATE TABLE IF NOT EXISTS op_outputs (
@@ -143,7 +146,7 @@ we'll require that the ID of a transformation is always just the input digest!
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
-  op_kind       TEXT NOT NULL,
+  op_class       TEXT NOT NULL,     -- This op is a transformation, analysis, or an observation
 
   op_type       TEXT NOT NULL,      -- e.g. 'http_fetch','html_to_text','llm_infer','human_label'
   tool_id       TEXT NOT NULL,      -- e.g. 'requests_v1','bs4_v1','rules_v2'
@@ -155,8 +158,8 @@ CREATE TABLE IF NOT EXISTS ops (
 
   CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
   -- NEW: a transformation is keyed by its input
-  CHECK ( (op_kind <> 'transformation') OR (op_key = input_digest) )
-  CHECK ( op_kind IN ('transformation', 'analysis', 'observation')  )
+  CHECK ( (op_class <> 'transformation') OR (op_key = input_digest) )
+  CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
 );
 ```
 In general, we want to index on our input digest, so that we can, e.g., query for all observations
@@ -193,7 +196,7 @@ field to our schema:
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
-  op_kind       TEXT NOT NULL,
+  op_class       TEXT NOT NULL,     -- This op is a transformation, analysis, or an observation
 
   op_type       TEXT NOT NULL,      -- e.g. 'http_fetch','html_to_text','llm_infer','human_label'
   tool_id       TEXT NOT NULL,      -- e.g. 'requests_v1','bs4_v1','rules_v2'
@@ -206,8 +209,8 @@ CREATE TABLE IF NOT EXISTS ops (
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
   CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
-  CHECK ( (op_kind <> 'transformation') OR (op_key = input_digest) )
-  CHECK ( op_kind IN ('transformation', 'analysis', 'observation')  )
+  CHECK ( (op_class <> 'transformation') OR (op_key = input_digest) )
+  CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
 );
 ```
 For _multiple_ observations, however, we need some kind of way of keeping track of the _set_ of
@@ -243,7 +246,7 @@ It's up to user-code to compute the appropriate hash and, if necessary, update t
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
-  op_kind       TEXT NOT NULL,
+  op_class       TEXT NOT NULL,     -- This op is a transformation, analysis, or an observation
 
   op_type       TEXT NOT NULL,      -- e.g. 'http_fetch','html_to_text','llm_infer','human_label'
   tool_id       TEXT NOT NULL,      -- e.g. 'requests_v1','bs4_v1','rules_v2'
@@ -256,20 +259,13 @@ CREATE TABLE IF NOT EXISTS ops (
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
   CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
-  CHECK ( (op_kind <> 'transformation') OR (op_key = input_digest) )
-  CHECK ( (op_kind <> 'observation') OR (op_key = ground_truth) )
-  CHECK ( op_kind IN ('transformation', 'analysis', 'observation')  )
+  CHECK ( (op_class <> 'transformation') OR (op_key = input_digest) )
+  CHECK ( (op_class <> 'observation') OR (op_key = ground_truth) )
+  CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
 );
 ```
-<!-- 
-And here's a view to compute which observations depend on an observation (_including_ the
-observation itself):
-```sql
---TODO: this
-DROP TABLE
-``` -->
 
-So we can just drop the `op_kind` field and replace it with views:
+So we can just drop the `op_class` field and replace it with views:
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
@@ -297,6 +293,41 @@ SELECT
     ELSE 'analysis'
   END AS op_class
 FROM ops o;
+```
+
+A view to directly look up the ground truth of a given operation might look like:
+```sql
+/* ============================================================
+   v_op_observations
+   ------------------------------------------------------------
+   Expands each op’s ground_truth into the observations it
+   depends on. Usage:
+       SELECT observation
+       FROM v_op_observations
+       WHERE op_key = :op;
+
+   Conventions:
+     • Observation o:   ground_truth = o.op_key
+     • Non-observation:
+         - Synthetic:   ground_truth IS NULL
+         - Singleton:   ground_truth = <obs_id>
+         - Composite:   ground_truth = <set_hash>, with members in observation_sets
+     • Singletons are NOT in observation_sets.
+
+   Logic:
+     • LEFT JOIN on observation_sets:
+         - Composite → rows per member
+         - Singleton → COALESCE picks ground_truth
+     • Synthetic ops excluded.
+   ============================================================ */
+CREATE VIEW IF NOT EXISTS v_op_observations AS
+SELECT
+  o.op_key                           AS op_key,
+  COALESCE(s.member, o.ground_truth) AS observation
+FROM ops AS o
+LEFT JOIN observation_sets AS s
+  ON s.set_hash = o.ground_truth
+WHERE o.ground_truth IS NOT NULL;
 ```
 
 Speaking of encapsulation; the final bit of functionality we want is to encapsulate compositions of
