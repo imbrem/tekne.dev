@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS ops (
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
   CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
-  CHECK ( (observed_class = 'analysis') OR (observed_at IS NULL) )
+  CHECK ( (op_class = 'observation') OR (observed_at IS NULL) )
 );
 
 CREATE TABLE IF NOT EXISTS op_outputs (
@@ -139,13 +139,14 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- NEW: SHA-256 hash of (op_type, tool_id, params_json)
+                                    -- followed by (slot id, input bytes) concatenated in slot order
 
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
   CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
-  CHECK ( (observed_class = 'analysis') OR (observed_at IS NULL) )
+  CHECK ( (op_class = 'observation') OR (observed_at IS NULL) )
   -- NEW: a transformation is keyed by its input
-  CHECK ( (op_class <> 'transformation') OR (op_key = input_digest) )
+  CHECK ( (op_class = 'transformation') = (op_key = input_digest) )
 );
 ```
 In general, we want to index on our input digest, so that we can, e.g., query for all observations
@@ -169,7 +170,7 @@ CREATE VIEW IF NOT EXISTS artifact_sizes AS
 SELECT artifact_hash, length(bytes) AS size_bytes FROM artifacts;
 ```
 
-(We still store operation outputs as raw data. If you want to return cached data, put its hash in
+(We still store operation outputs as raw bytes. If you want to return cached data, put its hash in
 data and write the bytes to artifacts.)
 
 _Fun exercise_: how could we garbage-collect the `artifacts` table?
@@ -188,15 +189,15 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
+                                    -- followed by (slot id, input bytes) concatenated in slot order
 
   ground_truth  BLOB,               -- NEW: 32B; NULL only if synthetic / no provenance
 
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
-  CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
   CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
-  CHECK ( (observed_class = 'analysis') OR (observed_at IS NULL) )
-  CHECK ( (op_class <> 'transformation') OR (op_key = input_digest) )
+  CHECK ( (op_class = 'observation') OR (observed_at IS NULL) )
+  CHECK ( (op_class = 'transformation') = (op_key = input_digest) )
 );
 ```
 If our operation does not depend on _any_ observation, we obviously want `ground_truth` to be
@@ -212,8 +213,8 @@ observations we're working with. We could:
 Let's go with the latter
 ```sql
 CREATE TABLE IF NOT EXISTS observation_sets (
-  set_hash      BLOB PRIMARY KEY,   -- SHA-256 hash of the keys in this set in sorted order
-  member        BLOB PRIMARY KEY,   -- `op_key` which is a member of this set 
+  set_hash      BLOB NOT NULL,    -- SHA-256 hash of the keys in this set in sorted order
+  member        BLOB NOT NULL,    -- `op_key` which is a member of this set 
   PRIMARY KEY (set_hash, member)
 );
 ```
@@ -240,15 +241,17 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
+                                    -- followed by (slot id, input bytes) concatenated in slot order
 
   ground_truth  BLOB,               -- 32B; NULL only if synthetic / no provenance
 
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
-  CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
-  CHECK ( (op_class <> 'transformation') OR (op_key = input_digest) )
-  CHECK ( (op_class <> 'observation') OR (op_key = ground_truth) )
   CHECK ( op_class IN ('transformation', 'analysis', 'observation')  )
+  CHECK ( (op_class = 'observation') OR (observed_at IS NULL) )
+  -- NEW: an observation is equal to its own ground truth
+  CHECK ( (op_class = 'observation') = (op_key = ground_truth) )
+  CHECK ( (op_class = 'transformation') = (op_key = input_digest) )
 );
 ```
 
@@ -262,12 +265,16 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
+                                    -- followed by (slot id, input bytes) concatenated in slot order
 
   ground_truth  BLOB,               -- 32B; NULL only if synthetic / no provenance
 
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
-  CHECK ( (observed_at IS NULL) OR (observed_at IS NULL) )
+
+  -- NEW: an observation is equal to its own ground truth, _and_
+  -- only an observation may have a non-null `observed_at`
+  CHECK ( (op_key = ground_truth) OR (observed_at IS NULL) )
 );
 
 -- Classify each op: transform / observation / analysis
@@ -334,17 +341,22 @@ To support this, add `alias`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
-  op_key        BLOB PRIMARY KEY,
-  op_type       TEXT NOT NULL,
-  tool_id       TEXT NOT NULL,
-  params_json   TEXT,
-  -- SHA-256 of (op_type || 0x00 || tool_id || 0x00 || canon(params_json) || 0x00 ||
-  --              concat(raw_input_bytes_in_slot_order))
-  input_digest  BLOB NOT NULL,
-  ground_truth  BLOB,       -- 32B; NULL only if synthetic
-  observed_at   TEXT,       -- MUST be NULL unless observation
-  alias         BLOB,       -- op_key this row encapsulates (outputs are copied)
-  CHECK ( (observed_at IS NULL) OR (ground_truth = op_key) )
+  op_key        BLOB PRIMARY KEY,   -- 32B unique key
+
+  op_type       TEXT NOT NULL,      -- e.g. 'http_fetch','html_to_text','llm_infer','human_label'
+  tool_id       TEXT NOT NULL,      -- e.g. 'requests_v1','bs4_v1','rules_v2'
+  params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
+
+  input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
+                                    -- followed by (slot id, input bytes) concatenated in slot order
+
+  ground_truth  BLOB,               -- 32B; NULL only if synthetic / no provenance
+
+  observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
+
+  alias         BLOB,               -- NEW: which operation this is an alias of, if any
+
+  CHECK ( (op_key = ground_truth) OR (observed_at IS NULL) )
 );
 ```
 
@@ -613,14 +625,14 @@ three days late.
 
 It's time for hypersleep.
 
-# Baldassar and the Storm
+# Balthasar and the Storm
 
 _Location_: Port of Genoa
 
-One of my favorite books is _Le Periple de Baldassare_. Soon after reading it, I went to Edinburgh
+One of my favorite books is _Le périple de Baldassare_. Soon after reading it, I went to Edinburgh
 on my KTM125. I came back changed.
 
-And now, like Baldassar, I recover my heritage, and ride to Genoa. 
+And now, like Balthasar, I recover my heritage, and ride to Genoa. 
 
 It's day 2. Yesterday there was an extreme weather warning, but really, last night was fine.
 
@@ -836,7 +848,7 @@ In code,
       <li><code>ops</code> - Operations in the pipeline graph</li>
       <li><code>op_outputs</code> - Output payloads from operations</li>
       <li><code>op_inputs</code> - Input edges between operations</li>
-      <li><code>composite_ground_truth</code> - Composite ground truth data</li>
+      <li><code>observation_sets</code> - Composite ground truth data</li>
       <li><code>artifacts</code> - Artifact store for GC/deduplication</li>
     </ul>
     
@@ -963,8 +975,9 @@ But now we need to press `q`. Let's see if we can get around that...
 ```bash
 yes q | head -n1 | vitest && playwright test
 ```
-Nope, auto-pressing `q` with `yes` too fast triggers the issue as well. Imagine pressing buttons
-manually.
+Nope, auto-pressing `q` with `yes` too fast triggers the issue as well. 
+
+Imagine pressing buttons manually.
 
 I'll live.
 
