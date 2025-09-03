@@ -1,10 +1,10 @@
 ---
 title: Adventures in Type Theory 3 — Scraping By
-published: '2025-09-02'
+published: '2025-09-03'
 ---
 
 _Location_: [Boulangerie aux délices de Souffel](https://maps.app.goo.gl/2vb9qMHP9eSuZTTr6)
-(42.62627, 7.72929)
+(48.62627, 7.72929)
 
 _Time_: 2025-08-27T12:04+2
 
@@ -139,7 +139,8 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- NEW: SHA-256 hash of (op_type, tool_id, params_json)
-                                    -- followed by (slot id, input bytes) concatenated in slot order
+                                    -- followed by (input len, input bytes) concatenated in 
+                                    -- slot order
 
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
 
@@ -189,7 +190,8 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
-                                    -- followed by (slot id, input bytes) concatenated in slot order
+                                    -- followed by (input len, input bytes) concatenated in 
+                                    -- slot order
 
   ground_truth  BLOB,               -- NEW: 32B; NULL only if synthetic / no provenance
 
@@ -241,7 +243,8 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
-                                    -- followed by (slot id, input bytes) concatenated in slot order
+                                    -- followed by (input len, input bytes) concatenated in 
+                                    -- slot order
 
   ground_truth  BLOB,               -- 32B; NULL only if synthetic / no provenance
 
@@ -265,7 +268,8 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
-                                    -- followed by (slot id, input bytes) concatenated in slot order
+                                    -- followed by (input len, input bytes) concatenated in 
+                                    -- slot order
 
   ground_truth  BLOB,               -- 32B; NULL only if synthetic / no provenance
 
@@ -348,7 +352,8 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
-                                    -- followed by (slot id, input bytes) concatenated in slot order
+                                    -- followed by (input len, input bytes) concatenated in
+                                    -- slot order
 
   ground_truth  BLOB,               -- 32B; NULL only if synthetic / no provenance
 
@@ -369,7 +374,7 @@ In general:
 
 * An alias operation can always be an **observation**.
 * An alias operation can be an **analysis** if all of its *internal-only dependencies* (those not
-  already implied by the alias' the inputs) are analyses.
+  already implied by the alias' inputs) are analyses.
 * An alias operation can be a **transformation** if all of its internal-only dependencies are
   transformations.
 
@@ -412,7 +417,7 @@ MeasureTemperature() := ComputeTemperature( MeasureResistance(), GetCalibration(
 Here we define `MeasureTemperature` as an **alias** of `ComputeTemperature`. This lets us query
 temperature measurements directly, abstracting away the raw resistance reading. It also makes
 heterogeneous measurements comparable: e.g. `MeasureTemperature` from a resistance probe can be
-queried alongside thermocouple-based temperatures (which are derived from a voltage measurement).
+queried alongside thermocouple-based temperatures (which are derived from voltage measurements).
 
 # The Gate of Schwindratzeim
 
@@ -474,7 +479,7 @@ me to, they send over breakdown services. Specifically, (TODO: INSERT COMPANY NA
 The man is not very happy. And does _not_ want to ride me back all the way to Seedz. So we're going
 to the depot. 
 
-10 minute ride, 230 euro bill, and I am brusqely shown the door, since they are closing. Fair, not
+10 minute ride, 230 euro bill, and I am brusquely shown the door, since they are closing. Fair, not
 exactly their fault. But not a good start to the night.
 
 Nearest hotel is an hour's walk away. 
@@ -551,12 +556,12 @@ Finally, we wipe off the remaining oil with brake cleaner.
 
 The bike is repaired, and it is time to face the Alps.
 
-I get some supplies: charge banks, cables, and something to drink. Get some Turkish food at the
+I get some supplies: power banks, cables, and something to drink. Get some Turkish food at the
 excellent [Restaurant Zeugma](https://maps.app.goo.gl/c66oN3LJ9HNpkL5W8). Talk to an old man sitting
 there about his time in England. Interesting guy.
 
 <div style="text-align: center">
-<img src={turkish_food} alt="Some excellent Turkish food in Strausbourg" style="max-width: 70%" />
+<img src={turkish_food} alt="Some excellent Turkish food in Strasbourg" style="max-width: 70%" />
 </div>
 
 Time drags on, I'm exhausted, and it's 19:00. I just want to rest.
@@ -575,7 +580,7 @@ Now the rain begins in earnest. My visor is covered in droplets.
 
 For long stretches, I just follow the fastest car on the road, just following the headlights.
 
-Waze was started taking me the wrong way, trying to avoid requiring a Swiss vignette, which I had
+Waze started taking me the wrong way, trying to avoid requiring a Swiss vignette, which I had
 already paid for. After a few kilometers on the road to Lyon, we turn back, and switch to Google
 Maps.
 
@@ -607,11 +612,11 @@ And yet that wasn't _the_ tunnel. And now. I _will_ stop and take some photos.
 <img src={tunnel_bike_view} alt="The Gladius sitting in a Swiss mountain tunnel" style="max-width: 70%" />
 </div>
 
-We approach the Italian border, passport control waves me through
+We approach the Italian border, passport control waves me through.
 
 The road is straight.
 
-I may not know Italian. But my heritage speaks to me: In my genetic memory, there seems to lie an
+I may not know Italian. But my heritage speaks to me: In my genetic memory, there seems to be an
 innate understanding of the beautiful language of the Italian road.
 
 I send it.
@@ -629,7 +634,7 @@ It's time for hypersleep.
 
 _Location_: Port of Genoa
 
-One of my favorite books is _Le périple de Baldassare_. Soon after reading it, I went to Edinburgh
+One of my favorite books is _Le Périple de Baldassare_. Soon after reading it, I went to Edinburgh
 on my KTM125. I came back changed.
 
 And now, like Balthasar, I recover my heritage, and ride to Genoa. 
@@ -676,7 +681,7 @@ Ship internet costs 7 euros for a GB, so we've got to get set up now that we sti
 port.
 
 Weirdly enough, when I tried connecting to the ship's internet, though it redirects to a login page,
-Playwright downloads Chromium just fine, with some spurious warnings about TSL.
+Playwright downloads Chromium just fine, with some spurious warnings about TLS.
 
 Everything else is blocked though; `ping` anything fails with 
 ```
@@ -935,7 +940,7 @@ onMount(() => {
   createNewDatabase();
 });
 ```
-We note the generated code forgot to call `closeDatabase` befor opening/creating a new one! 
+We note the generated code forgot to call `closeDatabase` before opening/creating a new one! 
 
 Adding this makes the UI flicker a bit when we open a new DB, which is a bit irritating but eh. We
 can probably change the UI to gray out the buttons rather than disappear them, and add some
