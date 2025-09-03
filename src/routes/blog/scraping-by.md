@@ -473,7 +473,7 @@ And then informs me that actually, he cannot, because my location counts as the 
 not have the necessary government permit.
 
 So I call SANEF, the French highway authority, and, after a bit of time figuring out who to transfer
-me to, they send over breakdown services. Specifically, (TODO: INSERT COMPANY NAME HERE).
+me to, they send over breakdown services.
 
 The man is not very happy. And does _not_ want to ride me back all the way to Seedz. So we're going
 to the depot. 
@@ -531,9 +531,7 @@ very professional way to handle a mistake.
 So we're good. Hopefully.
 
 I walk off to get some food. Move cafes a few times, tap away at this article. Van arrives, and we
-ride on over to (TODO: INSERT RECOVERY COMPANY NAME HERE)
-
-We go ahead re-attach the drain plug
+ride on over to the depot. We go ahead re-attach the drain plug
 
 <div style="text-align: center">
 <img src={drain_plug} alt="The Gladius with its drain plug re-attached" style="max-width: 50%" />
