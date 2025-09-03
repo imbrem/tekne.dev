@@ -2,7 +2,6 @@
 title: Adventures in Type Theory 3 — Scraping By
 published: '2025-09-03'
 ---
-
 _Location_: [Boulangerie aux délices de Souffel](https://maps.app.goo.gl/2vb9qMHP9eSuZTTr6)
 (48.62627, 7.72929)
 
@@ -224,10 +223,10 @@ CREATE TABLE IF NOT EXISTS observation_sets (
 We'll have the convention that: 
 - the set `{observation_id}` is just represented as the observation ID
 - the set `∅` is represented as `NULL`
-- An operation encapsulates its sub-ops: for an observation id, ground_truth = {id} even if its
+- An operation encapsulates its sub-ops: for an observation `id`, `ground_truth = {id}` even if its
   inputs contain a whole pipeline. For a non-observation,
   $$
-  \mathsf{ground}(o) = \bigcup_{(i, j) ∈ \mathsf{inputs}(o)}\mathsf{ground}(i)
+  \mathrm{ground}(o) = \bigcup_{(i, j) ∈ \mathrm{inputs}(o)}\mathrm{ground}(i)
   $$
 
 It's up to user-code to compute the appropriate hash and, if necessary, update the
@@ -1006,14 +1005,14 @@ Through the sea-spray, Palermo awaits!
     courses I had to take, it was just a box-filling, essay-generating exercise, and at first it
     was. But, like, two of those readings got engraved into my mind forever.
 
-    And it was also my first introduction to Kant. Though _that_ particular reading is long erased.
-    "Ancient" thinking about geometry contines to baffle me.
+    And [it](https://mitpress.mit.edu/9780262581691/space-from-zeno-to-einstein/) was also my first
+    introduction to Kant. Though _that_ particular reading is long erased. "Ancient" thinking about
+    geometry contines to baffle me.
 
 [^2]: We can't close the database with a different function that does not set `dbManager` to `null`;
   as this creates the potential bug that if we push the test button before re-initialization is
   complete, we'll get an error, since it will attempt to call `testDatabase` on a closed DB.
   Likewise for any other DB access we may add in the future!
-
 
 <script>
     import oil_spill from "$lib/assets/scraping-by/oil_spill.jpg"
@@ -1027,4 +1026,4 @@ Through the sea-spray, Palermo awaits!
     import chinese_genoa from "$lib/assets/scraping-by/chinese_genoa.jpg"
     import chinese_genoa_outside from "$lib/assets/scraping-by/chinese_genoa_outside.jpg"
     import ferry_setup from "$lib/assets/scraping-by/ferry_setup.jpg"
-</script>
+</script> 
