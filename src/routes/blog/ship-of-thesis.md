@@ -1,6 +1,6 @@
 ---
 title: Adventures in Type Theory 4 — The Ship of Thesis
-published: '2025-09-30'
+published: '2025-10-01'
 ---
 _Location_: [FS04, William Gates Building](https://maps.app.goo.gl/vE5oxXW5XHdiGybq5) (52.210434,
 0.091859)
@@ -178,7 +178,7 @@ and, I reflect that, as Steve Jobs might say, it's time to become a real artist,
 _Location_: [FS04, William Gates Building](https://maps.app.goo.gl/vE5oxXW5XHdiGybq5) (52.210434,
 0.091859)
 
-_Time_: 2025-09-30T18:19+1
+_Time_: 2025-10-01T23:03+1
 
 As I was just saying, a while back, I [wrote an article on building an inductive representation of
 SSA](http://tekne.dev/blog/building-inductive-ssa), which later became the core of my TOPLAS
@@ -242,6 +242,27 @@ G ::= β | G ; ℓ : β
 ```
 Note constants $c$ are just nullary operations `op`; we allow the if-statements in terminators to be
 nested for simplicity, and also because that can be used to emulate a `switch`.
+
+One question the astute reader may ask is what the scoping rules for variables are: while we might
+just raise an error on using an undefined variable (or declare this undefined behavior, more
+likely), we'd like to have a static analysis which guarantees that all variables are defined before
+use.
+
+In graph theory, a node $n$ in a directed graph with a distinguished entry node $e$ is _dominated_
+by a set of nodes $D$ if every path from $e$ to $n$ passes through an element of $D$. We'll say $D$
+_strictly dominates_ $n$ if $D \setminus \{n\}$ dominates $n$.[^5]
+
+We say a single node $d$ (strictly) dominates $n$ if $\{d\}$ (strictly) dominates $n$, in
+particular, $d$ strictly dominates $n$ if and only if $d$ dominates $n$ and $d ≠ n$.
+
+Letting $D_x$ be the set of basic blocks containing a definition of $x$, we know that a use of $x$
+in block $β$ with label $ℓ$ is well-scoped if
+- $ℓ ∈ D_x$ and the usage of $x$ is after the first definition of $x$ in $β$
+- $D_x$ strictly dominates $ℓ$, since all paths to get to $ℓ$ have already defined $x$
+
+We want to restrict our attention to such well-scoped programs, since we can give them a semantics
+even in settings without a clear notion of an error, and in particular, we can give them a
+_categorical_ semantics.
 
 There are three regularizing tweaks we might want to make as type theorists:
 - Introduce nullary tuples $()$ and binary tuples $(v, v')$ of values, and make operations take a
@@ -338,7 +359,7 @@ then:
 ```
 Often, we allow pure operations, or at least constants, in $ϕ$-instructions, so we could even
 simplify this to
-```
+```c
 if (φ) { goto left } else { goto right };
 left:
     goto then;
@@ -349,19 +370,210 @@ then:
     return x;
 ```
 These have slightly unintuitive scoping rules: we can add a label $ℓ : o$ to a $ϕ$-instruction if
-$o$ would be well-scoped at the _end_ of the basic-block $β$ labelled $ℓ$[^5]. We'll maintain the
+$o$ would be well-scoped at the _end_ of the basic-block $β$ labelled $ℓ$[^6]. We'll maintain the
 invariant that $ϕ$-instructions _cannot_ access other variables in _their own_ block (so the scope
 is _precisely_ that at the end of $β$, rather than the union of the instructions before the
 $ϕ$-instruction and those visible at the end of $β$); since $ϕ$-instructions are pure, we can also
 easily maintain the invariant that $ϕ$-instructions are always before any non-$ϕ$ instruction in
-their basic block by simply floating them up to the top[^6].
+their basic block by simply floating them up to the top[^7].
 
 Thankfully, by a mechanical transformation, we can show that $ϕ$-instructions are precisely
-equivalent to simply giving every label 
+equivalent to simply, for each $ϕ$-instruction $x_1,...,x_n$ at the front of a basic block $β$,
+adding parameters $x_1,...,x_n$ to the label $ℓ$. Then any jump to $ℓ$ needs to provide values for
+each parameter $x_i$, which correspond precisely to the value in the $ℓ$-branch of the
+$ϕ$-instruction originally defining $x_i$. This, hopefully, makes the scoping rules for
+$ϕ$-instructions obvious: it's just the regular scope at where the values are actually computed
+(namely, just before branching to $ℓ$).
 
+In terms of formal grammar, we get
+```c
+// Instructions
+//
+// We allow a variable as an instruction for renaming
+o ::= op x₁ ... xₙ | x
+// Basic blocks
+β ::= let x₁,...,xₙ = o; β | τ
+// Terminators
+τ ::= goto ℓ(o₁,...,oₙ) | switch (o) { ι₁ x₁ : τ₁ ; ... ; ιₙ xₙ : τₙ }
+// Control-flow graphs
+//
+// Note: the entry block is first
+G ::= β | G ; ℓ(x₁,...,xₙ) : β
+```
+The above program then becomes
+```c
+    if (φ) { goto left } else { goto right };
+left:
+    x₀ = 3;
+    goto then(x₀);
+right:
+    x₁ = 5;
+    goto then(x₁);
+then(x₂):
+    return x;
+```
+while our factorial program becomes
+```c
+    n = 10;
+    i₀ = 1;
+    a₀ = 1;
+    goto loop(i₀, a₀);
+loop(i₁, a₁):
+    if (i₁ < n) { goto body } 
+    else { return a₁ };
+body:
+    t = i₁ + 1;
+    a₂ = a₁ * t;
+    i₂ = i₁ + 1;
+    goto loop(i₂, a₂)
+```
+
+These hopefully have much more obvious semantics: tail-calls. Indeed, since every variable has a
+unique definition, it's like we're using a let-binding rather than a mutable variable. We really
+want things to be "as-functional-as-possible," since that makes building a nice compositional
+semantics a _lot_ easier. But we still don't know hour our let-bindings are _scoped_. And induction
+on CFGs by doing induction on the list of basic blocks is... suboptimal...
+
+What we want to do is figure out how to switch to lexical scoping, in a way which gives us a good
+induction principle on SSA programs.
+
+Since every variable $x$ has a unique definition point $d$, dominance-based scoping in SSA
+simplifies to requiring that every usage of $x$ is strictly dominated by $d$; i.e., in a basic block
+strictly dominated by $d$ or in the same basic block as $d$ and located after it. Thankfully, we
+note that the dominance relation is more than just a partial order on reachable blocks (in general
+it is a preorder), it's actually a _tree_.
+
+In particular, consider a directed graph with distinguished entry point $(G, e)$ again. We'll say a
+node $n$ has _immediate dominator_ $d$ if:
+- $d$ strictly dominates $n$ 
+- $d$ does not strictly dominate any other node that strictly dominates $n$
+
+It turns out that every node reachable from $e$ except $e$ itself has exactly one immediate
+dominator, forming the _dominator tree_, and moreover that the dominance relation on these nodes
+is just the reflexive transitive closure of the immediate dominance relation.
+
+Anyways, long story short, it turns out that lexical scoping w.r.t. the dominator tree is exactly
+the same as dominance-based scoping. So if we just encode the dominator tree syntactically, we don't
+need to bother with dominance-based scoping.
+
+So how do we do that?
+
+We borrow [some ideas from MLIR](https://mlir.llvm.org/docs/LangRef/#high-level-structure)
+and introduce the concept of a single-entry-multiple-exit _region_, which for us is just a subtree
+of the dominator tree. We want to nest up our graph in such a way that the nesting structure is the
+dominator tree (or rather, is _compatible_ with the dominator tree: if $β$ is nested within $β'$,
+then $β$ must be dominated by $β'$, but we can have $β$ dominated by $β'$ without the nesting so
+long as $β$ does not use any variables in $β'$).
+
+So more specifically, instead of treating our program as a CFG-with-entry-block $G$, we instead
+treat our program as a _region_ $r$, thought of as a subtree of the dominator tree, with the root
+being the entry block. This region consists of a basic block and a collection of children, which are
+only visible to each other and to the root. This enforces dominance, since the only way to get to
+the children is through the root; ergo, the root dominates the children.
+
+As a grammar, it is natural to replace the syntactic category of basic blocks $β$ with the category
+of regions $r$, as follows:
+```c
+// Instructions
+//
+// We allow a variable as an instruction for renaming
+o ::= op x₁ ... xₙ | x
+// Regions
+r ::= x₁,...,xₙ = o; r | τ where { L }
+// Terminators
+τ ::= goto ℓ(o₁,...,oₙ) | switch (o) { ι₁ x₁ : τ₁ ; ... ; ιₙ xₙ : τₙ }
+// Children
+L ::= · | L ; ℓ(x₁,...,xₙ) : r
+```
+Note that $r$ recognizes the same strings as `β where { L }`, and indeed, collecting all the
+instructions in a region into an array, the data in a region is basically a basic-block with
+children:
+```rust
+struct Region {
+    instructions: Vec<Instruction>,
+    terminator: Terminator,
+    children: Map<Label, Region>
+}
+```
+But for _induction_, `x₁,...,xₙ = o; r | τ where { L }` gives a nicer induction principle, and more
+importantly, it's easier to give it typing rules. The two data types are trivially isomorphic
+though!
+
+Now, for the typing rules a data structure like this would have, perhaps a peek at [_The
+Denotational Semantics of SSA_](https://arxiv.org/abs/2411.09347) is in order. But I need to re-work
+all that to be locally-nameless, which we should do in a future post.
+
+But specifically, I'd like to actually represent general MLIR SSACFG regions. And those: 
+- Allow instructions to take regions as parameters
+- Use _instructions_ as terminators (in the typing rules we need to check they are valid
+  terminators). We'll just pass in regions $r₁,...,rₙ$, and let the user handle labels in the
+  production `tm`.
+
+Syntactically that's not too complex:
+```c
+// Instructions
+//
+// We allow a variable as an instruction for renaming
+o ::= op x₁ ... xₙ r₁ ... rₙ | x
+// Regions
+r ::= x₁,...,xₙ = o; r | τ where { L }
+// Terminators
+τ ::= tm r₁ ... rₙ
+// Children
+L ::= · | L ; ℓ(x₁,...,xₙ) : r
+```
+In fact, a first pass at graph regions might look like
+```c
+// Instructions
+//
+// We allow a variable as an instruction for renaming
+o ::= op x₁ ... xₙ r₁ ... rₙ | x
+// Regions
+r ::= x₁,...,xₙ = o; r | τ where { L } | τ graph { O }
+// Terminators
+τ ::= tm r₁ ... rₙ
+// Children
+L ::= · | L ; ℓ(x₁,...,xₙ) : r
+// Mutually recursive definition graph
+O ::= · | O ; x₁,...,xₙ := o
+```
+But this exposes some irritating discrepancies with MLIR (though the first might be useful):
+- Graph regions can be preceded by let-bindings, which enforce a DAG on the operations in them
+  - A "daggy" graph region is a useful thing to have though, by requiring $O$ to be empty... a
+    dialect can require that!
+- Graph regions can appear as children of non-graph regions in a where-block, which is... weird...
+- Graph regions with a single block can opt out of having a terminator
+
+Let's take that
+```c
+// Instructions
+//
+// We allow a variable as an instruction for renaming
+o ::= op x₁ ... xₙ r₁ ... rₙ | x
+// Regions
+r ::= s | g
+// SSACFG regions
+s ::= x₁,...,xₙ = o; s | τ where { L }
+// Graph regions
+g ::= τ? graph { O }
+// Terminators
+τ ::= tm r₁ ... rₙ
+// Children
+L ::= · | L ; ℓ(x₁,...,xₙ) : r
+// Mutually recursive definition graph
+O ::= · | O ; x₁,...,xₙ := o
+```
+
+It's a good start. But we need to think long and hard about how to make this nice and locally
+nameless, give it dialect-friendly typing rules, and eventually, a good categorical semantics.
+
+I plan to start with SSACFG, for simplicity. One thing at a time. Graph regions on their own can
+also be interesting. But, that's for later articles.
+
+Toodles!
 
 [^1]: I was very confused, as the captain kept saying we were going to "Volcano Island." Which
-    volcano?
+    volcano??
 
 [^2]: I'll stick a link here when the second paper is on the arxiv; the LaTeX source is with the
       rest of our ongoing SSA research at https://github.com/isotope-project/ssa-densem 
@@ -371,14 +583,25 @@ equivalent to simply giving every label
       labels don't get a color so far so it all works out.
 
 [^4]: Static since we're talking about syntactic (static) definition; dynamically, that single
-    definition might be run plenty of times and receive a different value each time (e.g. $x =
-    read_int()$ in a loop)
+    definition might be run plenty of times and receive a different value each time (e.g. `x =
+    read_int()` in a loop)
 
-[^5]: Based on _dominance-based scoping_, as explained in the [previous
-    article](http://tekne.dev/blog/building-inductive-ssa), but to understand this, all you need to
-    know is that this is just whatever scoping we use in 3-address code
+[^5]: Note that a node can be (strictly) dominated by a set $D$ without being (strictly) dominated
+    by any of the elements in $d$. For example, given
+    ```c
+    e -> a
+    e -> b
+    a -> c
+    b -> c
+    ```
+    $c$ is strictly dominated by $\{a, b\}$ but not by either $a$ or $b$. Another edge case is that,
+    if $D = \varnothing$ then $n$ is dominated by $d$ if and only if it is unreachable from $e$.
 
-[^6]: What we're about to say is still true if the first invariant; that $ϕ$-instructions _cannot_
+    In particular, this means that, if $n$ is unreachable, it is dominated by _every_ node $d$.
+
+[^6]: Based on _dominance-based scoping_
+
+[^7]: What we're about to say is still true if the first invariant; that $ϕ$-instructions _cannot_
     access other variables in _their own_ block; is _not_ maintained, but then things get a bit more
     complicated, as we need to move any instructions depended on by that $ϕ$-instructions into each
     of the source blocks $ℓ$, disambiguating any $ϕ$-instructions we pull in by replacing them with
