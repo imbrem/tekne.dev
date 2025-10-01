@@ -112,7 +112,7 @@ between Italy and Switzerland, I am once more waylaid by that ever crafty oppone
 ruses of the French!
 
 A good friend from Toronto and I spend the day there on the phone, discussing `covalence`,
-mathematical superintelligence (I am very excited about [https://harmonic.fun/](Harmonic)... we need
+mathematical superintelligence (I am very excited about [Harmonic](https://harmonic.fun/)... we need
 to integrate Aristotle with `covalence`, or something...), game theory, and other fun topics.
 
 But then it is 9 PM and the Alps await. And I do not want to bankrupt myself finding a hotel in
