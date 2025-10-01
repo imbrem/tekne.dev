@@ -93,10 +93,6 @@ I stay at the powerfully-named [Happy Village e Camping
 Roma](https://maps.app.goo.gl/YSRQpQdWkDjhKh8U6). After a day of food, sightseeing, and
 formalization (I realized that I forgot to add the natural numbers to GT3...), it's time to bounce.
 
-<div style="text-align: center">
-<img src={roman_pasta} alt="Everything is improved by programming, but does programming improve everything?" style="max-width: 70%" />
-</div>
-
 I make for Milan, but _once again_ I fall prey to the temptations of the gas station. So I take a
 detour to Bologna, where I hope to meet [Vikraman](https://vikraman.org/), which is always an
 excellent experience. Alas, he has left for the UK the _previous day_. Such is fate!
@@ -624,7 +620,6 @@ Toodles!
     first invariant does not change much!
 
 <script>
-    import boat_circle from "$lib/assets/temporary.jpg"
-    import conad_seafood from "$lib/assets/temporary.jpg"
-    import roman_pasta from "$lib/assets/temporary.jpg"
+    import boat_circle from "$lib/assets/ship-of-thesis/boat_circle.jpg"
+    import conad_seafood from "$lib/assets/ship-of-thesis/conad_seafood.jpg"
 </script>
