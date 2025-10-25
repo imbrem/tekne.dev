@@ -1,5 +1,5 @@
 ---
-title: Do Embeddings Speak the Same Language?
+title: 'Proposal: Do Embeddings Speak the Same Language?'
 published: '2025-10-25'
 ---
 
@@ -27,6 +27,15 @@ _what_ are we actually learning.
 
 TODO: do second pass: many experiments on this theme. One (closely related set) per article.
 
+# Proposals
+
+TODO: rework into introduction to proposals, science in the open, etc etc; does not go into final
+article.
+
+TODO: note about students (and self!) struggling with research proposals and questions?
+
+TODO: note about blogging the research process?
+
 I had an interesting idea for some of experiements to do to figure this out, inspired partly by
 that time I used the aforementioned blog post to teach high schoolers about embeddings. It worked
 pretty well, but they asked a lot of questions, and more importantly, tried classifying a lot of
@@ -34,6 +43,10 @@ weird sentences.
 
 I have no idea what the results here will be; I'm trying to, in the spirit of _Adventures in Type
 Theory_, just get ideas out of my head and onto the page. So, without further ado...
+
+# Do Embeddings Speak the Same Language?
+
+Segue back into the proposal
 
 - are we learning "sentences about X" or "sentences about X in language Y"?
 
