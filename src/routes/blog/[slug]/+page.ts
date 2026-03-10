@@ -7,7 +7,7 @@ export async function load({ params }) {
 			content: post.default,
 			meta: post.metadata
 		};
-	} catch (_) {
+	} catch {
 		error(404, {
 			message: 'Invalid post'
 		});

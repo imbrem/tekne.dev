@@ -1,9 +1,10 @@
 <script>
 	import * as config from '$lib/config';
 
-	export let data;
+	let { data } = $props();
 
-	const { content, meta } = data;
+	const Content = $derived(data.content);
+	const meta = $derived(data.meta);
 </script>
 
 <svelte:head>
@@ -26,7 +27,7 @@
 		{/if}
 		<hr />
 	{/if}
-	<svelte:component this={content} />
+	<Content />
 </article>
 
 <style>

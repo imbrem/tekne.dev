@@ -1,38 +1,36 @@
-# create-svelte
+# tekne.dev
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+Personal website and blog for [Jad Ghalayini](https://tekne.dev/), a PhD student at the University of Cambridge working on categorical semantics for SSA form.
 
-## Creating a project
+Built with SvelteKit, deployed as a static site to Firebase Hosting.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Tech Stack
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+- **Framework**: SvelteKit with static adapter
+- **Markdown**: MDsveX (Svelte-flavored Markdown)
+- **Code Highlighting**: Shiki (Nord theme)
+- **Math**: KaTeX via remark-math + rehype-katex-svelte
+- **Diagrams**: Mermaid
+- **Styling**: CSS with Fira Code font
+- **Deployment**: Firebase Hosting
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Development
 
 ```bash
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
 ## Building
 
-To create a production version of your app:
+```bash
+npm run build
+npm run preview  # preview the production build locally
+```
+
+## Deployment
 
 ```bash
 npm run build
+firebase deploy
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.

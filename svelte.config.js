@@ -1,7 +1,7 @@
 import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { mdsvex, escapeSvelte } from 'mdsvex';
-import { bundledLanguages, getSingletonHighlighter } from 'shiki';
+import { getSingletonHighlighter } from 'shiki';
 import remarkMath from 'remark-math';
 import remarkFootnotes from 'remark-footnotes';
 import rehypeKatexSvelte from 'rehype-katex-svelte';

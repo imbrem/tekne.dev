@@ -1,7 +1,7 @@
 <script>
 	import * as config from '$lib/config';
 
-	export let data;
+	let { data } = $props();
 </script>
 
 <svelte:head>
@@ -11,16 +11,16 @@
 <h1>Blog</h1>
 
 <ul>
-	{#each data.posts as post}
+	{#each data.posts as post (post.path)}
 		<li>
 			<h2>
 				<a href={post.path}>{post.meta.title}</a>
 			</h2>
+			Published {post.meta.published}
+			{#if post.meta.edited}
+				(Edited {post.meta.edited})
+			{/if}
 		</li>
-		Published {post.meta.published}
-		{#if post.meta.edited}
-			(Edited {post.meta.edited})
-		{/if}
 	{/each}
 </ul>
 

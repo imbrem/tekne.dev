@@ -1,12 +1,15 @@
 <script lang="ts">
 	import '$lib/styles/style.css';
 	import Header from '$lib/components/Header.svelte';
+	import type { Snippet } from 'svelte';
+
+	let { children }: { children: Snippet } = $props();
 </script>
 
 <Header />
 
 <main>
-	<slot />
+	{@render children()}
 </main>
 
 <style>
