@@ -132,10 +132,8 @@ def Tm.bvi : Tm → ℕ
 
 Let's get to the ferry...
 
-<div style="text-align: center">
-<img src={motorbike_laptop} alt="My laptop perched on my motorbike, along with a coffee cup, my
-  keys, and my gloves." style="max-width: 70%" />
-</div>
+<Img src={motorbike_laptop} alt="My laptop perched on my motorbike, along with a coffee cup, my
+  keys, and my gloves." />
 
 Luckily, we arrived with time to spare, so I've got 20 minutes to keep hacking.
 
@@ -244,20 +242,14 @@ _Time:_ 2025-08-23T15:30+1
 Just as I got to defining contexts, someone came to collect my ticket, and it was time to ride off.
 I boarded the ferry and strapped down the Gladius:
 
-<div style="text-align: center">
-<img src={motorbike_ferry} alt="My motorbike strapped down on the ferry" style="max-width: 70%" />
-</div>
+<Img src={motorbike_ferry} alt="My motorbike strapped down on the ferry" />
 While someone strapped it down for me, when it came time to _unstrap_ it, I was glad I had learned
 how to use a ratchet strap during my Z650 recovery adventure. But that's a story for another time.
 We bid the white cliffs of Dover farewell
-<div style="text-align: center">
-<img src={dover_cliffs} alt="The white cliffs of Dover visible as we exit the port" style="max-width: 70%" />
-</div>
+<Img src={dover_cliffs} alt="The white cliffs of Dover visible as we exit the port" />
 and sit down to continue working with an exceedingly overpriced (I think it was £14.99) plate of 
 fish and chips. I was hungry, to be fair.
-<div style="text-align: center">
-<img src={ship_office} alt="My laptop, and some overpriced fish and chips, on the ferry to Dunkirk" style="max-width: 70%" />
-</div>
+<Img src={ship_office} alt="My laptop, and some overpriced fish and chips, on the ferry to Dunkirk" />
 
 So. Contexts.
 
@@ -447,9 +439,7 @@ supermarket and tightened it with the inline adjuster near the frame, since the 
 already maxed out. Thankfully, no need to touch the engine-side adjuster hidden behind a plate.
 Picture attached.
 
-<div style="text-align: center">
-<img src={clutch_adjustment} alt="Adjusting the clutch cable on the Gladius." style="max-width: 40%" />
-</div>
+<Img src={clutch_adjustment} alt="Adjusting the clutch cable on the Gladius." />
 
 Anyway, I finally arrive at the hotel, and after putting my stuff away, am treated to a nice tea by
 the wonderful host, with whom I practice my French. Definitely getting an excellent review[^4].
@@ -598,9 +588,10 @@ Toodles.
     rides a 500cc Honda. Very based.
 
 <script>
-    import motorbike_laptop from "$lib/assets/locally-nameless-stlc/motorbike_laptop.jpg"
-    import motorbike_ferry from "$lib/assets/locally-nameless-stlc/motorbike_ferry.jpg"
-    import dover_cliffs from "$lib/assets/locally-nameless-stlc/dover_cliffs.jpg"
-    import ship_office from "$lib/assets/locally-nameless-stlc/ship_office.jpg"
-    import clutch_adjustment from "$lib/assets/locally-nameless-stlc/clutch_adjustment.jpg"
+    import Img from "$lib/components/Img.svelte"
+    import motorbike_laptop from "$lib/assets/locally-nameless-stlc/motorbike_laptop.jpg?enhanced"
+    import motorbike_ferry from "$lib/assets/locally-nameless-stlc/motorbike_ferry.jpg?enhanced"
+    import dover_cliffs from "$lib/assets/locally-nameless-stlc/dover_cliffs.jpg?enhanced"
+    import ship_office from "$lib/assets/locally-nameless-stlc/ship_office.jpg?enhanced"
+    import clutch_adjustment from "$lib/assets/locally-nameless-stlc/clutch_adjustment.jpg?enhanced"
 </script>

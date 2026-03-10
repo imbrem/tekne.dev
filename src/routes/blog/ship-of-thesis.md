@@ -19,9 +19,7 @@ We set sail from [Termini Imerese](https://maps.app.goo.gl/9CGy7299J77gDpKF6) to
 [Vulcano](https://en.wikipedia.org/wiki/Vulcano)[^1]. Well, we sailed part of the way, but after
 making the mistake of letting me at the wheel, we had to switch to the engine...
 
-<div style="text-align: center">
-<img src={boat_circle} alt="The path of the boat with me at the wheel... a loop!" style="max-width: 70%" />
-</div>
+<Img src={boat_circle} alt="The path of the boat with me at the wheel... a loop!" />
 
 Anyways. From there, we move on to the island of [Lipari](https://en.wikipedia.org/wiki/Lipari),
 where we part ways, with the rest of the crew going to
@@ -47,9 +45,7 @@ coffees. I, of course, accept these, and then head out into the city to find cas
 Tempted by the seafood available at the [local
 supermarket](https://maps.app.goo.gl/J56836HjAMpBytREA), I decide to stay another night.
 
-<div style="text-align: center">
-<img src={conad_seafood} alt="That fish like this is available at a regular supermarket..." style="max-width: 70%" />
-</div>
+<Img src={conad_seafood} alt="That fish like this is available at a regular supermarket..." />
 
 I leave the next day, having laid down the bones for what I'm calling [Gödel-Tarski Type
 Theory](https://github.com/imbrem/gt3-lean), or GT3, and make for
@@ -620,6 +616,7 @@ Toodles!
     first invariant does not change much!
 
 <script>
-    import boat_circle from "$lib/assets/ship-of-thesis/boat_circle.jpg"
-    import conad_seafood from "$lib/assets/ship-of-thesis/conad_seafood.jpg"
+    import Img from "$lib/components/Img.svelte"
+    import boat_circle from "$lib/assets/ship-of-thesis/boat_circle.jpg?enhanced"
+    import conad_seafood from "$lib/assets/ship-of-thesis/conad_seafood.jpg?enhanced"
 </script>

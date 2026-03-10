@@ -35,9 +35,7 @@ A cloud of white smoke catches up to me as I pull to a stop. There's oil everywh
 
 My rear wheel is completely soaked.
 
-<div style="text-align: center">
-<img src={oil_spill} alt="The Gladius missing its drain plug" style="max-width: 70%" />
-</div>
+<Img src={oil_spill} alt="The Gladius missing its drain plug" />
 
 And that’s how I learned that French customs, perhaps uniquely in the world, are empowered to
 conduct searches anywhere in the country, not just at the border.
@@ -463,9 +461,7 @@ Apparently he crashed.
 There's a truck driver stranded with me here for the night. I get my laptop setup, but my phones are
 running low on battery. I don't have it in me to do much in the way of hacking.
 
-<div style="text-align: center">
-<img src={laptop_in_extremis} alt="My laptop left on the side of the highway." style="max-width: 70%" />
-</div>
+<Img src={laptop_in_extremis} alt="My laptop left on the side of the highway." />
 
 I call another recovery company. At first he agrees to come...
 
@@ -533,21 +529,15 @@ So we're good. Hopefully.
 I walk off to get some food. Move cafes a few times, tap away at this article. Van arrives, and we
 ride on over to the depot. We go ahead re-attach the drain plug
 
-<div style="text-align: center">
-<img src={drain_plug} alt="The Gladius with its drain plug re-attached" style="max-width: 50%" />
-</div>
+<Img src={drain_plug} alt="The Gladius with its drain plug re-attached" />
 
 and refill the oil
 
-<div style="text-align: center">
-<img src={oil_fill} alt="Refilling the oil of the Gladius" style="max-width: 50%" />
-</div>
+<Img src={oil_fill} alt="Refilling the oil of the Gladius" />
 
 Then we cart the bike over to a wash station, and give it a rinse
 
-<div style="text-align: center">
-<img src={wash_bike} alt="Washing spilled oil off the Gladius" style="max-width: 70%" />
-</div>
+<Img src={wash_bike} alt="Washing spilled oil off the Gladius" />
 
 Finally, we wipe off the remaining oil with brake cleaner. 
 
@@ -557,9 +547,7 @@ I get some supplies: power banks, cables, and something to drink. Get some Turki
 excellent [Restaurant Zeugma](https://maps.app.goo.gl/c66oN3LJ9HNpkL5W8). Talk to an old man sitting
 there about his time in England. Interesting guy.
 
-<div style="text-align: center">
-<img src={turkish_food} alt="Some excellent Turkish food in Strasbourg" style="max-width: 70%" />
-</div>
+<Img src={turkish_food} alt="Some excellent Turkish food in Strasbourg" />
 
 Time drags on, I'm exhausted, and it's 19:00. I just want to rest.
 
@@ -605,9 +593,7 @@ Another tunnel. Now this is truly beautiful. I wish I stopped and took a photo.
 
 And yet that wasn't _the_ tunnel. And now. I _will_ stop and take some photos.
 
-<div style="text-align: center">
-<img src={tunnel_bike_view} alt="The Gladius sitting in a Swiss mountain tunnel" style="max-width: 70%" />
-</div>
+<Img src={tunnel_bike_view} alt="The Gladius sitting in a Swiss mountain tunnel" />
 
 We approach the Italian border, passport control waves me through.
 
@@ -621,9 +607,7 @@ I send it.
 We decelerate in Milan, at the [Idea Hotel Milano San Siro](https://sansiro.ideahotel.it/), only
 three days late.
 
-<div style="text-align: center">
-<img src={milan_hotel} alt="My hotel room at the Idea Hotel Milan San Siro" style="max-width: 70%" />
-</div>
+<Img src={milan_hotel} alt="My hotel room at the Idea Hotel Milan San Siro" />
 
 It's time for hypersleep.
 
@@ -659,13 +643,9 @@ studied for three years, this is actually the first time I have a bona-fide orga
 unable to simply swap back to English the moment the going gets tough. And it goes well! Should do
 that more often.
 
-<div style="text-align: center">
-<img src={chinese_genoa} alt="The inside of Rosticeria Cinese Ji" style="max-width: 70%" />
-</div>
+<Img src={chinese_genoa} alt="The inside of Rosticeria Cinese Ji" />
 
-<div style="text-align: center">
-<img src={chinese_genoa_outside} alt="The sign outside Rosticeria Cinese Ji" style="max-width: 70%" />
-</div>
+<Img src={chinese_genoa_outside} alt="The sign outside Rosticeria Cinese Ji" />
 
 Also, the food's good! Very reasonable prices.
 
@@ -987,9 +967,7 @@ It is a long, cold, and melancholy night. My arm hurts, sleeping on a row of thr
 
 I get up. Bar's open. Get a coffee. Do a spot of writing (hi!)
 
-<div style="text-align: center">
-<img src={ferry_setup} alt="Setup inside the GNV ferry" style="max-width: 70%" />
-</div>
+<Img src={ferry_setup} alt="Setup inside the GNV ferry" />
 
 That seat is also a _much_ better sleeping spot.
 
@@ -1013,15 +991,16 @@ Through the sea-spray, Palermo awaits!
   Likewise for any other DB access we may add in the future!
 
 <script>
-    import oil_spill from "$lib/assets/scraping-by/oil_spill.jpg"
-    import laptop_in_extremis from "$lib/assets/scraping-by/laptop_in_extremis.jpg"
-    import drain_plug from "$lib/assets/scraping-by/drain_plug.jpg"
-    import oil_fill from "$lib/assets/scraping-by/oil_fill.jpg"
-    import wash_bike from "$lib/assets/scraping-by/wash_bike.jpg"
-    import turkish_food from "$lib/assets/scraping-by/turkish_food.jpg"
-    import tunnel_bike_view from "$lib/assets/scraping-by/tunnel_bike_view.jpg"
-    import milan_hotel from "$lib/assets/scraping-by/milan_hotel.jpg"
-    import chinese_genoa from "$lib/assets/scraping-by/chinese_genoa.jpg"
-    import chinese_genoa_outside from "$lib/assets/scraping-by/chinese_genoa_outside.jpg"
-    import ferry_setup from "$lib/assets/scraping-by/ferry_setup.jpg"
+    import Img from "$lib/components/Img.svelte"
+    import oil_spill from "$lib/assets/scraping-by/oil_spill.jpg?enhanced"
+    import laptop_in_extremis from "$lib/assets/scraping-by/laptop_in_extremis.jpg?enhanced"
+    import drain_plug from "$lib/assets/scraping-by/drain_plug.jpg?enhanced"
+    import oil_fill from "$lib/assets/scraping-by/oil_fill.jpg?enhanced"
+    import wash_bike from "$lib/assets/scraping-by/wash_bike.jpg?enhanced"
+    import turkish_food from "$lib/assets/scraping-by/turkish_food.jpg?enhanced"
+    import tunnel_bike_view from "$lib/assets/scraping-by/tunnel_bike_view.jpg?enhanced"
+    import milan_hotel from "$lib/assets/scraping-by/milan_hotel.jpg?enhanced"
+    import chinese_genoa from "$lib/assets/scraping-by/chinese_genoa.jpg?enhanced"
+    import chinese_genoa_outside from "$lib/assets/scraping-by/chinese_genoa_outside.jpg?enhanced"
+    import ferry_setup from "$lib/assets/scraping-by/ferry_setup.jpg?enhanced"
 </script> 

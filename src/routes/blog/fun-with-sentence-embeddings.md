@@ -135,9 +135,7 @@ plt.show()
 
 Running this, we obtain the following plot:
 
-<div style="text-align: center">
-<img src={embedding_tsne} alt="t-SNE projections of the embeddings of the sentences in facts.json, color-coded by topic" style="max-width: 70%"/>
-</div>
+<Img src={embedding_tsne} alt="t-SNE projections of the embeddings of the sentences in facts.json, color-coded by topic" />
 
 As we can see, the points corresponding to various topics are nicely clustered together, with the broader “topic clusters” of "STEM and geography also visible (cuisine showing up around the boundaries of geography).
 
@@ -247,9 +245,7 @@ plt.ylabel("Accuracy on unlabelled data")
 plt.show()
 ```
 
-<div style="text-align: center">
-<img src={svm_accuracy} alt="A plot of an SVM's accuracy at labelling embeddings given a proportion of the training data" style="max-width: 70%"/>
-</div>
+<Img src={svm_accuracy} alt="A plot of an SVM's accuracy at labelling embeddings given a proportion of the training data" />
 
 As we can see, it turns out we don’t need very much labelled data at all to get good results, and, furthermore, that the quality of results is for the most part consistent.
 
@@ -262,9 +258,7 @@ sns.scatterplot(x=vis_dims[:, 0], y=vis_dims[:, 1])
 plt.plot()
 ```
 
-<div style="text-align: center">
-<img src={tsne_unlabelled} alt="t-SNE projections of the embeddings of the sentences in facts.json" style="max-width: 70%"/>
-</div>
+<Img src={tsne_unlabelled} alt="t-SNE projections of the embeddings of the sentences in facts.json" />
 
 We can make out some clusters that are obvious to the eye, but it’s certainly a lot less clear what is what. One technique we could use, qualitatively, is to pick out random points from each “cluster” and look at what sentence they correspond to. This method can be further enhanced by playing with the hyperparameters of t-SNE, and even by using 3D visualization; in the end, we might be able to come up with the topics we want to later feed our classifier.
 
@@ -294,9 +288,7 @@ plt.plot()
 
 This produces
 
-<div style="text-align: center">
-<img src={contingency_matrix_2} alt="A contingency matrix for K-means clustering of our dataset into two clusters" style="max-width: 70%"/>
-</div>
+<Img src={contingency_matrix_2} alt="A contingency matrix for K-means clustering of our dataset into two clusters" />
 
 It seems that K-means has quite neatly separated out STEM topics from cultural topics, this being the main split in the dataset. Interestingly, some sentences about the US are put into the STEM cluster; we can examine these by pooling our sentences into an array and indexing as follows:
 
@@ -309,9 +301,7 @@ sentences[(topics == "usa") & (kmeans.labels_ == 1)]
 
 Most of these sentences seem to be about the legal, educational, and transportation systems of the US. It is interesting that no other country’s sentences get put into this cluser. Let’s now see if we can subdivide culture into “region” and “cuisine” clusters: by setting `n_clusters=3`, we obtain
 
-<div style="text-align: center">
-<img src={contingency_matrix_3} alt="A contingency matrix for K-means clustering of our dataset into three clusters" style="max-width: 70%"/>
-</div>
+<Img src={contingency_matrix_3} alt="A contingency matrix for K-means clustering of our dataset into three clusters" />
 
 It seems to work quite well, except that some sentences about Japan are cross-listed as being about cuisine instead. Listing these sentences with
 
@@ -323,23 +313,17 @@ we indeed see various sentences about Japanese cuisine, but also a few about top
 
 Let’s now try setting `n_clusters=13`, which is the real number of topics:
 
-<div style="text-align: center">
-<img src={contingency_matrix_12} alt="A contingency matrix for K-means clustering of our dataset into twelve clusters" style="max-width: 70%"/>
-</div>
+<Img src={contingency_matrix_12} alt="A contingency matrix for K-means clustering of our dataset into twelve clusters" />
 
 It seems to recover exactly the input topics, except that Ghana and Africa are considered a single topic, whereas category theory is split into two topics. Running it again with a different seed (`random_state=24`) to see if this result is stable, we obtain:
 
-<div style="text-align: center">
-<img src={contingency_matrix_12_24} alt="A contingency matrix for K-means clustering of our dataset into twelve clusters, with a different random seed" style="max-width: 70%"/>
-</div>
+<Img src={contingency_matrix_12_24} alt="A contingency matrix for K-means clustering of our dataset into twelve clusters, with a different random seed" />
 
 Here, Ghana and Africa are again only partially distinguished, and the separation between topics is a little less clear (e.g., there is more overlap between matheamtics and computer science). Category theory is now considered only a single topic.
 
 Finally, let’s try setting `n_clusters=20`, and seeing if we recover any useful distinctions not actually present in our manual labelling:
 
-<div style="text-align: center">
-<img src={contingency_matrix_20} alt="A contingency matrix for K-means clustering of our dataset into twenty clusters" style="max-width: 70%"/>
-</div>
+<Img src={contingency_matrix_20} alt="A contingency matrix for K-means clustering of our dataset into twenty clusters" />
 
 It seems we’ve done so! Africa and Ghana are now recognized as separate topics, and there is little confusion between topics, with topics instead split into sub-topics. For example, topic 3 seems to be about signal processing, control systems, and digital electronics as a subtopic of electrical engineering ('Semiconductor manufacturing involves the fabrication of integrated circuits and microchips using advanced processes and clean rooms.') while topic 7 seems to be mainly about electricity itself ('Electricity is a fundamental form of energy that powers a wide range of devices and systems in modern society.'). Topic 14 is about the application of category theory to computer science, as distinct from computer science itself (split into topics 5 and 8).
 
@@ -354,12 +338,13 @@ So far, we’ve only scratched the surface of the various applications of embedd
 [^3]: `n_init = 10` is the current default, here made explicit, as it will be changed to `n_init = ‘auto’` in later versions of Scikit, which we have not found to give particularly good results in this case
 
 <script>
-    import embedding_tsne from "$lib/assets/fun-with-sentence-embeddings/embedding_tsne.png"
-    import svm_accuracy from "$lib/assets/fun-with-sentence-embeddings/svm_accuracy.png"
-    import tsne_unlabelled from "$lib/assets/fun-with-sentence-embeddings/tsne_unlabelled.png"
-    import contingency_matrix_2 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_2.png"
-    import contingency_matrix_3 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_3.png"
-    import contingency_matrix_12 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_12.png"
-    import contingency_matrix_12_24 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_12_24.png"
-    import contingency_matrix_20 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_20.png"
+    import Img from "$lib/components/Img.svelte"
+    import embedding_tsne from "$lib/assets/fun-with-sentence-embeddings/embedding_tsne.png?enhanced"
+    import svm_accuracy from "$lib/assets/fun-with-sentence-embeddings/svm_accuracy.png?enhanced"
+    import tsne_unlabelled from "$lib/assets/fun-with-sentence-embeddings/tsne_unlabelled.png?enhanced"
+    import contingency_matrix_2 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_2.png?enhanced"
+    import contingency_matrix_3 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_3.png?enhanced"
+    import contingency_matrix_12 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_12.png?enhanced"
+    import contingency_matrix_12_24 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_12_24.png?enhanced"
+    import contingency_matrix_20 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_20.png?enhanced"
 </script>

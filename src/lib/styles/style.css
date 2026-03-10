@@ -54,3 +54,40 @@ code .line::before {
 .footnotes > ol > li {
 	margin: 1em;
 }
+
+article img {
+	display: block;
+	margin: 1.2em auto;
+	padding: 1.2em 0;
+	max-width: 100%;
+	border-radius: 8px;
+	height: auto;
+}
+
+article picture {
+	display: block;
+	margin: 1.2em auto;
+	max-width: 100%;
+}
+
+article picture img {
+	margin: 0 auto;
+}
+
+article figure {
+	margin: 1.2em auto;
+	padding: 1.2em 0;
+	max-width: 100%;
+	text-align: center;
+}
+
+article figure img {
+	margin: 0 auto 0.5rem;
+	padding: 0;
+}
+
+article figcaption {
+	font-size: 0.85em;
+	color: #aaa;
+	font-style: italic;
+}

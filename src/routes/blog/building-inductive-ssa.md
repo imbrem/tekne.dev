@@ -64,9 +64,7 @@ might become
 
 or, drawn as a graph,
 
-<img src={program_cfg} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="The above program's CFG drawn as a graph">
+<Img src={program_cfg} alt="The above program's CFG drawn as a graph" />
 
 In general, a program in three-adress code is composed of:
 
@@ -88,9 +86,7 @@ $\Gamma \vdash b : \Delta$ means that if the variables in the context $\Gamma$ a
 $b$, then the variables in the context $\Delta$ will be live once the instructions in $b$ are
 finished executing.
 
-<img src={body_live} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of the live variables on entry and exit to a basic block's body">
+<Img src={body_live} alt="A representation of the live variables on entry and exit to a basic block's body" />
 
 Here, a **context** is just a (finitely-supported) partial function from variables to types; the
 domain of this function is our _live variable set_.
@@ -145,9 +141,7 @@ Just like before, $\Gamma$ is the set of live variables on entry to the basic bl
 other hand, $\mathcal{L}$ is a **label context**: a finitely supported map from **labels** $\ell$ to
 contexts $\Gamma$, which represent the variables which must be live on entry to $\ell$, as below:
 
-<img src={block_live} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of live variables on entry and exit to a basic block">
+<Img src={block_live} alt="A representation of live variables on entry and exit to a basic block" />
 
 We might give the following simple typing rules for basic blocks
 
@@ -219,9 +213,7 @@ Finally, a **control-flow graph** $G$ can be viewed as a set of mutually-recursi
 taking a label context of entry points $\mathcal{L}$ to a label context of exit points
 $\mathcal{K}$, as in the following picture:
 
-<img src={cfg_live} 
-    style="max-width:30em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A representation of a control-flow graph">
+<Img src={cfg_live} alt="A representation of a control-flow graph" />
 
 Representing $G$ as a finitely-supported map from labels $\ell$ to basic blocks $\beta$, the
 judgement for this might look like the following:
@@ -812,9 +804,7 @@ labels are scoped in SSA.
 
 Consider the control-flow graph below:
 
-<img src={dominance_cfg} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A simple control-flow graph">
+<Img src={dominance_cfg} alt="A simple control-flow graph" />
 
 Here, the entry block, $A$, defines variables $x, y$, and then jumps to either $B$ or $D$. $B$
 defines $z$ and then jumps to $C$ unconditionally, which then jumps to $E$, whereas $D$ defines $w$
@@ -823,9 +813,7 @@ and then jumps straight to $E$.
 We might want to ask ourself which variables can be used, i.e. are _live_, at each point in the
 program. We can perform a _liveness analysis_ as follows:
 
-<img src={dominance_cfg_annotated} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="The results of a liveness analysis on the control-flow graph above">
+<Img src={dominance_cfg_annotated} alt="The results of a liveness analysis on the control-flow graph above" />
 
 - At the very beginning of the program, the definition of $x$ in $A$, no variables are yet live
 - Immediately afterwards, at the definition of $y$, only $x$ is live
@@ -862,9 +850,7 @@ In general, the _dominance tree_ of a control-flow graph encodes this relation; 
 
 For example, the dominance tree of the example control-flow graph from before can be written:
 
-<img src={dominance_tree_cfg} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="The control-flow graph above's dominance tree">
+<Img src={dominance_tree_cfg} alt="The control-flow graph above's dominance tree" />
 
 As long as all nodes in the control-flow graph are reachable (in the graph-theoretic sense, even if
 control flow will never actually reach them!) from the program entry point, this is indeed always a
@@ -887,47 +873,33 @@ proceed by induction:
   $B$ after $0 < k < n + 1$ steps. But the sub-path from this point to $C$ is of length $(n + 1) - k
   \leq n$, yielding a contradiction.
 
-<img src={dominance_tree_explainer} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="An illustration of why the dominance tree is a tree">
+<Img src={dominance_tree_explainer} alt="An illustration of why the dominance tree is a tree" />
 
 Going back to the dominance tree we drew, we can add our control-flow edges back in in grey:
 
-<img src={dominance_tree_control} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="The control-flow graph above's dominance tree, with control edges added back in">
+<Img src={dominance_tree_control} alt="The control-flow graph above's dominance tree, with control edges added back in" />
 
 Let's consider what kind of control edges we could add without changing the dominance structure. As
 we would hope, it is always OK to add control edges to direct descendants in the dominance tree:
 
-<img src={dominance_tree_add_child_good} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="Adding control edges targeting a child is fine">
+<Img src={dominance_tree_add_child_good} alt="Adding control edges targeting a child is fine" />
 
 Similarly, control edges between siblings seem to be fine:
 
-<img src={dominance_tree_add_sibling_good} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="Adding control edges targeting a sibling is fine">
+<Img src={dominance_tree_add_sibling_good} alt="Adding control edges targeting a sibling is fine" />
 
 It also seems to be fine to add control edges to the siblings of our _ancestors_, our "uncles":
 
-<img src={dominance_tree_add_uncle_good} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="Adding control edges targeting uncles is fine">
+<Img src={dominance_tree_add_uncle_good} alt="Adding control edges targeting uncles is fine" />
 
 As well as to parents, grandparents, and ourselves
 
-<img src={dominance_tree_add_rec_good} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="Adding control edges targeting ourselves and ancestors is fine">
+<Img src={dominance_tree_add_rec_good} alt="Adding control edges targeting ourselves and ancestors is fine" />
 
 But edges to our grandchildren would violate the dominance structure, since, for example, adding an
 edge from $A$ to $C$ would create a path from the entry to $C$ which does not reach $B$.
 
-<img src={dominance_tree_add_bad} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="We cannot add control edges targeting grandchildren">
+<Img src={dominance_tree_add_bad} alt="We cannot add control edges targeting grandchildren" />
 
 This points to an organization of our program into _regions_, such that
 
@@ -935,9 +907,7 @@ This points to an organization of our program into _regions_, such that
 - The children of that node are the region's _children_
 - All a node's descendants, including the node itself, are considered inside that node's region
 
-<img src={dominance_scope_annotated} 
-    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A control flow graph decomposed into regions">
+<Img src={dominance_scope_annotated} alt="A control flow graph decomposed into regions" />
 
 Now, the correctness rule becomes very simple: "every control-flow edge going from the outside of a
 region to the inside of a region must target the entry-block of that region."
@@ -945,9 +915,7 @@ region to the inside of a region must target the entry-block of that region."
 We might hence represent a region as a basic block, followed by a list of child regions which only
 this _entry block_ can call (the entry blocks of)
 
-<img src={region_diagram} 
-    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A region">
+<Img src={region_diagram} alt="A region" />
 
 In particular, since liveness is now taken care of by the structure of the CFG itself, we no longer
 need to keep track of live variable sets in label contexts, and hence can define them to simply be
@@ -1019,9 +987,7 @@ $$
 
 Graphically, this simply corresponds to "erasing the region boundaries", here in orange:
 
-<img src={dominance_cfg_scoped} 
-    style="max-width:25em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="A control-flow graph with regions marked out">
+<Img src={dominance_cfg_scoped} alt="A control-flow graph with regions marked out" />
 
 ### De-Bruijn Indices
 
@@ -1179,9 +1145,7 @@ Doing this gives us the Region data structure in
 
 Intuitively, all we've done is generalize the old region data structure as follows:
 
-<img src={region_diagram_gen} 
-    style="max-width:40em;width:100%;display:block;margin-left: auto;margin-right: auto;"
-    alt="Regions with generalized terminators">
+<Img src={region_diagram_gen} alt="Regions with generalized terminators" />
 
 Note that this grammar typechecks a strict superset of all valid `TRegion`s, which can always be
 reached by semantics-preserving _rewrites_ such as
@@ -1522,6 +1486,7 @@ There's a whole lot of future work in the wings as well, including:
 But, I think this article is already long enough! Until next time!
 
 <script>
+    import Img from "$lib/components/Img.svelte"
     import program_cfg from "$lib/assets/inductive-ssa/program_cfg.svg"
     import body_live from "$lib/assets/inductive-ssa/body_live.svg"
     import block_live from "$lib/assets/inductive-ssa/block_live.svg"

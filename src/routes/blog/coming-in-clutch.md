@@ -23,9 +23,7 @@ _Time_: 2025-08-24T11:49+2
 
 I woke up, and the hosts treated me to a wonderful breakfast.
 
-<div style="text-align: center">
-<img src={breakfast} alt="Some croissants, bread, and jams for breakfast at L'Emanuella" style="max-width: 70%" />
-</div>
+<Img src={breakfast} alt="Some croissants, bread, and jams for breakfast at L'Emanuella" />
 
 Then I headed to the supermarket to buy some toothpaste and a toothbrush; I tried to buy gas too,
 but my (Starling) debit card was not accepted, and they use those auto-pumps here which need you to
@@ -92,24 +90,16 @@ I stop for gas and a snack. My credit cards, which are on my phone, are not acce
 notice, _elas_ [^1], my clutch is slipping once more. The free play at the clutch lever has disappeared,
 so I pull over to the side of the highway and adjust it once more.
 
-<div style="text-align: center">
-<img src={highway_stop_1} alt="View from the hard shoulder, where we stopped to adjust the clutch cable" style="max-width: 70%" />
-</div>
+<Img src={highway_stop_1} alt="View from the hard shoulder, where we stopped to adjust the clutch cable" />
 
-<div style="text-align: center">
-<img src={clutch_adjustment} alt="Adjusting the clutch cable with a spanner from the toolkit in the seat" style="max-width: 70%" />
-</div>
+<Img src={clutch_adjustment} alt="Adjusting the clutch cable with a spanner from the toolkit in the seat" />
 
-<div style="text-align: center">
-<img src={ready_to_ride} alt="Ready to ride off post-adjustment!" style="max-width: 70%" />
-</div>
+<Img src={ready_to_ride} alt="Ready to ride off post-adjustment!" />
 
 The ride carries on, we get some more gas, and... it's slipping again! Again, the free play is
 mostly gone, so we adjust further... There are also nice windmills on the side of the road.
 
-<div style="text-align: center">
-<img src={windmills} alt="Windmills on the side of the road, during the second clutch adjustment" style="max-width: 70%" />
-</div>
+<Img src={windmills} alt="Windmills on the side of the road, during the second clutch adjustment" />
 
 The ride carries on. Clutch is holding just fine. I test it a few times, and even on 6th gear
 lugging it, the RPM is directly proportional to the speed.
@@ -120,9 +110,7 @@ So I'm stopped at the toll gate, and begin trying to figure out what's wrong. Th
 to adjust at the handlebar. I take off the sprocket cover to take a look at the arm, with the help
 of my trusty mechanic, ChatGPT, who hopes that it's just the cable being worn.
 
-<div style="text-align: center">
-<img src={clutch_arm_open} alt="The clutch arm of the Gladius, visible under the sprocket panel" style="max-width: 70%" />
-</div>
+<Img src={clutch_arm_open} alt="The clutch arm of the Gladius, visible under the sprocket panel" />
 
 During this kerfuffle, I drop the bike. The bike is fine, but the left mirror takes a hit and needs
 to be straightened, and, more irritatingly, my only power bank breaks. Up to this point, I was
@@ -148,18 +136,14 @@ About 35 kilometers left.
 
 Is my bike... dabbing?
 
-<div style="text-align: center">
-<img src={motorcycle_mirrors} alt="The right mirror on the Gladius is bent out of alignment, at the Kekastel Shell" style="max-width: 70%" />
-</div>
+<Img src={motorcycle_mirrors} alt="The right mirror on the Gladius is bent out of alignment, at the Kekastel Shell" />
 
 The cold begins to set in.
 
 At one point, the road split into two levels, and it looked quite striking at night. I could only
 find a Google Streetview image taken during the day:
 
-<div style="text-align: center">
-<img src={streetview_levels} alt="The road from Kekastel to Sarreguemines, split into two levels as it goes through the hills" style="max-width: 70%" />
-</div>
+<Img src={streetview_levels} alt="The road from Kekastel to Sarreguemines, split into two levels as it goes through the hills" />
 
 None of these roads are, individually, _bona fide_ megaprojects, and yet, I am always awestruck at
 the immense labor it must have required to build these structures _in totality_. There is something
@@ -178,9 +162,7 @@ But I digress.
 
 We arrive. The room is spare, but standard.
 
-<div style="text-align: center">
-<img src={f1_room} alt="Room 203 at the hotelF1 Saverne Monswiller" style="max-width: 70%" />
-</div>
+<Img src={f1_room} alt="Room 203 at the hotelF1 Saverne Monswiller" />
 
 I debate writing this post, but hypersleep beckons.
 
@@ -233,30 +215,22 @@ Naturally, I book the [ferry from Genoa to
 Palermo](https://www.gnv.it/en/ferries-destinations/sicily/genoa-palermo) departing
 2025-08-28T22:45+2. As I'm booking, I catch sight of an... interesting... advertisement.
 
-<div style="text-align: center">
-<img src={foreign_legion} alt="A recruitment flyer for the French Foreign Legion, at the hotelF1 Saverne Monswiller" style="max-width: 70%" />
-</div>
+<Img src={foreign_legion} alt="A recruitment flyer for the French Foreign Legion, at the hotelF1 Saverne Monswiller" />
 
 We ride to [Seedz](https://www.facebook.com/people/Seedz-Motorsport/100028842297131/), arriving just
 as they open at 2025-08-25T14:00+2, and they take a quick look. The staff is extremely nice, and let
 me watch as they open up the sprocket cover. Lots of cool bikes around, too, in various states of
 disassembly.
 
-<div style="text-align: center">
-<img src={gladius_bench} alt="The Gladius on the workbench" style="max-width: 70%" />
-</div>
+<Img src={gladius_bench} alt="The Gladius on the workbench" />
 
-<div style="text-align: center">
-<img src={gladius_sprocket} alt="The Gladius with the sprocket cover removed, exposing the sprockets and clutch arm" style="max-width: 70%" />
-</div>
+<Img src={gladius_sprocket} alt="The Gladius with the sprocket cover removed, exposing the sprockets and clutch arm" />
 
 Seems the clutch cable is fine, which means they have to open the clutch itself. But later, as they
 have another bike scheduled. I go get a coffee and a croissant at the [nearby
 patisserie](https://maps.app.goo.gl/Ky85BSdFnAwzvKKT7), and start writing.
 
-<div style="text-align: center">
-<img src={cafe_setup} alt="A coffee at Boulangerie Pâtisserie Berg Woustviller" style="max-width: 70%" />
-</div>
+<Img src={cafe_setup} alt="A coffee at Boulangerie Pâtisserie Berg Woustviller" />
 
 I finally get a bit of work in on my TOPLAS revisions: I start [removing effect annotations from
 contexts](https://github.com/isotope-project/ssa-densem/commit/e7f56c3e42fdbb87e78ea52ace8ebf355e058d3f),
@@ -269,49 +243,35 @@ incorrectly, with the plates in the wrong order and the springs far too soft. An
 disconnected, and half the coolant was missing. So that's why there was that misting of oil on the
 engine case. _No bueno_.
 
-<div style="text-align: center">
-<img src={gladius_clutch} alt="The Gladius with the clutch opened, showing an empty clutch casing" style="max-width: 70%" />
-</div>
+<Img src={gladius_clutch} alt="The Gladius with the clutch opened, showing an empty clutch casing" />
 
-<div style="text-align: center">
-<img src={burnt_clutch} alt="The removed clutch, which is completely glazed." style="max-width: 70%" />
-</div>
+<Img src={burnt_clutch} alt="The removed clutch, which is completely glazed." />
 
 Thankfully, they can get the parts in, hopefully even by tomorrow, as planned, and we can ride off.
 Until then, I guess we can walk and enjoy the wonderful scenery.
 
-<div style="text-align: center">
-<img src={village_view} alt="A beautiful view nearby the patisserie" style="max-width: 70%" />
-</div>
+<Img src={village_view} alt="A beautiful view nearby the patisserie" />
 
 I book accommodation at [Alternative Hôtel Proche
 Sarreguemines](https://maps.app.goo.gl/4DoHT8c4oCsihPU17), which I walk to, and the room is
 _beautiful_.
 
-<div style="text-align: center">
-<img src={alt_hotel} alt="The bed in the beautiful Alternative Hôtel Proche
-Sarreguemines" style="max-width: 70%" />
-</div>
-<div style="text-align: center">
-<img src={alt_hotel_2} alt="The table at the Alternative Hôtel Proche
-Sarreguemines" style="max-width: 70%" />
-</div>
+<Img src={alt_hotel} alt="The bed in the beautiful Alternative Hôtel Proche
+Sarreguemines" />
+<Img src={alt_hotel_2} alt="The table at the Alternative Hôtel Proche
+Sarreguemines" />
 
 They've even got this nice intro to the hotel, along with a little guide to the local area!
 
-<div style="text-align: center">
-<img src={alt_hotel_booklet} alt="A booklet containing the Alternative Hôtel Proche
-Sarreguemines' lore, along with a guide to some local establishments" style="max-width: 70%" />
-</div>
+<Img src={alt_hotel_booklet} alt="A booklet containing the Alternative Hôtel Proche
+Sarreguemines' lore, along with a guide to some local establishments" />
 
 It's really great. It's amazing what happens when people _care_.
 
 I then walk to go get some food. And some more coffee. The river ever calls my kind, and I find
 myself at [Kebab Le Bosphore](https://maps.app.goo.gl/BZDovZ6r6yfJkxV49), writing this up.
 
-<div style="text-align: center">
-<img src={bosphorus_setup} alt="Table at Kebab Le Bosphore, with espresso and a carafe of water" style="max-width: 70%" />
-</div>
+<Img src={bosphorus_setup} alt="Table at Kebab Le Bosphore, with espresso and a carafe of water" />
 
 And since I'm here and I've eaten, let's start on that locally nameless SSA, then.
 
@@ -730,24 +690,25 @@ Alright, until next time!
     - `simp only [bvi, wkUnder, substUnder] ; simp? ; grind`: yay! Now just expand the `simp?`.
 
 <script>
-    import breakfast from "$lib/assets/coming-in-clutch/breakfast.jpg"
-    import streetview_levels from "$lib/assets/coming-in-clutch/streetview_levels.png"
-    import highway_stop_1 from "$lib/assets/coming-in-clutch/highway_stop_1.jpg"
-    import clutch_adjustment from "$lib/assets/coming-in-clutch/clutch_adjustment.jpg"
-    import ready_to_ride from "$lib/assets/coming-in-clutch/ready_to_ride.jpg"
-    import windmills from "$lib/assets/coming-in-clutch/windmills.jpg"
-    import clutch_arm_open from "$lib/assets/coming-in-clutch/clutch_arm_open.jpg"
-    import motorcycle_mirrors from "$lib/assets/coming-in-clutch/motorcycle_mirrors.jpg"
-    import f1_room from "$lib/assets/coming-in-clutch/f1_room.jpg"
-    import foreign_legion from "$lib/assets/coming-in-clutch/foreign_legion.jpg"
-    import gladius_bench from "$lib/assets/coming-in-clutch/gladius_bench.jpg"
-    import gladius_sprocket from "$lib/assets/coming-in-clutch/gladius_sprocket.jpg"
-    import cafe_setup from "$lib/assets/coming-in-clutch/cafe_setup.jpg"
-    import gladius_clutch from "$lib/assets/coming-in-clutch/gladius_clutch.jpg"
-    import burnt_clutch from "$lib/assets/coming-in-clutch/burnt_clutch.jpg"
-    import village_view from "$lib/assets/coming-in-clutch/village_view.jpg"
-    import alt_hotel from "$lib/assets/coming-in-clutch/alt_hotel.jpg"
-    import alt_hotel_2 from "$lib/assets/coming-in-clutch/alt_hotel_2.jpg"
-    import alt_hotel_booklet from "$lib/assets/coming-in-clutch/alt_hotel_booklet.jpg"
-    import bosphorus_setup from "$lib/assets/coming-in-clutch/bosphorus_setup.jpg"
+    import Img from "$lib/components/Img.svelte"
+    import breakfast from "$lib/assets/coming-in-clutch/breakfast.jpg?enhanced"
+    import streetview_levels from "$lib/assets/coming-in-clutch/streetview_levels.png?enhanced"
+    import highway_stop_1 from "$lib/assets/coming-in-clutch/highway_stop_1.jpg?enhanced"
+    import clutch_adjustment from "$lib/assets/coming-in-clutch/clutch_adjustment.jpg?enhanced"
+    import ready_to_ride from "$lib/assets/coming-in-clutch/ready_to_ride.jpg?enhanced"
+    import windmills from "$lib/assets/coming-in-clutch/windmills.jpg?enhanced"
+    import clutch_arm_open from "$lib/assets/coming-in-clutch/clutch_arm_open.jpg?enhanced"
+    import motorcycle_mirrors from "$lib/assets/coming-in-clutch/motorcycle_mirrors.jpg?enhanced"
+    import f1_room from "$lib/assets/coming-in-clutch/f1_room.jpg?enhanced"
+    import foreign_legion from "$lib/assets/coming-in-clutch/foreign_legion.jpg?enhanced"
+    import gladius_bench from "$lib/assets/coming-in-clutch/gladius_bench.jpg?enhanced"
+    import gladius_sprocket from "$lib/assets/coming-in-clutch/gladius_sprocket.jpg?enhanced"
+    import cafe_setup from "$lib/assets/coming-in-clutch/cafe_setup.jpg?enhanced"
+    import gladius_clutch from "$lib/assets/coming-in-clutch/gladius_clutch.jpg?enhanced"
+    import burnt_clutch from "$lib/assets/coming-in-clutch/burnt_clutch.jpg?enhanced"
+    import village_view from "$lib/assets/coming-in-clutch/village_view.jpg?enhanced"
+    import alt_hotel from "$lib/assets/coming-in-clutch/alt_hotel.jpg?enhanced"
+    import alt_hotel_2 from "$lib/assets/coming-in-clutch/alt_hotel_2.jpg?enhanced"
+    import alt_hotel_booklet from "$lib/assets/coming-in-clutch/alt_hotel_booklet.jpg?enhanced"
+    import bosphorus_setup from "$lib/assets/coming-in-clutch/bosphorus_setup.jpg?enhanced"
 </script>
