@@ -1,14 +1,19 @@
 ---
 title: Adventures in Type Theory 5 — Paper Planes
 published: '2025-10-07'
+description: Recapping our POPL submission on iterative expression languages and sketching region-parameterized extensions
+categories: [type-theory, lean, compilers]
+series: Adventures in Type Theory
+uuid: 1cd5e007-6bdf-49b1-bed2-65b1e1139ae2
 ---
 
 _Time_: 2025-10-07T21:36Z
 
 _Location_: High above a vast, fractured disc of light, wreathed in subtle glowing mist. #PC5170
 
-Let's recap the story of our POPL submission. We develop λiter: the standard `WHILE` imperatibe
+Let's recap the story of our POPL submission. We develop λiter: the standard `WHILE` imperative
 language recast as an expression language, with the obvious grammar:
+
 ```text
 a, b, c ::= | x         # variables
             | f a       # instructions
@@ -17,23 +22,25 @@ a, b, c ::= | x         # variables
             | ι₁ a      # left injection
             | ι₂ a      # right injection
             # case expressions
-            | case a (ι₁ x => b) (ι₂ y => c) 
+            | case a (ι₁ x => b) (ι₂ y => c)
             | abort a   # empty type elim
             # iteration expressions
             | iter a (ι₂ x => b)
 ```
+
 In particular, note that:
+
 - We emulate `n`-tuples with nullary and binary tuples
-    - A zero-tuple is `()`
-    - A one-tuple is just `a`
-    - An `n + 1`-tuple is `(a, t)`, where `t` is an `n`-tuple. 
-      Of course, we can just as well recurse on the left.
+  - A zero-tuple is `()`
+  - A one-tuple is just `a`
+  - An `n + 1`-tuple is `(a, t)`, where `t` is an `n`-tuple.
+    Of course, we can just as well recurse on the left.
 - Likewise, instructions are always unary; an `n`-ary instruction is just a unary instruction taking
   an `n`-tuple. In particular, a constant `c` is a nullary instruction `c ()`
 - We use `case` rather than `if`; an `if`-statement is a `case` on `1 + 1`
 - Likewise than iterate using a loop of the form `do { body } while P`, we have an iteration
   expresion `iter a (ι₂ x => b)`.
-  
+
   Semantically, this evalutes an expression `b` with a hole of type `A` to produce an expression of
   type `B + A`, and recurses on the left.
 
@@ -125,7 +132,6 @@ general. In particular,
 
 - We can mix our specific dialect and its specific instructions with general control-flow and
   data-flow primitives with well-understood behaviour, for things like:
-
   - Structured control-flow (if-statements, while-loops, and for-loops can all be instructions!)
 
   - Unstructured control-flow (SSACFG regions with unstructured branch instructions)
@@ -136,7 +142,7 @@ general. In particular,
   operating on dialects and mixes-of-dialects.
 
 The point is MLIR sounds a lot like what Neel would call a _domain nonspecific language_, which is
-what we are most interested in researching. 
+what we are most interested in researching.
 
 I, a brash youngling, simply go ahead and call it a _category_.
 
@@ -186,20 +192,26 @@ But why is this important for MLIR. MLIR still uses dominance-based scoping, aft
 nevertheless introduces nested structure based on regions. So what gives?
 
 Well, remember our typing judgement for regions,
+
 $$
 Γ ⊢ r \rhd \mathsf{L}
 $$
+
 Took a while for Neel to learn to love contexts on both sides.
 
 So that's a context because we want to support weakening and label-substitution, two powerful
 workhorses of optimization. But if we don't care about that, well... it's basically a type.
 
-I mean, semantically, 
+I mean, semantically,
+
 <!--  -->
-$$ 
+
+$$
 ⟦Γ ⊢ a : A⟧ : ⟦Γ⟧ → ⟦A⟧ \qquad ⟦Γ ⊢ r \rhd \mathsf{L}⟧ : ⟦Γ⟧ → ⟦\mathsf{L}⟧
-$$ 
+$$
+
 <!--  -->
+
 They're of the same sort. In fact, the difference is the type is just slightly more _general_, since
 $⟦\mathsf{L}⟧$ needs a $0$ on the LHS of the sum if we're being strict.
 
@@ -255,7 +267,7 @@ A possible sketch of what this might look like is:
   parameters and $k$ `Tm 1` parameters. Formalize the _syntax_ in Lean.
 
 - Figure out the appropriate rewrite rules, which modulo instructions should be the same.
-  
+
   Go and formalize these, and some of their basic properties.
 
 - Figure out λssa-with-region-parameters (λmlir?), and formalize this syntax too.

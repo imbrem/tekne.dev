@@ -1,7 +1,12 @@
 ---
 title: Adventures in Type Theory 3 — Scraping By
 published: '2025-09-03'
+description: Scraping together a formalization of SSA semantics with de Bruijn indices and substitution lemmas
+categories: [type-theory, lean]
+series: Adventures in Type Theory
+uuid: 0429d73c-09b5-4a44-8e18-7b446f0b518b
 ---
+
 _Location_: [Boulangerie aux délices de Souffel](https://maps.app.goo.gl/2vb9qMHP9eSuZTTr6)
 (48.62627, 7.72929)
 
@@ -16,7 +21,7 @@ Yesterday, while meditating upon scraping, I decided to do some frontend.
 Surely, if all my friends are jumping off a bridge, that bridge must be on fire! So I decided to
 indulge in a spot of _vibe coding_ with Claude.
 
-So I'm vibing. 
+So I'm vibing.
 
 I get a call. The clutch repair is ready, and it's time to bid Woustviller goodbye.
 
@@ -25,13 +30,13 @@ I ride off on my freshly repaired Gladius. So far, so good.
 It's really hot. I take off my jacket. I feel the wind. I'm alive, and we're riding to Mulhouse.
 Tomorrow, the Alps await.
 
-I pull up to the [gare de péage de Schwindratzeim](https://maps.app.goo.gl/GLNweHJZ4ERnHrYC8). 
+I pull up to the [gare de péage de Schwindratzeim](https://maps.app.goo.gl/GLNweHJZ4ERnHrYC8).
 
 It's filled with police and customs officers.
 
 Catching sight of me, they motion me to pull over, wide-eyed.
 
-A cloud of white smoke catches up to me as I pull to a stop. There's oil everywhere. 
+A cloud of white smoke catches up to me as I pull to a stop. There's oil everywhere.
 
 My rear wheel is completely soaked.
 
@@ -45,7 +50,7 @@ Van's here, yo.
 # A Chat at the Pâtisserie
 
 _Location_: [Boulangerie Pâtisserie Berg Woustviller](https://maps.app.goo.gl/3iR1iHs9AqidEsHv6)
-            (49.07644, 7.02056)
+(49.07644, 7.02056)
 
 _Time_: 2025-08-26T15:30+2
 
@@ -64,6 +69,7 @@ _Health warning_: as I said, all the SQL here is vibe-coded, and potentially rif
 an _extremely_ early stage experiment!
 
 The concrete application here is scraping:
+
 - **Observations**: opening a page and seeing what HTML response comes back.
 - **Transformations**: deterministic steps like extracting plain text from HTML.
 - **Analyses**: nondeterministic or open-world steps like ML inference or human labels.
@@ -72,6 +78,7 @@ The concrete application here is scraping:
 ## Basic Schema
 
 So, a basic schema might look like
+
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
@@ -102,6 +109,7 @@ CREATE TABLE IF NOT EXISTS op_inputs (
   PRIMARY KEY (op_key, idx)
 );
 ```
+
 We note the following important design decisions:
 
 - We use the usual relational pattern for multiple inputs and outputs.
@@ -110,15 +118,16 @@ We note the following important design decisions:
 - The input to every operation is a vector of outputs from other operations, plus parameters.
 
 So, for a scraping experiment, we might have our database containing operations of the form
+
 - `fetch_http` (observation) with URL/user-agent params; outputs headers and bytes.
 - `extract_text_from_html` (transformation) consumes HTML and outputs text.
 - `split_text_into_sentences` (usually transformation) consumes text; outputs sentences.
 - `embed_sentences` (transformation) outputs embeddings.
 - A manual labeling pass is an analysis (nondeterministic selection), not an observation.
 
-
 On the other hand, this framework is perfectly generic. For example, we might apply this framework
 to a lab experiment:
+
 - Observe raw sensor data (e.g., the voltage in a thermocouple).
 - Transform to the measured quantity via calibration (e.g., the temperature this corresponds to).
 - Analyze the transformed data (e.g., fit a regression).
@@ -126,6 +135,7 @@ to a lab experiment:
 Since transformations are pure, we'd like to deduplicate them: two equal transforms with the same
 inputs produce the same outputs. We can do this by adding a field `input_digest` and requiring that
 a transformation’s key is its digest:
+
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
@@ -136,7 +146,7 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- NEW: SHA-256 hash of (op_type, tool_id, params_json)
-                                    -- followed by (input len, input bytes) concatenated in 
+                                    -- followed by (input len, input bytes) concatenated in
                                     -- slot order
 
   observed_at   TEXT,               -- optional wall clock; MUST be NULL unless observation
@@ -147,14 +157,17 @@ CREATE TABLE IF NOT EXISTS ops (
   CHECK ( (op_class = 'transformation') = (op_key = input_digest) )
 );
 ```
+
 In general, we want to index on our input digest, so that we can, e.g., query for all observations
 of a given thing, even if each has a unique ID (being an observation rather than a transformation):
+
 ```sql
 CREATE INDEX IF NOT EXISTS idx_ops_inputdig     ON ops(input_digest);
 ```
 
 We also add a content-addressed artifact store for caching large blobs (and the ability to purge
 bytes later):
+
 ```sql
 /* =======================
    ARTIFACTS (content-addressed bytes)
@@ -177,6 +190,7 @@ _Fun exercise_: how could we garbage-collect the `artifacts` table?
 
 We want to be able to, for any operation, quickly query the set of observations it ultimately
 depends on. We can do this by adding a `ground_truth` field to our schema:
+
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
@@ -187,7 +201,7 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
-                                    -- followed by (input len, input bytes) concatenated in 
+                                    -- followed by (input len, input bytes) concatenated in
                                     -- slot order
 
   ground_truth  BLOB,               -- NEW: 32B; NULL only if synthetic / no provenance
@@ -199,26 +213,30 @@ CREATE TABLE IF NOT EXISTS ops (
   CHECK ( (op_class = 'transformation') = (op_key = input_digest) )
 );
 ```
+
 If our operation does not depend on _any_ observation, we obviously want `ground_truth` to be
 `NULL`. On the other hand, for a _single_ observation, it makes sense for `ground_truth` to be the
 `op_key` of that observation.
 
 For _multiple_ observations, however, we need some kind of way of keeping track of the _set_ of
 observations we're working with. We could:
+
 - Have a separate ground truth table containing records `(operation, observation)`, but the size of
   this table can, in the worst case, grow quadratically with the number of operations
 - Have a separate table defining _sets_ of ground truth observations, given by their hashes
 
 Let's go with the latter
+
 ```sql
 CREATE TABLE IF NOT EXISTS observation_sets (
   set_hash      BLOB NOT NULL,    -- SHA-256 hash of the keys in this set in sorted order
-  member        BLOB NOT NULL,    -- `op_key` which is a member of this set 
+  member        BLOB NOT NULL,    -- `op_key` which is a member of this set
   PRIMARY KEY (set_hash, member)
 );
 ```
 
-We'll have the convention that: 
+We'll have the convention that:
+
 - the set `{observation_id}` is just represented as the observation ID
 - the set `∅` is represented as `NULL`
 - An operation encapsulates its sub-ops: for an observation `id`, `ground_truth = {id}` even if its
@@ -240,7 +258,7 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
-                                    -- followed by (input len, input bytes) concatenated in 
+                                    -- followed by (input len, input bytes) concatenated in
                                     -- slot order
 
   ground_truth  BLOB,               -- 32B; NULL only if synthetic / no provenance
@@ -256,6 +274,7 @@ CREATE TABLE IF NOT EXISTS ops (
 ```
 
 So we can just drop the `op_class` field and replace it with views:
+
 ```sql
 CREATE TABLE IF NOT EXISTS ops (
   op_key        BLOB PRIMARY KEY,   -- 32B unique key
@@ -265,7 +284,7 @@ CREATE TABLE IF NOT EXISTS ops (
   params_json   TEXT,               -- canonical JSON (sorted keys, stable forms)
 
   input_digest  BLOB NOT NULL,      -- SHA-256 hash of (op_type, tool_id, params_json)
-                                    -- followed by (input len, input bytes) concatenated in 
+                                    -- followed by (input len, input bytes) concatenated in
                                     -- slot order
 
   ground_truth  BLOB,               -- 32B; NULL only if synthetic / no provenance
@@ -291,6 +310,7 @@ FROM ops o;
 ```
 
 A view to directly look up the ground truth of a given operation might look like:
+
 ```sql
 /* ============================================================
    v_op_observations
@@ -364,15 +384,15 @@ CREATE TABLE IF NOT EXISTS ops (
 
 This matters because what you call an “observation” is often a **calibrated** result rather than raw
 sensor bytes (e.g. cleaned HTTP responses, factory-calibrated instruments). Aliasing lets you
-publish the calibrated result as *the* observation while the raw steps remain optional but still
+publish the calibrated result as _the_ observation while the raw steps remain optional but still
 machine-readable when present.
 
 In general:
 
-* An alias operation can always be an **observation**.
-* An alias operation can be an **analysis** if all of its *internal-only dependencies* (those not
+- An alias operation can always be an **observation**.
+- An alias operation can be an **analysis** if all of its _internal-only dependencies_ (those not
   already implied by the alias' inputs) are analyses.
-* An alias operation can be a **transformation** if all of its internal-only dependencies are
+- An alias operation can be a **transformation** if all of its internal-only dependencies are
   transformations.
 
 We use the inclusions
@@ -391,16 +411,16 @@ ComplexOp(A, B, C) := SimpleOp( SimpleOp2(A, B), C )
 
 Here `A, B, C` can be anything (including observations). Then:
 
-* `ComplexOp` can always be an observation.
-* `ComplexOp` can be an analysis if `SimpleOp` and `SimpleOp2` are both analyses.
-* `ComplexOp` can be a transformation if `SimpleOp` and `SimpleOp2` are both transformations.
+- `ComplexOp` can always be an observation.
+- `ComplexOp` can be an analysis if `SimpleOp` and `SimpleOp2` are both analyses.
+- `ComplexOp` can be a transformation if `SimpleOp` and `SimpleOp2` are both transformations.
 
 Edge cases:
 
-* If an operation appears both as a direct dependency of `ComplexOp` and inside one of its inputs’
+- If an operation appears both as a direct dependency of `ComplexOp` and inside one of its inputs’
   transitive dependencies, it still counts toward classification (because it is directly required by
   the alias).
-* Every operation is considered a transitive dependency of itself.
+- Every operation is considered a transitive dependency of itself.
 
 ### Example: calibrated temperature as the observation
 
@@ -408,8 +428,8 @@ Edge cases:
 MeasureTemperature() := ComputeTemperature( MeasureResistance(), GetCalibration() )
 ```
 
-* `MeasureResistance` = observation (hardware).
-* `GetCalibration` + `ComputeTemperature` = transformations.
+- `MeasureResistance` = observation (hardware).
+- `GetCalibration` + `ComputeTemperature` = transformations.
 
 Here we define `MeasureTemperature` as an **alias** of `ComputeTemperature`. This lets us query
 temperature measurements directly, abstracting away the raw resistance reading. It also makes
@@ -472,14 +492,14 @@ So I call SANEF, the French highway authority, and, after a bit of time figuring
 me to, they send over breakdown services.
 
 The man is not very happy. And does _not_ want to ride me back all the way to Seedz. So we're going
-to the depot. 
+to the depot.
 
 10 minute ride, 230 euro bill, and I am brusquely shown the door, since they are closing. Fair, not
 exactly their fault. But not a good start to the night.
 
-Nearest hotel is an hour's walk away. 
+Nearest hotel is an hour's walk away.
 
-The rain begins to fall. 
+The rain begins to fall.
 
 I call an Uber. We discuss whether he knows anyone with a van that could take me and the bike back
 to Seedz tomorrow morning, since the local recovery companies are charging up to 400 euros. He
@@ -497,6 +517,7 @@ I call up my category-theorist-biker-friend, and discuss how I may be able to pe
 myself.
 
 According to him and ChatGPT, I'll need:
+
 - A Suzuki compatible drain plug, which is apparently the somewhat special M12 × 1.25.
   Might need a larger one if the threads are stripped and that's why the plug fell out.
 - The associated washer
@@ -539,7 +560,7 @@ Then we cart the bike over to a wash station, and give it a rinse
 
 <Img src={wash_bike} alt="Washing spilled oil off the Gladius" />
 
-Finally, we wipe off the remaining oil with brake cleaner. 
+Finally, we wipe off the remaining oil with brake cleaner.
 
 The bike is repaired, and it is time to face the Alps.
 
@@ -571,12 +592,12 @@ Maps.
 
 In the middle of the night, we cross the border with Switzerland and enter Basel.
 
-The roads are superbly well-maintained, and empty. Winding tunnel sections. 
+The roads are superbly well-maintained, and empty. Winding tunnel sections.
 
 To be honest, it's like a racetrack the size of a country. And given the price of a vignette, versus
 tolls, it's cheap too!
 
-That's the only cheap thing in this dark place. 
+That's the only cheap thing in this dark place.
 
 I take a stop, and it's 50 CHF for a charger... and 1 CHF to use the bathroom.
 
@@ -618,7 +639,7 @@ _Location_: Port of Genoa
 One of my favorite books is _Le Périple de Baldassare_. Soon after reading it, I went to Edinburgh
 on my KTM125. I came back changed.
 
-And now, like Balthasar, I recover my heritage, and ride to Genoa. 
+And now, like Balthasar, I recover my heritage, and ride to Genoa.
 
 It's day 2. Yesterday there was an extreme weather warning, but really, last night was fine.
 
@@ -660,7 +681,8 @@ port.
 Weirdly enough, when I tried connecting to the ship's internet, though it redirects to a login page,
 Playwright downloads Chromium just fine, with some spurious warnings about TLS.
 
-Everything else is blocked though; `ping` anything fails with 
+Everything else is blocked though; `ping` anything fails with
+
 ```
 From _gateway (172.20.0.1) icmp_seq=1 Destination Net Prohibited
 ```
@@ -668,12 +690,15 @@ From _gateway (172.20.0.1) icmp_seq=1 Destination Net Prohibited
 Eh. Swap to data.
 
 So last time we generated a Svelte app to go with our SQL. I started by creating a blank app using
+
 ```bash
 npx sv create
 ```
+
 I use `bun` as my package manager, and add support for Vitest and Playwright.
 
 Given our prompt, based on the SQL above, Claude generated
+
 - A file, `database.ts`, exposing some basic operations on a `wa-sqlite` database with the above
   schema; currently, just creating one
 - A simple Svelte app to test and exercise this file.
@@ -682,13 +707,14 @@ Let's go over `database.ts`. It starts by defining a Typescript interface for ou
 
 ```ts
 export interface DatabaseManager {
-  db: number;
-  sqlite3: any;
-  close(): Promise<void>;
-  execute(sql: string, params?: any[]): Promise<void>;
-  query(sql: string, params?: any[]): Promise<any[]>;
+	db: number;
+	sqlite3: any;
+	close(): Promise<void>;
+	execute(sql: string, params?: any[]): Promise<void>;
+	query(sql: string, params?: any[]): Promise<any[]>;
 }
 ```
+
 along with a function to create an in-memory database
 
 ```ts
@@ -696,70 +722,75 @@ along with a function to create an in-memory database
  * Create a new in-memory database
  */
 export async function createInMemoryDatabase(): Promise<DatabaseManager> {
-  const sqlite3 = await initSQLite();
-  const db = await sqlite3.open_v2(':memory:');
-  
-  // Create schema
-  await sqlite3.exec(db, SCHEMA_SQL);
-  
-  console.log('DB opened successfully (in-memory database)');
-  
-  return {
-    db,
-    sqlite3,
-    async close() {
-      await sqlite3.close(db);
-    },
-    async execute(sql: string, params?: any[]) {
-      if (params && params.length > 0) {
-        for await (const stmt of sqlite3.statements(db, sql)) {
-          sqlite3.bind_collection(stmt, params);
-          await sqlite3.step(stmt);
-        }
-      } else {
-        await sqlite3.exec(db, sql);
-      }
-    },
-    async query(sql: string, params?: any[]) {
-      const results: any[] = [];
-      for await (const stmt of sqlite3.statements(db, sql)) {
-        if (params && params.length > 0) {
-          sqlite3.bind_collection(stmt, params);
-        }
-        const columns = sqlite3.column_names(stmt);
-        while (await sqlite3.step(stmt) === SQLite.SQLITE_ROW) {
-          const row: any = {};
-          columns.forEach((col, i) => {
-            row[col] = sqlite3.column(stmt, i);
-          });
-          results.push(row);
-        }
-      }
-      return results;
-    }
-  };
+	const sqlite3 = await initSQLite();
+	const db = await sqlite3.open_v2(':memory:');
+
+	// Create schema
+	await sqlite3.exec(db, SCHEMA_SQL);
+
+	console.log('DB opened successfully (in-memory database)');
+
+	return {
+		db,
+		sqlite3,
+		async close() {
+			await sqlite3.close(db);
+		},
+		async execute(sql: string, params?: any[]) {
+			if (params && params.length > 0) {
+				for await (const stmt of sqlite3.statements(db, sql)) {
+					sqlite3.bind_collection(stmt, params);
+					await sqlite3.step(stmt);
+				}
+			} else {
+				await sqlite3.exec(db, sql);
+			}
+		},
+		async query(sql: string, params?: any[]) {
+			const results: any[] = [];
+			for await (const stmt of sqlite3.statements(db, sql)) {
+				if (params && params.length > 0) {
+					sqlite3.bind_collection(stmt, params);
+				}
+				const columns = sqlite3.column_names(stmt);
+				while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
+					const row: any = {};
+					columns.forEach((col, i) => {
+						row[col] = sqlite3.column(stmt, i);
+					});
+					results.push(row);
+				}
+			}
+			return results;
+		}
+	};
 }
 ```
+
 Claude also generated a function, `openExistingDatabase(file: File)`, to open a database stored in a
 file, but right now it just does exactly the same thing, except it also opens the provided file as a
 `Uint8Array` and then does nothing with it. Just caught this now as we're writing the article! So
 that's fun!
 
 Likewise, we're starting simple with the export function:
+
 ```ts
 /**
  * Export database to downloadable file
  */
-export async function exportDatabase(dbManager: DatabaseManager, filename: string = 'scrapebook.sqlite'): Promise<void> {
-  const { db, sqlite3 } = dbManager;
-  
-  // For wa-sqlite, we need to serialize the database differently
-  // This is a simplified version - in a real implementation you'd want
-  // to use the proper VFS for file operations
-  
-  // For now, we'll create a simple export by dumping the schema and data
-  console.log(`Export functionality not fully implemented yet for ${filename}`);
-  console.log('Database would be exported here');
+export async function exportDatabase(
+	dbManager: DatabaseManager,
+	filename: string = 'scrapebook.sqlite'
+): Promise<void> {
+	const { db, sqlite3 } = dbManager;
+
+	// For wa-sqlite, we need to serialize the database differently
+	// This is a simplified version - in a real implementation you'd want
+	// to use the proper VFS for file operations
+
+	// For now, we'll create a simple export by dumping the schema and data
+	console.log(`Export functionality not fully implemented yet for ${filename}`);
+	console.log('Database would be exported here');
 }
 ```
 
@@ -768,8 +799,11 @@ So I guess we're telling Claude to do import and export next.
 Now, on to our Svelte app. Our `<script>` section starts by importing our database API:
 
 ```ts
-import { createInMemoryDatabase, openExistingDatabase, type DatabaseManager } 
-  from '$lib/database.js';
+import {
+	createInMemoryDatabase,
+	openExistingDatabase,
+	type DatabaseManager
+} from '$lib/database.js';
 ```
 
 For state, we've got
@@ -788,6 +822,7 @@ let fileInput: HTMLInputElement;
 ```
 
 Our page is a bunch of buttons to do the obvious things:
+
 - Create a new database
 - Open an existing database
 - If a database is opened (`dbManager != null`)
@@ -795,47 +830,44 @@ Our page is a bunch of buttons to do the obvious things:
   - Close the open database
 
 In code,
+
 ```svelte
 <main>
-  <h1>Scrapebook SPA</h1>
-  <p>SQLite Database Test - First Milestone</p>
-  
-  <div class="status">
-    <strong>Status:</strong> {status}
-  </div>
+	<h1>Scrapebook SPA</h1>
+	<p>SQLite Database Test - First Milestone</p>
 
-  <div class="controls">
-    <button on:click={createNewDatabase}>Create New In-Memory Database</button>
-    
-    <div class="file-input">
-      <input 
-        bind:this={fileInput}
-        type="file" 
-        accept=".sqlite,.sqlite3,.db" 
-        id="file-input"
-      />
-      <button on:click={openFileDatabase}>Open Existing Database File</button>
-    </div>
-    
-    {#if dbManager}
-      <button on:click={testDatabase}>Test Database</button>
-      <button on:click={closeDatabase}>Close Database</button>
-    {/if}
-  </div>
+	<div class="status">
+		<strong>Status:</strong>
+		{status}
+	</div>
 
-  <div class="info">
-    <h2>Database Schema</h2>
-    <p>The database includes the following tables:</p>
-    <ul>
-      <li><code>ops</code> - Operations in the pipeline graph</li>
-      <li><code>op_outputs</code> - Output payloads from operations</li>
-      <li><code>op_inputs</code> - Input edges between operations</li>
-      <li><code>observation_sets</code> - Composite ground truth data</li>
-      <li><code>artifacts</code> - Artifact store for GC/deduplication</li>
-    </ul>
-    
-    <p><strong>Check the browser console</strong> for detailed logs about database operations.</p>
-  </div>
+	<div class="controls">
+		<button on:click={createNewDatabase}>Create New In-Memory Database</button>
+
+		<div class="file-input">
+			<input bind:this={fileInput} type="file" accept=".sqlite,.sqlite3,.db" id="file-input" />
+			<button on:click={openFileDatabase}>Open Existing Database File</button>
+		</div>
+
+		{#if dbManager}
+			<button on:click={testDatabase}>Test Database</button>
+			<button on:click={closeDatabase}>Close Database</button>
+		{/if}
+	</div>
+
+	<div class="info">
+		<h2>Database Schema</h2>
+		<p>The database includes the following tables:</p>
+		<ul>
+			<li><code>ops</code> - Operations in the pipeline graph</li>
+			<li><code>op_outputs</code> - Output payloads from operations</li>
+			<li><code>op_inputs</code> - Input edges between operations</li>
+			<li><code>observation_sets</code> - Composite ground truth data</li>
+			<li><code>artifacts</code> - Artifact store for GC/deduplication</li>
+		</ul>
+
+		<p><strong>Check the browser console</strong> for detailed logs about database operations.</p>
+	</div>
 </main>
 ```
 
@@ -843,87 +875,90 @@ And, back in `<script>` we've got functions to do each using our database API:
 
 ```ts
 async function createNewDatabase() {
-  try {
-    // If a database is currently open, close it
-    await closeDatabase();
+	try {
+		// If a database is currently open, close it
+		await closeDatabase();
 
-    status = 'Creating in-memory database...';
-    dbManager = await createInMemoryDatabase();
-    status = 'Connected to in-memory database';
-    
-    // Test the database by inserting a sample record
-    await testDatabase();
-  } catch (error) {
-    console.error('Failed to create database:', error);
-    status = `Error: ${error}`;
-  }
+		status = 'Creating in-memory database...';
+		dbManager = await createInMemoryDatabase();
+		status = 'Connected to in-memory database';
+
+		// Test the database by inserting a sample record
+		await testDatabase();
+	} catch (error) {
+		console.error('Failed to create database:', error);
+		status = `Error: ${error}`;
+	}
 }
 
 async function openFileDatabase() {
-  const file = fileInput.files?.[0];
-  if (!file) {
-    alert('Please select a file first');
-    return;
-  }
+	const file = fileInput.files?.[0];
+	if (!file) {
+		alert('Please select a file first');
+		return;
+	}
 
-  try {
-    // If a database is currently open, close it
-    await closeDatabase();
+	try {
+		// If a database is currently open, close it
+		await closeDatabase();
 
-    status = `Opening database from ${file.name}...`;
+		status = `Opening database from ${file.name}...`;
 
-    dbManager = await openExistingDatabase(file);
-    status = `Connected to database: ${file.name}`;
-    
-    // Test the database
-    await testDatabase();
-  } catch (error) {
-    console.error('Failed to open database:', error);
-    status = `Error: ${error}`;
-  }
+		dbManager = await openExistingDatabase(file);
+		status = `Connected to database: ${file.name}`;
+
+		// Test the database
+		await testDatabase();
+	} catch (error) {
+		console.error('Failed to open database:', error);
+		status = `Error: ${error}`;
+	}
 }
 
 async function testDatabase() {
-  if (!dbManager) return;
+	if (!dbManager) return;
 
-  try {      
-    // Query the ops table
-    const ops = await dbManager.query('SELECT COUNT(*) as count FROM ops');
-    console.log('Operations in database:', ops);
-    
-    // Query all table names to verify schema
-    const tables = await dbManager.query(`
+	try {
+		// Query the ops table
+		const ops = await dbManager.query('SELECT COUNT(*) as count FROM ops');
+		console.log('Operations in database:', ops);
+
+		// Query all table names to verify schema
+		const tables = await dbManager.query(`
       SELECT name FROM sqlite_master WHERE type='table' ORDER BY name
     `);
-    console.log('Tables in database:', tables);
-    
-  } catch (error) {
-    console.error('Database test failed:', error);
-  }
+		console.log('Tables in database:', tables);
+	} catch (error) {
+		console.error('Database test failed:', error);
+	}
 }
 
 async function closeDatabase() {
-  if (dbManager) {
-    await dbManager.close();
-    dbManager = null;
-    status = 'Disconnected';
-  }
+	if (dbManager) {
+		await dbManager.close();
+		dbManager = null;
+		status = 'Disconnected';
+	}
 }
 ```
+
 We also auto-load an in-memory database on initialization
+
 ```ts
 onMount(() => {
-  // Auto-create in-memory database on load for demo
-  createNewDatabase();
+	// Auto-create in-memory database on load for demo
+	createNewDatabase();
 });
 ```
-We note the generated code forgot to call `closeDatabase` before opening/creating a new one! 
+
+We note the generated code forgot to call `closeDatabase` before opening/creating a new one!
 
 Adding this makes the UI flicker a bit when we open a new DB, which is a bit irritating but eh. We
 can probably change the UI to gray out the buttons rather than disappear them, and add some
 interpolation[^2]. This will hopefully still work if other things affect the DB connection.
 
 So far, so good. But, `npm run test` gives us a spurious SSR error, after all tests pass:
+
 ```
 10:05:12 PM [vite] (ssr) Error when evaluating SSR module /node_modules/@sveltejs/kit/src/runtime/server/index.js: transport was disconnected, cannot call "fetchModule"
       at reviveInvokeError (file:///home/tekne/Projects/scrapebook-spa/node_modules/vite/dist/node/module-runner.js:475:14)
@@ -937,27 +972,34 @@ So far, so good. But, `npm run test` gives us a spurious SSR error, after all te
       at async SSRCompatModuleRunner.cachedRequest (file:///home/tekne/Projects/scrapebook-spa/node_modules/vite/dist/node/module-runner.js:1037:73)
       at async eval (/home/tekne/Projects/scrapebook-spa/node_modules/svelte/src/internal/client/dev/hmr.js:7:1)
 ```
+
 Turns out this is an internal Svelte issue
 [(#16663)](https://github.com/sveltejs/svelte/issues/16663); this happens with default project too.
 Until that gets fixed, we just change the default script in `package.json` from
+
 ```json
 "scripts": {
   // -- snip
   "test": "npm run test:unit -- --run  && npm run test:e2e",
 },
 ```
+
 to
+
 ```json
 "scripts": {
   // -- snip
   "test": "npm run test:unit && npm run test:e2e",
 },
 ```
+
 But now we need to press `q`. Let's see if we can get around that...
+
 ```bash
 yes q | head -n1 | vitest && playwright test
 ```
-Nope, auto-pressing `q` with `yes` too fast triggers the issue as well. 
+
+Nope, auto-pressing `q` with `yes` too fast triggers the issue as well.
 
 Imagine pressing buttons manually.
 
@@ -971,11 +1013,12 @@ I get up. Bar's open. Get a coffee. Do a spot of writing (hi!)
 
 That seat is also a _much_ better sleeping spot.
 
-The dawn rises over the waves. 
+The dawn rises over the waves.
 
 Through the sea-spray, Palermo awaits!
 
-[^1]: It really is amazing just how much of an impact
+[^1]:
+    It really is amazing just how much of an impact
     [VIC173](https://artsci.calendar.utoronto.ca/course/vic173y1), the wonderfully named _Philosophy
     of Science for Physical Scientists_, had on my life. I thought, like the rest of the breadth
     courses I had to take, it was just a box-filling, essay-generating exercise, and at first it
@@ -985,10 +1028,11 @@ Through the sea-spray, Palermo awaits!
     introduction to Kant. Though _that_ particular reading is long erased. "Ancient" thinking about
     geometry contines to baffle me.
 
-[^2]: We can't close the database with a different function that does not set `dbManager` to `null`;
-  as this creates the potential bug that if we push the test button before re-initialization is
-  complete, we'll get an error, since it will attempt to call `testDatabase` on a closed DB.
-  Likewise for any other DB access we may add in the future!
+[^2]:
+    We can't close the database with a different function that does not set `dbManager` to `null`;
+    as this creates the potential bug that if we push the test button before re-initialization is
+    complete, we'll get an error, since it will attempt to call `testDatabase` on a closed DB.
+    Likewise for any other DB access we may add in the future!
 
 <script>
     import Img from "$lib/components/Img.svelte"
@@ -1003,4 +1047,4 @@ Through the sea-spray, Palermo awaits!
     import chinese_genoa from "$lib/assets/scraping-by/chinese_genoa.jpg?enhanced"
     import chinese_genoa_outside from "$lib/assets/scraping-by/chinese_genoa_outside.jpg?enhanced"
     import ferry_setup from "$lib/assets/scraping-by/ferry_setup.jpg?enhanced"
-</script> 
+</script>

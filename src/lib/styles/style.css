@@ -26,13 +26,12 @@ a {
 }
 
 pre.shiki {
-	white-space: pre-wrap;
-	word-wrap: break-word;
+	overflow-x: auto;
 }
 
 @media only screen and (max-width: 600px) {
-	pre.shiki {
-		font-size: 0.7em;
+	code .line::before {
+		display: none;
 	}
 }
 
@@ -90,4 +89,10 @@ article figcaption {
 	font-size: 0.85em;
 	color: #aaa;
 	font-style: italic;
+}
+
+.katex-display {
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding: 0.5rem 0;
 }

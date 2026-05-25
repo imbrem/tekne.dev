@@ -22,7 +22,7 @@ ${sortedPosts
 <title>${escape(post.meta.title)}</title>
 <link>${config.live_url}${post.path.replace(/^\//, '')}</link>
 <guid isPermaLink="true">${config.live_url}${post.path.replace(/^\//, '')}</guid>
-<pubDate>${new Date(post.meta.published).toUTCString()}</pubDate>
+<pubDate>${new Date(post.meta.published).toUTCString()}</pubDate>${post.meta.description ? `\n<description>${escape(post.meta.description)}</description>` : ''}
 </item>`
 	)
 	.join('\n')}

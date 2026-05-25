@@ -1,7 +1,12 @@
 ---
 title: Adventures in Type Theory 4 — The Ship of Thesis
 published: '2025-10-01'
+description: From SSA to MLIR — building a typed representation of regions, basic blocks, and control-flow graphs
+categories: [type-theory, lean, compilers]
+series: Adventures in Type Theory
+uuid: f94c16e3-a3da-4150-963b-ef5bce7f2957
 ---
+
 _Location_: [FS04, William Gates Building](https://maps.app.goo.gl/vE5oxXW5XHdiGybq5) (52.210434,
 0.091859)
 
@@ -63,7 +68,7 @@ planning.
 
 I make for Rome, where, carrying what I thought was most of GT3. I get distracted at the gas
 station, and the night deepens, so, at 1:30 AM or so, I decide to stop at the neighboring city of
-Aquina. As a first shot, I make for (La Vecchia Quercia)[https://maps.app.goo.gl/6xvSN7VuARrSBbXu5],
+Aquina. As a first shot, I make for [La Vecchia Quercia](https://maps.app.goo.gl/6xvSN7VuARrSBbXu5),
 but I'm too late. Most of the places I call are closed, or expensive, and at this point, being 2:30
 AM, I'd be buying just a few hours of quality sleep.
 
@@ -139,7 +144,7 @@ Gas stations are dangerous. It seems that the closer I go to where I was forged,
 become. Once more, I find myself waylaid by my dastardly foe. At 3 AM, I decide just to sleep there.
 Attendant was a cool guy. Lots of food, warm, and open all night. Like a little mall.
 
-It's 6 AM, I'm up, I get some food, and we have precisely 12 hours to be ready for London. 
+It's 6 AM, I'm up, I get some food, and we have precisely 12 hours to be ready for London.
 
 We ride for Calais! For the first time since I began this journey, I crack a monster: "Top Speed,"
 the French version of Lewis Hamilton flavor. Already, we're coming home.
@@ -185,6 +190,7 @@ jump to a label $ℓ$, or a conditional branch (if-then-else). By convention, we
 distinguished _entry block_ without a label.
 
 So, to compute `10!`, we might write the C program
+
 ```rust
 let n = 10;
 let mut i = 1;
@@ -194,14 +200,16 @@ while i < 10 {
     i += 1;
 }
 ```
+
 We could compile this to three-address code to get
+
 ```c
     n = 10;
     i = 1;
     a = 1;
     goto loop;
 loop:
-    if (i < n) { goto body } 
+    if (i < n) { goto body }
     else { return a };
 body:
     t = i + 1;
@@ -209,15 +217,19 @@ body:
     i = i + 1;
     goto loop
 ```
+
 Which blocks can _syntactically_ jump to each other form the (directed) edges in the CFG. So for
 example, this CFG has edges
+
 ```c
 ENTR -> loop
 loop -> body
 loop -> EXIT
 body -> loop
 ```
+
 We might make this into a formal grammar as follows:
+
 ```c
 // Instructions
 //
@@ -232,6 +244,7 @@ o ::= op x₁ ... xₙ | x
 // Note: the entry block is first
 G ::= β | G ; ℓ : β
 ```
+
 Note constants $c$ are just nullary operations `op`; we allow the if-statements in terminators to be
 nested for simplicity, and also because that can be used to emulate a `switch`.
 
@@ -249,6 +262,7 @@ particular, $d$ strictly dominates $n$ if and only if $d$ dominates $n$ and $d �
 
 Letting $D_x$ be the set of basic blocks containing a definition of $x$, we know that a use of $x$
 in block $β$ with label $ℓ$ is well-scoped if
+
 - $ℓ ∈ D_x$ and the usage of $x$ is after the first definition of $x$ in $β$
 - $D_x$ strictly dominates $ℓ$, since all paths to get to $ℓ$ have already defined $x$
 
@@ -257,20 +271,25 @@ even in settings without a clear notion of an error, and in particular, we can g
 _categorical_ semantics.
 
 There are three regularizing tweaks we might want to make as type theorists:
+
 - Introduce nullary tuples $()$ and binary tuples $(v, v')$ of values, and make operations take a
   single tuple $v$, likeso:
-    ```c
-    // Tuples
-    v ::= x | (v₁, v₂) | ()
-    // Instructions
-    o ::= op v
-    ```
+
+  ```c
+  // Tuples
+  v ::= x | (v₁, v₂) | ()
+  // Instructions
+  o ::= op v
+  ```
+
   An $n$-ary tuple can then be implemented as just $(x_1, (x_2, (x_3, ...)))$ (or we can associate
   on the left, of course). Then we can regularize our let-bindings as
+
   ```c
   // Basic blocks
   β ::= x = o; β | (x, y) = o; β | τ
   ```
+
   which of course we can use to desugar any pattern destructure $v = o; β$ in the obvious manner.
   This avoids tedious work with $n$-ary shifts to our de-Bruijn indices when using those, since
   adding one and two has _much_ better defeqs.
@@ -279,7 +298,7 @@ There are three regularizing tweaks we might want to make as type theorists:
   keep it in mind.
 
 - Replace `return` with a branch to a distinguished exit label; with `return` now just syntax sugar.
-- Replace if-then-else with case-statements `case (o) { ι₁ x₁ : τ₁ ; ι₂ x₂ : τ₂ }` 
+- Replace if-then-else with case-statements `case (o) { ι₁ x₁ : τ₁ ; ι₂ x₂ : τ₂ }`
   (if-then-else just desugars to an anonymous case split on $1 + 1$).
 
   Well, our paper does binary case-statements, but this in fact leads to suffering later when we
@@ -294,14 +313,17 @@ There are three regularizing tweaks we might want to make as type theorists:
   in the paper.
 
 We'll do the latter two only. So terminators become
+
 ```c
 // Terminators
 τ ::= goto ℓ | switch (o) { ι₁ x₁ : τ₁ ; ... ; ιₙ xₙ : τₙ }
 ```
+
 Now, SSA can be viewed as a _property_ of a 3-address program: every variable name $x$ having
 precisely one definition; i.e. _static single assignment_[^4]. If a 3-address program has no
 variables whose value is (syntactically) control-flow dependent, we can re-name variables
 (essentially, appending a time-stamp) to convert it to an equivalent program in SSA; e.g.
+
 ```c
     x = y + z;
     x = x + 3;
@@ -310,7 +332,9 @@ rest:
     x = 3 + y;
     return x;
 ```
+
 becomes
+
 ```c
     x₀ = y + z;
     x₁ = x₀ + 3;
@@ -319,9 +343,11 @@ rest:
     x₂ = 3 + y;
     return x₂
 ```
+
 The idea is we're just numbering each syntactic re-definition of $x$, and then replacing each use
 with the specific definition it is referring to, where "John" is replaced with "John Smith" or "John
 Doe" based on context. But not every program is unambiguous with respect to control-flow:
+
 ```c
     if (φ) { goto left } else { goto right };
 left:
@@ -333,10 +359,12 @@ right:
 then:
     return x;
 ```
+
 If $x₀ = 3$ and $x₁ = 5$, which $x$ are we returning? Standard SSA solves this by introducing
 special _$ϕ$-instructions_ or $ϕ$-nodes which take a different value depending on where we just came
 from in the CFG. So for example, since if we came from `left` we'd use $x₁$, but use $x₂$ if we came
 from `right`, we could introduce a $ϕ$-instruction representing this as follows:
+
 ```c
     if (φ) { goto left } else { goto right };
 left:
@@ -349,8 +377,10 @@ then:
     x₂ = ϕ { left : x₀ ; right : x₁ }
     return x;
 ```
+
 Often, we allow pure operations, or at least constants, in $ϕ$-instructions, so we could even
 simplify this to
+
 ```c
 if (φ) { goto left } else { goto right };
 left:
@@ -361,6 +391,7 @@ then:
     x₂ = ϕ { left : 3 ; right : 5 }
     return x;
 ```
+
 These have slightly unintuitive scoping rules: we can add a label $ℓ : o$ to a $ϕ$-instruction if
 $o$ would be well-scoped at the _end_ of the basic-block $β$ labelled $ℓ$[^6]. We'll maintain the
 invariant that $ϕ$-instructions _cannot_ access other variables in _their own_ block (so the scope
@@ -378,6 +409,7 @@ $ϕ$-instructions obvious: it's just the regular scope at where the values are a
 (namely, just before branching to $ℓ$).
 
 In terms of formal grammar, we get
+
 ```c
 // Instructions
 //
@@ -392,7 +424,9 @@ o ::= op x₁ ... xₙ | x
 // Note: the entry block is first
 G ::= β | G ; ℓ(x₁,...,xₙ) : β
 ```
+
 The above program then becomes
+
 ```c
     if (φ) { goto left } else { goto right };
 left:
@@ -404,14 +438,16 @@ right:
 then(x₂):
     return x;
 ```
+
 while our factorial program becomes
+
 ```c
     n = 10;
     i₀ = 1;
     a₀ = 1;
     goto loop(i₀, a₀);
 loop(i₁, a₁):
-    if (i₁ < n) { goto body } 
+    if (i₁ < n) { goto body }
     else { return a₁ };
 body:
     t = i₁ + 1;
@@ -437,7 +473,8 @@ it is a preorder), it's actually a _tree_.
 
 In particular, consider a directed graph with distinguished entry point $(G, e)$ again. We'll say a
 node $n$ has _immediate dominator_ $d$ if:
-- $d$ strictly dominates $n$ 
+
+- $d$ strictly dominates $n$
 - $d$ does not strictly dominate any other node that strictly dominates $n$
 
 It turns out that every node reachable from $e$ except $e$ itself has exactly one immediate
@@ -465,6 +502,7 @@ the children is through the root; ergo, the root dominates the children.
 
 As a grammar, it is natural to replace the syntactic category of basic blocks $β$ with the category
 of regions $r$, as follows:
+
 ```c
 // Instructions
 //
@@ -477,9 +515,11 @@ r ::= x₁,...,xₙ = o; r | τ where { L }
 // Children
 L ::= · | L ; ℓ(x₁,...,xₙ) : r
 ```
+
 Note that $r$ recognizes the same strings as `β where { L }`, and indeed, collecting all the
 instructions in a region into an array, the data in a region is basically a basic-block with
 children:
+
 ```rust
 struct Region {
     instructions: Vec<Instruction>,
@@ -487,6 +527,7 @@ struct Region {
     children: Map<Label, Region>
 }
 ```
+
 But for _induction_, `x₁,...,xₙ = o; r | τ where { L }` gives a nicer induction principle, and more
 importantly, it's easier to give it typing rules. The two data types are trivially isomorphic
 though!
@@ -495,13 +536,15 @@ Now, for the typing rules a data structure like this would have, perhaps a peek 
 Denotational Semantics of SSA_](https://arxiv.org/abs/2411.09347) is in order. But I need to re-work
 all that to be locally-nameless, which we should do in a future post.
 
-But specifically, I'd like to actually represent general MLIR SSACFG regions. And those: 
+But specifically, I'd like to actually represent general MLIR SSACFG regions. And those:
+
 - Allow instructions to take regions as parameters
 - Use _instructions_ as terminators (in the typing rules we need to check they are valid
   terminators). We'll just pass in regions $r₁,...,rₙ$, and let the user handle labels in the
   production `tm`.
 
 Syntactically that's not too complex:
+
 ```c
 // Instructions
 //
@@ -514,7 +557,9 @@ r ::= x₁,...,xₙ = o; r | τ where { L }
 // Children
 L ::= · | L ; ℓ(x₁,...,xₙ) : r
 ```
+
 In fact, a first pass at graph regions might look like
+
 ```c
 // Instructions
 //
@@ -529,7 +574,9 @@ L ::= · | L ; ℓ(x₁,...,xₙ) : r
 // Mutually recursive definition graph
 O ::= · | O ; x₁,...,xₙ := o
 ```
+
 But this exposes some irritating discrepancies with MLIR (though the first might be useful):
+
 - Graph regions can be preceded by let-bindings, which enforce a DAG on the operations in them
   - A "daggy" graph region is a useful thing to have though, by requiring $O$ to be empty... a
     dialect can require that!
@@ -537,6 +584,7 @@ But this exposes some irritating discrepancies with MLIR (though the first might
 - Graph regions with a single block can opt out of having a terminator
 
 Let's take that
+
 ```c
 // Instructions
 //
@@ -564,28 +612,35 @@ also be interesting. But, that's for later articles.
 
 Toodles!
 
-[^1]: I was very confused, as the captain kept saying we were going to "Volcano Island." Which
+[^1]:
+    I was very confused, as the captain kept saying we were going to "Volcano Island." Which
     volcano??
 
-[^2]: I'll stick a link here when the second paper is on the arxiv; the LaTeX source is with the
-      rest of our ongoing SSA research at https://github.com/isotope-project/ssa-densem 
+[^2]:
+    I'll stick a link here when the second paper is on the arxiv; the LaTeX source is with the
+    rest of our ongoing SSA research at https://github.com/isotope-project/ssa-densem
 
-[^3]: Note that the paper uses `br`, but we're using `goto` here. That's why. I've also switched
-      commas to semicolons, so it really does look like a C switch if labels took arguments, and
-      labels don't get a color so far so it all works out.
+[^3]:
+    Note that the paper uses `br`, but we're using `goto` here. That's why. I've also switched
+    commas to semicolons, so it really does look like a C switch if labels took arguments, and
+    labels don't get a color so far so it all works out.
 
-[^4]: Static since we're talking about syntactic (static) definition; dynamically, that single
+[^4]:
+    Static since we're talking about syntactic (static) definition; dynamically, that single
     definition might be run plenty of times and receive a different value each time (e.g. `x =
-    read_int()` in a loop)
+read_int()` in a loop)
 
-[^5]: Note that a node can be (strictly) dominated by a set $D$ without being (strictly) dominated
+[^5]:
+    Note that a node can be (strictly) dominated by a set $D$ without being (strictly) dominated
     by any of the elements in $d$. For example, given
+
     ```c
     e -> a
     e -> b
     a -> c
     b -> c
     ```
+
     $c$ is strictly dominated by $\{a, b\}$ but not by either $a$ or $b$. Another edge case is that,
     if $D = \varnothing$ then $n$ is dominated by $d$ if and only if it is unreachable from $e$.
 
@@ -593,7 +648,8 @@ Toodles!
 
 [^6]: Based on _dominance-based scoping_
 
-[^7]: What we're about to say is still true if the first invariant; that $ϕ$-instructions _cannot_
+[^7]:
+    What we're about to say is still true if the first invariant; that $ϕ$-instructions _cannot_
     access other variables in _their own_ block; is _not_ maintained, but then things get a bit more
     complicated, as we need to move any instructions depended on by that $ϕ$-instructions into each
     of the source blocks $ℓ$, disambiguating any $ϕ$-instructions we pull in by replacing them with

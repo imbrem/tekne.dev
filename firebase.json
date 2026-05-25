@@ -1,6 +1,33 @@
 {
 	"hosting": {
 		"public": "build",
+		"redirects": [
+			{
+				"source": "/blog/locally-nameless-stlc",
+				"destination": "/blog/adventures-in-type-theory/locally-nameless-stlc",
+				"type": 301
+			},
+			{
+				"source": "/blog/coming-in-clutch",
+				"destination": "/blog/adventures-in-type-theory/coming-in-clutch",
+				"type": 301
+			},
+			{
+				"source": "/blog/scraping-by",
+				"destination": "/blog/adventures-in-type-theory/scraping-by",
+				"type": 301
+			},
+			{
+				"source": "/blog/ship-of-thesis",
+				"destination": "/blog/adventures-in-type-theory/ship-of-thesis",
+				"type": 301
+			},
+			{
+				"source": "/blog/paper-planes",
+				"destination": "/blog/adventures-in-type-theory/paper-planes",
+				"type": 301
+			}
+		],
 		"headers": [
 			{
 				"source": "/**",

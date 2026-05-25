@@ -2,6 +2,10 @@
 title: Adventures in Type Theory 1 — Locally Nameless STLC (Part 1)
 published: '2025-08-24'
 edited: '2025-08-26'
+description: Formalizing the simply-typed lambda calculus using locally nameless representation in Lean 4
+categories: [type-theory, lean]
+series: Adventures in Type Theory
+uuid: 47d71e1c-cc2f-4833-b82f-59c6240e2116
 ---
 
 It’s been a while.

@@ -2,6 +2,9 @@
 title: Fun with Sentence Embedding
 edited: '2024-06-04'
 published: '2023-10-08'
+description: Using sentence embeddings for clustering, topic modelling, and classification of text datasets
+categories: [machine-learning, nlp]
+uuid: c40fb474-d241-4118-9eb6-0658ebc605a2
 ---
 
 It’s been a while! I got back from [ICFP'23](https://icfp23.sigplan.org/) where I presented my work on [Explicit Refinement Types](https://dl.acm.org/doi/10.1145/3607837), got buried in PhD work, and now need to get back to writing. So to celebrate my return, let’s do something a little different, and write some Python.
@@ -319,7 +322,7 @@ It seems to recover exactly the input topics, except that Ghana and Africa are c
 
 <Img src={contingency_matrix_12_24} alt="A contingency matrix for K-means clustering of our dataset into twelve clusters, with a different random seed" />
 
-Here, Ghana and Africa are again only partially distinguished, and the separation between topics is a little less clear (e.g., there is more overlap between matheamtics and computer science). Category theory is now considered only a single topic.
+Here, Ghana and Africa are again only partially distinguished, and the separation between topics is a little less clear (e.g., there is more overlap between mathematics and computer science). Category theory is now considered only a single topic.
 
 Finally, let’s try setting `n_clusters=20`, and seeing if we recover any useful distinctions not actually present in our manual labelling:
 

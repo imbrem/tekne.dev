@@ -16,6 +16,9 @@
 			<h2>
 				<a href={post.path}>{post.meta.title}</a>
 			</h2>
+			{#if post.meta.description}
+				<p class="description">{post.meta.description}</p>
+			{/if}
 			Published {post.meta.published}
 			{#if post.meta.edited}
 				(Edited {post.meta.edited})
@@ -28,5 +31,11 @@
 	ul {
 		list-style-type: none;
 		padding-left: 0;
+	}
+
+	.description {
+		font-size: 0.9em;
+		color: #aaa;
+		margin: 0.25em 0;
 	}
 </style>

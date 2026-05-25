@@ -1,6 +1,9 @@
 ---
 title: Building An Inductive Representation of SSA
 published: '2024-07-21'
+description: Constructing an inductive representation of static single assignment form suitable for mechanized metatheory
+categories: [type-theory, compilers, lean]
+uuid: 0d339a25-cdf0-4ac8-a5ec-b3b3661effe2
 ---
 
 [Static Single Assignment form](https://en.wikipedia.org/wiki/Static_single-assignment_form), or
@@ -1521,5 +1524,3 @@ But, I think this article is already long enough! Until next time!
     import region_diagram_gen from 
         "$lib/assets/inductive-ssa/region_diagram_gen.excalidraw.svg"
 </script>
-
-<!-- TODO: fix annotations -->

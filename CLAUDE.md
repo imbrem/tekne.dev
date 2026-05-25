@@ -55,7 +55,7 @@ Blog posts are `.md` files in `src/routes/blog/`. They use MDsveX (markdown prep
 ---
 title: Post Title
 published: YYYY-MM-DD
-edited: YYYY-MM-DD  # optional
+edited: YYYY-MM-DD # optional
 ---
 ```
 

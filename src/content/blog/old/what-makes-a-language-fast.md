@@ -2,6 +2,9 @@
 title: What Makes a Language Fast?
 edited: '2024-05-10'
 published: '2023-08-18'
+description: Exploring how language design choices affect runtime performance through benchmarks and low-level analysis
+categories: [compilers, programming-languages]
+uuid: ee3651aa-0fcf-405d-91a0-6b5198252fc9
 ---
 
 Back in the day, I had a teacher tell me there was no such thing (at least in the context of the
@@ -796,8 +799,6 @@ make fast code more natural to write.
 [^7]:
     All benchmarks are extracted from separate runs of an executable containing all final
     benchmarks on my desktop (an Intel Core i9-9900-KF running Linux).
-
- <!-- TODO: fix unicode escape expected nonsense -->
 
 [^8]:
     Due to the [birthday paradox](https://en.wikipedia.org/wiki/Birthday_problem), the probability
