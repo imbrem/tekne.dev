@@ -25,23 +25,29 @@ SvelteKit 5 with `@sveltejs/adapter-static` for static site generation. All page
 ```
 src/
 ├── app.html                     # HTML shell (Google Analytics, KaTeX CDN)
+├── content/blog/                # Blog post markdown, grouped by series
+│   ├── adventures-in-type-theory/
+│   └── old/                     # Pre-series posts (served at /blog/<slug>)
 ├── lib/
-│   ├── assets/                  # Images organized by blog post
-│   ├── components/Header.svelte # Navigation header
+│   ├── assets/                  # Images, one subdirectory per blog post
+│   ├── components/
+│   │   ├── Header.svelte        # Navigation header
+│   │   └── Img.svelte           # enhanced:img wrapper, optional <figcaption>
 │   ├── config.ts                # Site config (title, author, URLs)
 │   ├── icons/                   # SVG icon components (Home, Github, Gitlab, Mail)
 │   ├── styles/style.css         # Global styles (dark theme, Fira Code font)
-│   └── utils/index.ts           # fetchMarkdownPosts() utility
+│   └── utils/index.ts           # fetchMarkdownPosts(), buildPostLookup()
 ├── routes/
 │   ├── +layout.svelte           # Root layout
 │   ├── +layout.ts               # prerender = true
 │   ├── +page.svelte             # Home page (bio, publications)
 │   ├── api/posts/+server.ts     # JSON API returning sorted blog posts
+│   ├── rss.xml/+server.ts       # RSS feed
+│   ├── sitemap.xml/+server.ts   # Sitemap
 │   └── blog/
 │       ├── +page.svelte         # Blog index
 │       ├── +page.ts             # Fetches from /api/posts
-│       ├── [slug]/              # Dynamic blog post route
-│       └── *.md                 # Blog post markdown files
+│       └── [...slug]/           # Catch-all post route (resolves via lookup table)
 static/
 ├── favicon.png
 └── ert.pdf
@@ -49,25 +55,38 @@ static/
 
 ### Blog System
 
-Blog posts are `.md` files in `src/routes/blog/`. They use MDsveX (markdown preprocessed as Svelte components) with frontmatter metadata:
+Blog posts are `.md` files under `src/content/blog/`, **not** under `src/routes/`. They use MDsveX (markdown preprocessed as Svelte components) with frontmatter metadata:
 
 ```yaml
 ---
 title: Post Title
-published: YYYY-MM-DD
-edited: YYYY-MM-DD # optional
+published: 'YYYY-MM-DD'
+edited: 'YYYY-MM-DD' # optional
+description: One-line summary for RSS, sitemap, and the blog index
+categories: [type-theory, lean] # optional
+series: Adventures in Type Theory # optional
+uuid: <stable uuid, never change once published>
+aliases: [old-url-slug] # optional extra URLs that resolve to this post
 ---
 ```
 
-Posts are auto-discovered via `import.meta.glob('/src/routes/blog/*.md')` in `fetchMarkdownPosts()`. The `/api/posts` endpoint returns them sorted by publish date.
+A post's directory determines its canonical URL: `src/content/blog/<series-dir>/<slug>.md` is served at `/blog/<series-dir>/<slug>`, except for `old/`, which is served at `/blog/<slug>` to preserve pre-restructure URLs.
+
+Posts are auto-discovered via `import.meta.glob('/src/content/blog/**/*.md')`. Two utilities consume that glob:
+
+- `fetchMarkdownPosts()` — flat list of posts with metadata, backing `/api/posts` (sorted by publish date), the blog index, RSS, and the sitemap.
+- `buildPostLookup()` — the `[...slug]` route's resolution table. Each post is registered under **several** keys, all of which resolve to it: canonical path, bare slug (legacy pre-restructure URL), `uuid`, and any `aliases`. `entries()` prerenders one page per key, so old links keep working.
+
+Because URLs are derived from filenames, **moving or renaming a published post breaks its URL** — add the old slug to `aliases` when you do.
 
 ### Markdown Features
 
-- **Code highlighting**: Shiki with Nord theme (Lean language preloaded)
+- **Code highlighting**: Shiki with Nord theme. Languages are preloaded in `svelte.config.js`; add any new language to that list.
 - **Math**: LaTeX via remark-math + rehype-katex-svelte
-- **Diagrams**: Mermaid (rendered as `<pre class="mermaid">`)
 - **Footnotes**: remark-footnotes
-- **Images**: `@sveltejs/enhanced-img` for optimization
+- **Images**: `@sveltejs/enhanced-img`. In a post, import with `?enhanced` inside a `<script module>` block and render via `$lib/components/Img.svelte`.
+
+Mermaid is **not** available: the dependency was removed and nothing ever initialized it client-side. `svelte.config.js` still special-cases a `mermaid` fence into `<pre class="mermaid">`, but no code renders that, so a mermaid fence will come out as unstyled text.
 
 ### Styling
 
