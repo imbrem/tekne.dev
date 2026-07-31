@@ -1,192 +1,153 @@
 # CLAUDE.md
 
-## Project Overview
-
-Personal website and blog for Jad Ghalayini (tekne.dev). Static site built with SvelteKit, deployed to Firebase Hosting.
+Personal website and blog for Jad Ghalayini (tekne.dev). SvelteKit 5 with
+`adapter-static`, fully prerendered, deployed to Firebase Hosting.
 
 ## Commands
 
-**Package manager is pnpm.** There is a Nix dev shell (`nix develop`, or `direnv allow` via `.envrc`) providing Node 24, pnpm, and `firebase-tools`. The tests need `firebase` on PATH, so run them inside the shell.
+Package manager is **pnpm**. A Nix dev shell (`nix develop`, or `direnv allow`)
+provides Node 24, pnpm and `firebase-tools`; the tests need `firebase` on PATH,
+so run them inside it.
 
-- `pnpm dev` — Start dev server
-- `pnpm build` — Build static site to `build/`
-- `pnpm test` — Build, then run the CAS and hosting suites
-- `pnpm test:cas` — CAS invariants only; pure and fast, no build or server
-- `pnpm preview` — Preview production build (**Vite, not Firebase** — see below)
-- `pnpm check` — Type-check with svelte-check
+- `pnpm dev` / `pnpm build` / `pnpm preview` — dev server, static build, preview
+- `pnpm test` — build, then CAS + hosting suites
+- `pnpm test:cas` — CAS invariants only; no build or server
+- `pnpm check` — svelte-check
 - `pnpm lint` / `pnpm format` — Prettier + ESLint
-- `pnpm cas -- <add|ls|verify|check|aliases>` — Manage the content-addressed store
-- `firebase emulators:start --only hosting` — Serve `build/` under the real hosting rules
-- `firebase deploy` — Deploy to Firebase Hosting
+- `pnpm cas -- <add|ls|verify|check|aliases>` — content-addressed store
+- `firebase emulators:start --only hosting` — serve `build/` under real hosting rules
+- `firebase deploy` — publish
 
-pnpm's strict `node_modules` is deliberate: it caught `vite-imagetools` being imported by `Img.svelte` while only present as a hoisted transitive dependency. Anything imported must be declared. Dependency install scripts are blocked by default and an unapproved one is a hard error — `pnpm-workspace.yaml` allows `sharp`, which backs `@sveltejs/enhanced-img`.
+pnpm's strict `node_modules` is deliberate — anything imported must be declared.
+Dependency install scripts are blocked by default and an unapproved one is a hard
+error; `pnpm-workspace.yaml` allows `sharp` (behind `@sveltejs/enhanced-img`).
 
-### Tests
-
-`tests/cas.test.mjs` asserts the store's invariants — every object hashes to its own name, objects carry no extension, names resolve, history never references a dropped object.
-
-`tests/hosting.test.mjs` runs the **real Firebase hosting emulator** and asserts status codes and served bytes. This is the layer `pnpm preview` cannot reach, and the reason it exists is in the file header: the site once served HTTP 404 and an empty shell for every extensionless URL, for about a year, while looking perfect in a browser. So the assertions check the status code and the actual response body, never "does the page look right".
-
-Note the emulator does not implement range requests (returns 200 where production returns 206), so range behaviour — which is what makes range-querying a stored SQLite database viable — can only be confirmed against the deployed site.
-
-## Architecture
-
-### Framework
-
-SvelteKit 5 with `@sveltejs/adapter-static` for static site generation. All pages are prerendered.
-
-### Key Directories
+## Layout
 
 ```
 src/
-├── app.html                     # HTML shell (Google Analytics, KaTeX CDN)
-├── content/blog/                # Blog post markdown, grouped by series
+├── app.html                  # shell: Google Analytics, KaTeX CDN
+├── content/blog/             # posts, grouped by series
 │   ├── adventures-in-type-theory/
-│   └── old/                     # Pre-series posts (served at /blog/<slug>)
+│   └── old/                  # pre-series posts, served at /blog/<slug>
 ├── lib/
-│   ├── assets/                  # Images, one subdirectory per blog post
-│   ├── components/
-│   │   ├── Header.svelte        # Navigation header
-│   │   └── Img.svelte           # enhanced:img wrapper, optional <figcaption>
-│   ├── config.ts                # Site config (title, author, URLs)
-│   ├── icons/                   # SVG icon components (Home, Github, Gitlab, Mail)
-│   ├── styles/style.css         # Global styles (dark theme, Fira Code font)
-│   └── utils/index.ts           # fetchMarkdownPosts(), buildPostLookup()
-├── routes/
-│   ├── +layout.svelte           # Root layout
-│   ├── +layout.ts               # prerender = true
-│   ├── +page.svelte             # Home page (bio, publications)
-│   ├── api/posts/+server.ts     # JSON API returning sorted blog posts
-│   ├── rss.xml/+server.ts       # RSS feed
-│   ├── sitemap.xml/+server.ts   # Sitemap
-│   └── blog/
-│       ├── +page.svelte         # Blog index
-│       ├── +page.ts             # Fetches from /api/posts
-│       └── [...slug]/           # Catch-all post route (resolves via lookup table)
-static/
-├── favicon.png
-└── ert.pdf
+│   ├── assets/               # one subdirectory per post
+│   ├── components/           # Header.svelte, Img.svelte (enhanced:img wrapper)
+│   ├── config.ts, icons/, styles/style.css
+│   └── utils/index.ts        # fetchMarkdownPosts(), buildPostLookup()
+└── routes/
+    ├── +page.svelte          # home: bio, publications
+    ├── api/posts/            # JSON, sorted by publish date
+    ├── rss.xml/, sitemap.xml/
+    └── blog/[...slug]/       # catch-all, resolved via lookup table
+scripts/cas.mjs               # content-addressed store tooling
+static/cas/                   # store objects; manifest at static/cas.json
+tests/                        # cas.test.mjs, hosting.test.mjs
 ```
 
-### Blog System
+## Blog
 
-Blog posts are `.md` files under `src/content/blog/`, **not** under `src/routes/`. They use MDsveX (markdown preprocessed as Svelte components) with frontmatter metadata:
+Posts are `.md` under `src/content/blog/`, **not** under `src/routes/`. MDsveX
+preprocesses them into Svelte components. Frontmatter:
 
 ```yaml
 ---
 title: Post Title
 published: 'YYYY-MM-DD'
 edited: 'YYYY-MM-DD' # optional
-description: One-line summary for RSS, sitemap, and the blog index
+description: One-line summary for RSS, sitemap, blog index
 categories: [type-theory, lean] # optional
 series: Adventures in Type Theory # optional
-uuid: <stable uuid, never change once published>
-aliases: [old-url-slug] # optional extra URLs that resolve to this post
+uuid: <stable; never change once published>
+aliases: [old-url-slug] # optional extra URLs resolving here
 ---
 ```
 
-A post's directory determines its canonical URL: `src/content/blog/<series-dir>/<slug>.md` is served at `/blog/<series-dir>/<slug>`, except for `old/`, which is served at `/blog/<slug>` to preserve pre-restructure URLs.
+A post's directory sets its URL: `<series-dir>/<slug>.md` → `/blog/<series-dir>/<slug>`,
+except `old/`, which serves at `/blog/<slug>` to preserve pre-restructure links.
 
-Posts are auto-discovered via `import.meta.glob('/src/content/blog/**/*.md')`. Two utilities consume that glob:
+Both consumers glob `/src/content/blog/**/*.md`:
 
-- `fetchMarkdownPosts()` — flat list of posts with metadata, backing `/api/posts` (sorted by publish date), the blog index, RSS, and the sitemap.
-- `buildPostLookup()` — the `[...slug]` route's resolution table. Each post is registered under **several** keys, all of which resolve to it: canonical path, bare slug (legacy pre-restructure URL), `uuid`, and any `aliases`. `entries()` prerenders one page per key, so old links keep working.
+- `fetchMarkdownPosts()` — flat list behind `/api/posts`, the index, RSS, sitemap.
+- `buildPostLookup()` — the `[...slug]` resolution table. Each post registers under
+  its canonical path, bare slug, `uuid`, **and** any `aliases`; `entries()`
+  prerenders one page per key, so old links keep working.
 
-Because URLs are derived from filenames, **moving or renaming a published post breaks its URL** — add the old slug to `aliases` when you do.
+Since URLs derive from filenames, **moving or renaming a published post breaks its
+URL** — add the old slug to `aliases` in the same edit.
 
-### Markdown Features
+## Markdown
 
-- **Code highlighting**: Shiki with Nord theme. Languages are preloaded in `svelte.config.js`; add any new language to that list.
-- **Math**: LaTeX via remark-math + rehype-katex-svelte
-- **Footnotes**: remark-footnotes
-- **Images**: `@sveltejs/enhanced-img`. In a post, import with `?enhanced` inside a `<script module>` block and render via `$lib/components/Img.svelte`.
+- **Code**: Shiki, Nord theme. Languages are preloaded in `svelte.config.js` — add
+  new ones there or highlighting fails.
+- **Math**: remark-math + rehype-katex-svelte (KaTeX CSS from CDN in `app.html`).
+- **Footnotes**: remark-footnotes.
+- **Images**: `@sveltejs/enhanced-img`. Import with `?enhanced` in a `<script module>`
+  block, render via `$lib/components/Img.svelte`.
+- **Mermaid is not available.** The dependency is gone and nothing ever initialised
+  it. `svelte.config.js` still turns a `mermaid` fence into `<pre class="mermaid">`,
+  which nothing renders, so it comes out as unstyled text.
 
-Mermaid is **not** available: the dependency was removed and nothing ever initialized it client-side. `svelte.config.js` still special-cases a `mermaid` fence into `<pre class="mermaid">`, but no code renders that, so a mermaid fence will come out as unstyled text.
+## Styling
 
-### Styling
+Dark theme (`#222222`), Fira Code, cyan links, 77rem max-width.
 
-- Dark theme (#222222 background)
-- Fira Code monospace font
-- Cyan accent color for links/hover
-- Responsive layout with 77rem max-width
+## Content-addressed store (`/cas/`)
 
-### Content-addressed store (`/cas/`)
+`static/cas/<hash>` (BLAKE3), served at `/cas/<hash>`: bytes only — no extension,
+no media type, no filename. Objects are committed, so the repo _is_ the store and
+nothing can drift from it. Media type, download filename and title belong to a
+**name** pointing at the object.
 
-The store holds **bytes, keyed only by BLAKE3 hash**: `static/cas/<hash>` served
-at `/cas/<hash>`. No extension, no media type, no filename — `/cas/<hash>` means
-"give me these bytes" and nothing more. Objects are committed to the repo, so the
-repository _is_ the store: nothing generates it, so nothing can drift from it,
-and `pnpm preview` serves exactly what deploys.
+`static/cas.json` (served at `/cas.json`) holds immutable `objects`, mutable
+`names`, and a `history` of retired name→hash bindings with dates.
 
-Everything else — media type, download filename, title — belongs to a **name**,
-not to the object. `scripts/cas.mjs` manages both:
+Four things are deliberate and easy to break:
 
-- `pnpm cas -- add <file> [--name <alias>]... [--title <t>]` — store and name
-- `pnpm cas -- ls` — list objects, current names, retired bindings
-- `pnpm cas -- verify` — re-hash every object; asserts the store's invariant
-- `pnpm cas -- check` — assert `firebase.json` agrees with `cas.json`
-- `pnpm cas -- aliases` — print the hosting entries `check` expects
+- **Objects are bare hashes** — type is not identity. `/cas/**` is served an
+  explicit `application/octet-stream`, so `WebAssembly.instantiateStreaming()` will
+  reject a `/cas/` URL; fetch to an `ArrayBuffer`, or give the module a name.
+- **The manifest sits outside `/cas/`**, which is served `immutable`.
+- **Names are rewrites plus a per-name header rule, never redirects.** Header rules
+  match the _request_ path, so only a rule on the name can set `Content-Type` and
+  `Content-Disposition`. A 302 inherits the object's (absent) type; a rewrite alone
+  infers nothing from `.pdf`. The cost is dedup — an alias caches its own copy.
+- **`firebase.json` is hand-maintained** (it also holds the blog's 301s). After any
+  `add` that binds a name, update the rewrite _and_ its header rule, then run
+  `pnpm cas -- check`.
 
-The manifest is `static/cas.json` (served at `/cas.json`): immutable `objects`,
-mutable `names` carrying the semantics, and a `history` of every retired
-name→hash binding with dates — the seed of a publication-history table.
+## Hosting
 
-Four things here are deliberate and easy to break:
+Serves `build/` with 60s cache headers. **`cleanUrls: true` is load-bearing — do
+not remove it.** The adapter emits `blog.html` and `blog/<slug>.html`; without
+`cleanUrls` every extensionless URL misses and falls through to `404.html`, which
+is an SPA shell that hydrates and renders the right page. The site then looks fine
+in a browser while returning HTTP 404 and an empty document to every crawler. That
+was live for about a year.
 
-- **Objects are bare hashes.** Type is not part of identity. `/cas/**` is served
-  an explicit `Content-Type: application/octet-stream` so behaviour is defined
-  rather than left to Firebase's extension table. Consequently
-  `WebAssembly.instantiateStreaming()` will reject a `/cas/` URL — fetch to an
-  `ArrayBuffer` and use `WebAssembly.instantiate`, or give the module a name.
-- **The manifest lives outside `/cas/`.** `/cas/**` is served `immutable`; the
-  manifest is the one mutable thing, so it sits at `/cas.json`.
-- **Names are rewrites plus a per-name header rule — never redirects.** This is
-  forced, and was measured rather than assumed: header rules match the _request_
-  path, so a rule on the name can set `Content-Type` and `Content-Disposition`
-  while `/cas/**` stays untyped. A 302 cannot, because the final response comes
-  from `/cas/<hash>` and inherits its type. A rewrite _alone_ cannot either — the
-  `.pdf` in the request path implies nothing. The header rule does the work.
-  The cost is deduplication: an alias URL caches its own copy rather than
-  converging on `/cas/<hash>`. Aliases are few and human-facing; anything
-  referencing content by hash still converges.
-- **`firebase.json` is hand-maintained, not generated** (it also holds the blog's
-  301s). After any `add` that binds a name, update the rewrite _and_ its header
-  rule, then run `pnpm cas -- check` — otherwise a rebound name silently
-  serves the old object, or serves the right bytes untyped. `check` also rejects
-  any redirect pointing into `/cas/`.
+Consequences: `pnpm preview` goes through Vite and ignores `firebase.json`, so it
+cannot catch this class of bug — use the emulator. And check the **status code**,
+not the page: `curl -sI https://tekne.dev/blog` must return 200.
 
-Note the hosting emulator does not implement range requests (returns 200 where
-production returns 206). Production Firebase does support them, which is what
-makes range-querying a stored SQLite database viable — but it can only be
-confirmed against the deployed site.
+`firebase.json` also 301s legacy bare slugs to canonical series paths. Redirects
+are evaluated _before_ static files, so they win over the identically-named pages
+`buildPostLookup` also emits.
 
-### Deployment
+## Tests
 
-Firebase Hosting serving from `build/` directory with 60-second cache headers.
+- `tests/cas.test.mjs` — objects hash to their own names, carry no extension, names
+  resolve and carry semantics, and history never references a dropped object (that
+  would make a past URL unrecoverable).
+- `tests/hosting.test.mjs` — drives the real hosting emulator and asserts status
+  codes and served bytes, never whether a page renders. Covers the `cleanUrls`
+  regression, uuid resolution, legacy redirects, and CAS headers and byte identity.
 
-**`cleanUrls: true` in `firebase.json` is load-bearing — do not remove it.** The
-static adapter emits `blog.html` and `blog/<slug>.html`, but Firebase without
-`cleanUrls` resolves only an exact path or `<path>/index.html`. Every
-extensionless URL therefore missed and fell through to `404.html`, which — since
-the adapter's `fallback` is an SPA shell — hydrated client-side and rendered the
-right page anyway. The site looked fine in a browser while serving HTTP 404 and
-an empty document to every crawler and link preview, and none of the prerendered
-HTML was ever used. This was live for roughly a year before being caught.
-
-Two consequences worth remembering:
-
-- `pnpm preview` serves through Vite and ignores `firebase.json` entirely, so
-  it cannot catch this class of bug. Verify hosting behaviour with
-  `firebase emulators:start --only hosting` against a fresh `pnpm build`.
-- Because the failure mode renders correctly in a browser, check the **status
-  code**, not the page: `curl -sI https://tekne.dev/blog` must return `200`.
-
-`firebase.json` also 301s the legacy bare slugs to their canonical series paths.
-Redirects are evaluated _before_ static files, so those redirects win over the
-identically-named prerendered pages that `buildPostLookup` also emits.
+The emulator does **not** implement range requests (200 where production returns
+206), so range behaviour — what makes range-querying a hosted SQLite database
+viable — is only confirmable against the deployed site.
 
 ## Conventions
 
-- Svelte 5 runes syntax (`$props()`, `{@render children()}`, etc.)
-- Tabs for indentation, single quotes, no trailing commas (see .prettierrc)
-- ESLint flat config (eslint.config.js)
+- Svelte 5 runes (`$props()`, `{@render children()}`)
+- Tabs, single quotes, no trailing commas (`.prettierrc`)
+- ESLint flat config (`eslint.config.js`)
