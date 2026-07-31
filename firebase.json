@@ -27,6 +27,17 @@
 				"source": "/blog/paper-planes",
 				"destination": "/blog/adventures-in-type-theory/paper-planes",
 				"type": 301
+			},
+
+			{
+				"source": "/ert.pdf",
+				"destination": "/cas/ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801.pdf",
+				"type": 302
+			},
+			{
+				"source": "/papers/explicit-refinement-types.pdf",
+				"destination": "/cas/ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801.pdf",
+				"type": 302
 			}
 		],
 		"headers": [
@@ -36,6 +47,15 @@
 					{
 						"key": "Cache-Control",
 						"value": "max-age=60"
+					}
+				]
+			},
+			{
+				"source": "/cas/**",
+				"headers": [
+					{
+						"key": "Cache-Control",
+						"value": "public, max-age=31536000, immutable"
 					}
 				]
 			}

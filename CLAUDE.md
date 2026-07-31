@@ -98,6 +98,43 @@ Mermaid is **not** available: the dependency was removed and nothing ever initia
 - Cyan accent color for links/hover
 - Responsive layout with 77rem max-width
 
+### Content-addressed store (`/cas/`)
+
+Immutable assets — papers, and later WASM demos and datasets — are stored by
+BLAKE3 hash at `static/cas/<hash>.<ext>`, committed to the repo. The repository
+_is_ the store: there is no generation step that could drift from it, and
+`npm run preview` serves exactly what deploys. `scripts/cas.mjs` manages it:
+
+- `npm run cas -- add <file> [--name <alias>]... [--title <t>]` — store and name
+- `npm run cas -- ls` — list objects, current names, retired bindings
+- `npm run cas -- verify` — re-hash every object; asserts the store's invariant
+- `npm run cas -- check` — assert `firebase.json` agrees with `cas.json`
+- `npm run cas -- aliases` — print the redirect entries `check` expects
+
+The manifest is `static/cas.json` (served at `/cas.json`), and it separates
+immutable `objects` from mutable `names` that point at them, plus a `history` of
+every retired name→hash binding. That history is the seed of a publication-history
+table.
+
+Four things here are deliberate and easy to break:
+
+- **Objects keep their file extension.** Firebase derives `Content-Type` from it,
+  and a bare hash would be served as `application/octet-stream` —
+  `WebAssembly.instantiateStreaming()` hard-fails on that. The hash still
+  identifies the bytes; the extension carries what the protocol needs.
+- **The manifest lives outside `/cas/`.** `/cas/**` is served `immutable`; the
+  manifest is the one mutable thing, so it sits at `/cas.json`.
+- **Names are 302 redirects, never rewrites.** The redirect makes the client
+  fetch the `/cas/` URL, so every name for the same bytes shares one cache entry
+  in the browser and at the CDN — a rewrite would serve the bytes _at_ each name
+  and defeat that. And 302 rather than 301 because a name is mutable while its
+  content is not: browsers cache 301s near-permanently, so a revision would never
+  reach anyone who had already followed the name.
+- **`firebase.json` is hand-maintained, not generated** (it also holds the blog's
+  301s). So after any `add` that binds a name, update the redirect and run
+  `npm run cas -- check` — otherwise a rebound name silently keeps serving the
+  old object.
+
 ### Deployment
 
 Firebase Hosting serving from `build/` directory with 60-second cache headers.

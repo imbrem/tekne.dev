@@ -9,10 +9,12 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"cas": "node scripts/cas.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
+		"@noble/hashes": "^2.2.0",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/enhanced-img": "^0.10.3",
 		"@sveltejs/kit": "^2.53.4",

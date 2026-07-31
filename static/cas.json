@@ -1,0 +1,20 @@
+{
+	"algorithm": "blake3-256",
+	"encoding": "hex",
+	"objects": {
+		"ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801": {
+			"ext": ".pdf",
+			"path": "/cas/ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801.pdf",
+			"mediaType": "application/pdf",
+			"size": 429751,
+			"originalName": "ert.pdf",
+			"added": "2026-07-31",
+			"title": "Explicit Refinement Types (ICFP'23)"
+		}
+	},
+	"names": {
+		"/ert.pdf": "ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801",
+		"/papers/explicit-refinement-types.pdf": "ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801"
+	},
+	"history": []
+}
