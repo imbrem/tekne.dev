@@ -6,12 +6,15 @@ Personal website and blog for Jad Ghalayini (tekne.dev). Static site built with 
 
 ## Commands
 
+There is a Nix dev shell (`nix develop`, or `direnv allow` via `.envrc`) providing Node 24 and `firebase-tools`.
+
 - `npm run dev` — Start dev server
 - `npm run build` — Build static site to `build/`
-- `npm run preview` — Preview production build
+- `npm run preview` — Preview production build (**Vite, not Firebase** — see below)
 - `npm run check` — Type-check with svelte-check
 - `npm run lint` — Prettier + ESLint
 - `npm run format` — Auto-format with Prettier
+- `firebase emulators:start --only hosting` — Serve `build/` under the real hosting rules
 - `firebase deploy` — Deploy to Firebase Hosting
 
 ## Architecture
@@ -98,6 +101,27 @@ Mermaid is **not** available: the dependency was removed and nothing ever initia
 ### Deployment
 
 Firebase Hosting serving from `build/` directory with 60-second cache headers.
+
+**`cleanUrls: true` in `firebase.json` is load-bearing — do not remove it.** The
+static adapter emits `blog.html` and `blog/<slug>.html`, but Firebase without
+`cleanUrls` resolves only an exact path or `<path>/index.html`. Every
+extensionless URL therefore missed and fell through to `404.html`, which — since
+the adapter's `fallback` is an SPA shell — hydrated client-side and rendered the
+right page anyway. The site looked fine in a browser while serving HTTP 404 and
+an empty document to every crawler and link preview, and none of the prerendered
+HTML was ever used. This was live for roughly a year before being caught.
+
+Two consequences worth remembering:
+
+- `npm run preview` serves through Vite and ignores `firebase.json` entirely, so
+  it cannot catch this class of bug. Verify hosting behaviour with
+  `firebase emulators:start --only hosting` against a fresh `npm run build`.
+- Because the failure mode renders correctly in a browser, check the **status
+  code**, not the page: `curl -sI https://tekne.dev/blog` must return `200`.
+
+`firebase.json` also 301s the legacy bare slugs to their canonical series paths.
+Redirects are evaluated _before_ static files, so those redirects win over the
+identically-named prerendered pages that `buildPostLookup` also emits.
 
 ## Conventions
 
