@@ -100,40 +100,53 @@ Mermaid is **not** available: the dependency was removed and nothing ever initia
 
 ### Content-addressed store (`/cas/`)
 
-Immutable assets — papers, and later WASM demos and datasets — are stored by
-BLAKE3 hash at `static/cas/<hash>.<ext>`, committed to the repo. The repository
-_is_ the store: there is no generation step that could drift from it, and
-`npm run preview` serves exactly what deploys. `scripts/cas.mjs` manages it:
+The store holds **bytes, keyed only by BLAKE3 hash**: `static/cas/<hash>` served
+at `/cas/<hash>`. No extension, no media type, no filename — `/cas/<hash>` means
+"give me these bytes" and nothing more. Objects are committed to the repo, so the
+repository _is_ the store: nothing generates it, so nothing can drift from it,
+and `npm run preview` serves exactly what deploys.
+
+Everything else — media type, download filename, title — belongs to a **name**,
+not to the object. `scripts/cas.mjs` manages both:
 
 - `npm run cas -- add <file> [--name <alias>]... [--title <t>]` — store and name
 - `npm run cas -- ls` — list objects, current names, retired bindings
 - `npm run cas -- verify` — re-hash every object; asserts the store's invariant
 - `npm run cas -- check` — assert `firebase.json` agrees with `cas.json`
-- `npm run cas -- aliases` — print the redirect entries `check` expects
+- `npm run cas -- aliases` — print the hosting entries `check` expects
 
-The manifest is `static/cas.json` (served at `/cas.json`), and it separates
-immutable `objects` from mutable `names` that point at them, plus a `history` of
-every retired name→hash binding. That history is the seed of a publication-history
-table.
+The manifest is `static/cas.json` (served at `/cas.json`): immutable `objects`,
+mutable `names` carrying the semantics, and a `history` of every retired
+name→hash binding with dates — the seed of a publication-history table.
 
 Four things here are deliberate and easy to break:
 
-- **Objects keep their file extension.** Firebase derives `Content-Type` from it,
-  and a bare hash would be served as `application/octet-stream` —
-  `WebAssembly.instantiateStreaming()` hard-fails on that. The hash still
-  identifies the bytes; the extension carries what the protocol needs.
+- **Objects are bare hashes.** Type is not part of identity. `/cas/**` is served
+  an explicit `Content-Type: application/octet-stream` so behaviour is defined
+  rather than left to Firebase's extension table. Consequently
+  `WebAssembly.instantiateStreaming()` will reject a `/cas/` URL — fetch to an
+  `ArrayBuffer` and use `WebAssembly.instantiate`, or give the module a name.
 - **The manifest lives outside `/cas/`.** `/cas/**` is served `immutable`; the
   manifest is the one mutable thing, so it sits at `/cas.json`.
-- **Names are 302 redirects, never rewrites.** The redirect makes the client
-  fetch the `/cas/` URL, so every name for the same bytes shares one cache entry
-  in the browser and at the CDN — a rewrite would serve the bytes _at_ each name
-  and defeat that. And 302 rather than 301 because a name is mutable while its
-  content is not: browsers cache 301s near-permanently, so a revision would never
-  reach anyone who had already followed the name.
+- **Names are rewrites plus a per-name header rule — never redirects.** This is
+  forced, and was measured rather than assumed: header rules match the _request_
+  path, so a rule on the name can set `Content-Type` and `Content-Disposition`
+  while `/cas/**` stays untyped. A 302 cannot, because the final response comes
+  from `/cas/<hash>` and inherits its type. A rewrite _alone_ cannot either — the
+  `.pdf` in the request path implies nothing. The header rule does the work.
+  The cost is deduplication: an alias URL caches its own copy rather than
+  converging on `/cas/<hash>`. Aliases are few and human-facing; anything
+  referencing content by hash still converges.
 - **`firebase.json` is hand-maintained, not generated** (it also holds the blog's
-  301s). So after any `add` that binds a name, update the redirect and run
-  `npm run cas -- check` — otherwise a rebound name silently keeps serving the
-  old object.
+  301s). After any `add` that binds a name, update the rewrite _and_ its header
+  rule, then run `npm run cas -- check` — otherwise a rebound name silently
+  serves the old object, or serves the right bytes untyped. `check` also rejects
+  any redirect pointing into `/cas/`.
+
+Note the hosting emulator does not implement range requests (returns 200 where
+production returns 206). Production Firebase does support them, which is what
+makes range-querying a stored SQLite database viable — but it can only be
+confirmed against the deployed site.
 
 ### Deployment
 

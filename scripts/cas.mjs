@@ -2,30 +2,36 @@
 /**
  * Content-addressed store for immutable assets.
  *
- * Objects live at static/cas/<blake3>.<ext> and are committed to the repo, so
- * the repository *is* the store — there is no build step that could drift from
- * it, and `npm run preview` serves exactly what deploys.
+ * The store holds *bytes*, keyed only by BLAKE3 hash:
  *
- * The manifest lives at static/cas.json, deliberately OUTSIDE static/cas/: that
- * directory is served with `immutable` cache headers, and the manifest is the
- * one thing here that changes.
+ *     static/cas/<hash>   ->   /cas/<hash>
  *
- * The manifest separates two things that are easy to conflate:
+ * No extension, no media type, no filename. `/cas/<hash>` means "give me these
+ * bytes" and nothing else. Objects are committed to the repo, so the repository
+ * *is* the store — nothing generates it, so nothing can drift from it, and
+ * `npm run preview` serves exactly what deploys.
  *
- *   objects  — immutable content, keyed by hash. Append-only.
- *   names    — mutable pointers into that content. Exactly one hash each.
- *   history  — every name→hash binding that has ever been retired, with dates.
+ * Everything else — media type, download filename, human-readable title — is
+ * the business of a *name*, not of the object:
  *
- * Names are served as 302 redirects to the object, never as rewrites. Two
- * reasons, both load-bearing:
+ *     objects  — immutable bytes, keyed by hash. Append-only, untyped.
+ *     names    — mutable pointers carrying the semantics. One hash each.
+ *     history  — every name->hash binding retired so far, with dates.
  *
- *   - Dedup. A redirect makes the client fetch the /cas/ URL, so every name
- *     pointing at the same bytes shares one cache entry, in the browser and at
- *     the CDN. A rewrite would serve those bytes *at* the name, giving each
- *     name its own independently-cached copy of the same content.
- *   - Revisability. A name is mutable, the content it points at is not.
- *     Browsers cache a 301 more or less permanently, so a 301 would pin the
- *     name to one hash forever for anyone who had already followed it.
+ * Names are served as REWRITES plus a per-name header rule, not as redirects.
+ * That is forced by how Firebase resolves headers, which was measured, not
+ * assumed:
+ *
+ *   - Header rules match the *request* path. So a rule on the name can set
+ *     Content-Type and Content-Disposition, while /cas/** stays untyped.
+ *   - A 302 cannot: the final response comes from /cas/<hash> and inherits its
+ *     (absent) type, so no redirect-based alias can ever render inline.
+ *   - A rewrite alone cannot either: the `.pdf` in the request path does not
+ *     imply a type. The header rule is doing the work.
+ *
+ * The cost of a rewrite over a redirect is deduplication: the alias URL caches
+ * its own copy of the bytes rather than converging on /cas/<hash>. Aliases are
+ * few and human-facing; anything referencing content by hash still converges.
  *
  * Usage:
  *   node scripts/cas.mjs add <file> [--name <alias>]... [--title <title>]
@@ -45,8 +51,8 @@ const STORE = join(ROOT, 'static', 'cas');
 const MANIFEST = join(ROOT, 'static', 'cas.json');
 const FIREBASE = join(ROOT, 'firebase.json');
 
-// Informational only — Firebase derives the response Content-Type from the
-// file extension, which is exactly why objects keep theirs.
+// Used to give a *name* its Content-Type, inferred from the name's own
+// extension. Objects have no media type; only names do.
 const MEDIA_TYPES = {
 	'.pdf': 'application/pdf',
 	'.wasm': 'application/wasm',
@@ -55,8 +61,8 @@ const MEDIA_TYPES = {
 	'.jpeg': 'image/jpeg',
 	'.svg': 'image/svg+xml',
 	'.json': 'application/json',
-	'.txt': 'text/plain',
-	'.md': 'text/markdown',
+	'.txt': 'text/plain; charset=utf-8',
+	'.md': 'text/markdown; charset=utf-8',
 	'.zip': 'application/zip',
 	'.sqlite3': 'application/vnd.sqlite3'
 };
@@ -69,8 +75,7 @@ function loadManifest() {
 	if (!existsSync(MANIFEST)) {
 		return { algorithm: 'blake3-256', encoding: 'hex', objects: {}, names: {}, history: [] };
 	}
-	const m = JSON.parse(readFileSync(MANIFEST, 'utf8'));
-	return { names: {}, history: [], ...m };
+	return { names: {}, history: [], ...JSON.parse(readFileSync(MANIFEST, 'utf8')) };
 }
 
 function saveManifest(m) {
@@ -88,7 +93,7 @@ function saveManifest(m) {
 
 /** Point `name` at `hash`, retiring any previous binding into history. */
 function bind(m, name, hash) {
-	const previous = m.names[name];
+	const previous = m.names[name]?.hash;
 	if (previous === hash) return;
 	if (previous) {
 		// When the binding was made: the end of the name's prior stint if it had
@@ -100,7 +105,14 @@ function bind(m, name, hash) {
 		m.history.push({ name, hash: previous, from, until: today() });
 		console.log(`  rebound ${name}: ${previous.slice(0, 12)}… -> ${hash.slice(0, 12)}…`);
 	}
-	m.names[name] = hash;
+
+	const ext = extname(name).toLowerCase();
+	m.names[name] = {
+		hash,
+		mediaType: MEDIA_TYPES[ext] ?? 'application/octet-stream',
+		filename: basename(name),
+		...(m.names[name]?.disposition ? { disposition: m.names[name].disposition } : {})
+	};
 }
 
 function add(args) {
@@ -116,27 +128,23 @@ function add(args) {
 
 	const bytes = readFileSync(file);
 	const hash = hashOf(bytes);
-	const ext = extname(file).toLowerCase();
-	const stored = `${hash}${ext}`;
-	const target = join(STORE, stored);
+	const target = join(STORE, hash);
 
 	const m = loadManifest();
 
 	if (!existsSync(target)) {
 		mkdirSync(STORE, { recursive: true });
 		writeFileSync(target, bytes);
-		console.log(`stored: ${stored} (${bytes.length} bytes)`);
+		console.log(`stored: ${hash} (${bytes.length} bytes)`);
 	} else {
-		console.log(`already stored: ${stored}`);
+		console.log(`already stored: ${hash}`);
 	}
 
-	// Written whenever absent rather than only on first store, so the manifest
-	// is always reconstructible from the objects on disk — deleting cas.json and
+	// Written whenever absent rather than only on first store, so the manifest is
+	// always reconstructible from the objects on disk — deleting cas.json and
 	// re-adding must converge, not half-populate.
 	m.objects[hash] = {
-		ext,
-		path: `/cas/${stored}`,
-		mediaType: MEDIA_TYPES[ext] ?? 'application/octet-stream',
+		path: `/cas/${hash}`,
 		size: bytes.length,
 		originalName: basename(file),
 		added: m.objects[hash]?.added ?? today(),
@@ -147,10 +155,8 @@ function add(args) {
 	for (const name of names) bind(m, name, hash);
 	saveManifest(m);
 
-	console.log(`  url:   /cas/${stored}`);
-	const pointing = Object.entries(m.names)
-		.filter(([, h]) => h === hash)
-		.map(([n]) => n);
+	console.log(`  url:   /cas/${hash}`);
+	const pointing = Object.keys(m.names).filter((n) => m.names[n].hash === hash);
 	if (pointing.length) console.log(`  names: ${pointing.join(', ')}`);
 	if (names.length) console.log(`\nRun \`npm run cas -- check\` after updating firebase.json.`);
 }
@@ -160,12 +166,11 @@ function ls() {
 	const entries = Object.entries(m.objects);
 	if (!entries.length) return console.log('(store is empty)');
 	for (const [hash, o] of entries) {
-		const pointing = Object.entries(m.names)
-			.filter(([, h]) => h === hash)
-			.map(([n]) => n);
-		console.log(`${hash}${o.ext}`);
+		console.log(hash);
 		console.log(`  ${o.title ?? o.originalName}  ${o.size} bytes  added ${o.added}`);
-		if (pointing.length) console.log(`  names: ${pointing.join(', ')}`);
+		for (const n of Object.keys(m.names).filter((n) => m.names[n].hash === hash)) {
+			console.log(`  name: ${n}  (${m.names[n].mediaType})`);
+		}
 	}
 	if (m.history.length) {
 		console.log(`\nretired bindings:`);
@@ -187,12 +192,16 @@ function verify() {
 
 	const onDisk = existsSync(STORE) ? readdirSync(STORE) : [];
 	for (const file of onDisk) {
-		const expected = basename(file, extname(file));
+		if (extname(file)) {
+			console.error(`EXTENSION ${file} (objects are bare hashes; type belongs to names)`);
+			bad++;
+			continue;
+		}
 		const actual = hashOf(readFileSync(join(STORE, file)));
-		if (actual !== expected) {
+		if (actual !== file) {
 			console.error(`CORRUPT ${file}\n  content hashes to ${actual}`);
 			bad++;
-		} else if (!m.objects[expected]) {
+		} else if (!m.objects[file]) {
 			console.error(`UNTRACKED ${file} (on disk but absent from cas.json)`);
 			bad++;
 		} else {
@@ -200,16 +209,16 @@ function verify() {
 		}
 	}
 
-	for (const [hash, o] of Object.entries(m.objects)) {
-		if (!existsSync(join(STORE, `${hash}${o.ext}`))) {
-			console.error(`MISSING ${hash}${o.ext} (in cas.json but not on disk)`);
+	for (const hash of Object.keys(m.objects)) {
+		if (!existsSync(join(STORE, hash))) {
+			console.error(`MISSING ${hash} (in cas.json but not on disk)`);
 			bad++;
 		}
 	}
 
-	for (const [name, hash] of Object.entries(m.names)) {
-		if (!m.objects[hash]) {
-			console.error(`DANGLING name ${name} -> ${hash} (no such object)`);
+	for (const [name, n] of Object.entries(m.names)) {
+		if (!m.objects[n.hash]) {
+			console.error(`DANGLING name ${name} -> ${n.hash} (no such object)`);
 			bad++;
 		}
 	}
@@ -221,51 +230,79 @@ function verify() {
 	console.log(`\n${onDisk.length} object(s) verified, ${Object.keys(m.names).length} name(s)`);
 }
 
-/** The firebase.json redirect entries implied by the name table. */
-function redirectsFromManifest(m) {
-	return Object.entries(m.names).map(([name, hash]) => ({
+/** The firebase.json rewrites and header rules implied by the name table. */
+function hostingFor(m) {
+	const rewrites = Object.entries(m.names).map(([name, n]) => ({
 		source: name,
-		destination: `/cas/${hash}${m.objects[hash].ext}`,
-		type: 302
+		destination: `/cas/${n.hash}`
 	}));
+	const headers = Object.entries(m.names).map(([name, n]) => ({
+		source: name,
+		headers: [
+			{ key: 'Content-Type', value: n.mediaType },
+			{
+				key: 'Content-Disposition',
+				value: `${n.disposition ?? 'inline'}; filename="${n.filename}"`
+			}
+		]
+	}));
+	return { rewrites, headers };
 }
 
 function aliases() {
-	console.log(JSON.stringify(redirectsFromManifest(loadManifest()), null, '\t'));
+	console.log(JSON.stringify(hostingFor(loadManifest()), null, '\t'));
 }
 
 /**
  * firebase.json is hand-maintained (it also holds the blog's 301s), so the name
  * table is not generated into it. Instead, assert the two agree — otherwise a
- * rebound name silently keeps serving the old object.
+ * rebound name silently keeps serving the old object, or loses its type.
  */
 function check() {
 	const m = loadManifest();
-	const want = redirectsFromManifest(m);
-	const have = JSON.parse(readFileSync(FIREBASE, 'utf8')).hosting.redirects ?? [];
-	const bySource = new Map(have.map((r) => [r.source, r]));
+	const want = hostingFor(m);
+	const fb = JSON.parse(readFileSync(FIREBASE, 'utf8')).hosting;
+	const haveRewrites = new Map((fb.rewrites ?? []).map((r) => [r.source, r]));
+	const haveHeaders = new Map((fb.headers ?? []).map((h) => [h.source, h]));
 	let bad = 0;
 
-	for (const w of want) {
-		const got = bySource.get(w.source);
+	for (const w of want.rewrites) {
+		const got = haveRewrites.get(w.source);
 		if (!got) {
-			console.error(`MISSING redirect for ${w.source} -> ${w.destination}`);
+			console.error(`MISSING rewrite ${w.source} -> ${w.destination}`);
 			bad++;
 		} else if (got.destination !== w.destination) {
 			console.error(
-				`STALE ${w.source}\n  firebase.json -> ${got.destination}\n  cas.json      -> ${w.destination}`
+				`STALE rewrite ${w.source}\n  firebase.json -> ${got.destination}\n  cas.json      -> ${w.destination}`
 			);
-			bad++;
-		} else if (got.type !== 302) {
-			console.error(`${w.source} is a ${got.type}; CAS names must be 302 (see header comment)`);
 			bad++;
 		}
 	}
 
-	const casDestinations = have.filter((r) => r.destination.startsWith('/cas/'));
-	for (const r of casDestinations) {
-		if (!m.names[r.source]) {
-			console.error(`ORPHAN redirect ${r.source} -> ${r.destination} (no such name in cas.json)`);
+	for (const w of want.headers) {
+		const got = haveHeaders.get(w.source);
+		const flat = (h) => JSON.stringify((h?.headers ?? []).map((x) => [x.key, x.value]).sort());
+		if (!got) {
+			console.error(`MISSING header rule for ${w.source} (name would serve untyped)`);
+			bad++;
+		} else if (flat(got) !== flat(w)) {
+			console.error(`STALE header rule ${w.source}\n  want ${flat(w)}\n  have ${flat(got)}`);
+			bad++;
+		}
+	}
+
+	for (const r of fb.rewrites ?? []) {
+		if (r.destination.startsWith('/cas/') && !m.names[r.source]) {
+			console.error(`ORPHAN rewrite ${r.source} -> ${r.destination} (no such name in cas.json)`);
+			bad++;
+		}
+	}
+
+	// A CAS name must never be a redirect: the response would come from
+	// /cas/<hash> and inherit its lack of a type.
+	for (const r of fb.redirects ?? []) {
+		if (r.destination.startsWith('/cas/')) {
+			console.error(`REDIRECT ${r.source} -> ${r.destination}; CAS names must be rewrites`);
 			bad++;
 		}
 	}
@@ -274,7 +311,7 @@ function check() {
 		console.error(`\n${bad} problem(s) — run \`npm run cas -- aliases\` for the expected entries`);
 		process.exit(1);
 	}
-	console.log(`firebase.json agrees with cas.json (${want.length} name(s))`);
+	console.log(`firebase.json agrees with cas.json (${want.rewrites.length} name(s))`);
 }
 
 const [cmd, ...args] = process.argv.slice(2);

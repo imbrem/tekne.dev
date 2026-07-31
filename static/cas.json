@@ -3,18 +3,24 @@
 	"encoding": "hex",
 	"objects": {
 		"ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801": {
-			"ext": ".pdf",
-			"path": "/cas/ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801.pdf",
-			"mediaType": "application/pdf",
+			"path": "/cas/ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801",
 			"size": 429751,
-			"originalName": "ert.pdf",
+			"originalName": "ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801",
 			"added": "2026-07-31",
 			"title": "Explicit Refinement Types (ICFP'23)"
 		}
 	},
 	"names": {
-		"/ert.pdf": "ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801",
-		"/papers/explicit-refinement-types.pdf": "ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801"
+		"/ert.pdf": {
+			"hash": "ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801",
+			"mediaType": "application/pdf",
+			"filename": "ert.pdf"
+		},
+		"/papers/explicit-refinement-types.pdf": {
+			"hash": "ebec31ef1bdbf55b263842c2d39cf8782b0c761f7157be465628c2797afe6801",
+			"mediaType": "application/pdf",
+			"filename": "explicit-refinement-types.pdf"
+		}
 	},
 	"history": []
 }
