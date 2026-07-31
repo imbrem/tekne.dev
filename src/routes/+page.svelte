@@ -1,6 +1,6 @@
-<script>
+<script lang="ts">
 	import * as config from '$lib/config';
-	import me from '$lib/assets/me.jpg';
+	import me from '$lib/assets/me.jpg?enhanced';
 </script>
 
 <svelte:head>
@@ -12,7 +12,11 @@
 
 <div id="profile">
 	<div id="photo">
-		<img src={me} alt="Nanosecond wise, hour foolish" style="width:100%; border-radius:5%" />
+		<enhanced:img
+			src={me}
+			alt="Nanosecond wise, hour foolish"
+			style="width:100%; border-radius:5%"
+		/>
 	</div>
 
 	<div id="bio">

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import Home from '$lib/icons/Home.svelte';
 	import Github from '$lib/icons/Github.svelte';
 	import Gitlab from '$lib/icons/Gitlab.svelte';

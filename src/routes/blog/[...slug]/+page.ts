@@ -12,16 +12,7 @@ async function getLookup() {
 
 export async function entries() {
 	const lookup = await getLookup();
-	const seen = new Set<string>();
-	const result: { slug: string }[] = [];
-	for (const [key, entry] of lookup) {
-		const id = entry.post.path;
-		if (!seen.has(id)) {
-			seen.add(id);
-		}
-		result.push({ slug: key });
-	}
-	return result;
+	return [...lookup.keys()].map((slug) => ({ slug }));
 }
 
 export async function load({ params }: { params: { slug: string } }) {

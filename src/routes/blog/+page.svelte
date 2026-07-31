@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import * as config from '$lib/config';
 
 	let { data } = $props();

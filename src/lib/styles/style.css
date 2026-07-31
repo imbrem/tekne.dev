@@ -9,11 +9,9 @@ body {
 
 code {
 	font-family: 'Fira Code', monospace;
+	counter-reset: step;
+	counter-increment: step 0;
 }
-
-/* 
-h1, h2, h3 {
-} */
 
 a {
 	color: cyan;
@@ -33,11 +31,6 @@ pre.shiki {
 	code .line::before {
 		display: none;
 	}
-}
-
-code {
-	counter-reset: step;
-	counter-increment: step 0;
 }
 
 code .line::before {

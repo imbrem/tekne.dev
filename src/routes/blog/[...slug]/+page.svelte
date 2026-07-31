@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import * as config from '$lib/config';
 
 	let { data } = $props();
@@ -42,7 +42,7 @@
 <style>
 	h1 {
 		font-size: 2em;
-		margin: 0px;
+		margin: 0;
 	}
 
 	.series {

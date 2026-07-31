@@ -8,7 +8,22 @@ import rehypeKatexSvelte from 'rehype-katex-svelte';
 
 const highlighter = await getSingletonHighlighter({
 	themes: ['nord'],
-	langs: ['lean'] // Add Lean language for highlighting
+	langs: [
+		'lean',
+		'rust',
+		'c',
+		'cpp',
+		'python',
+		'bash',
+		'typescript',
+		'javascript',
+		'sql',
+		'json',
+		'toml',
+		'text',
+		'svelte',
+		'asm'
+	]
 });
 
 /** @type {import('@sveltejs/kit').Config} */
