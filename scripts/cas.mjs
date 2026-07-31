@@ -9,7 +9,7 @@
  * No extension, no media type, no filename. `/cas/<hash>` means "give me these
  * bytes" and nothing else. Objects are committed to the repo, so the repository
  * *is* the store — nothing generates it, so nothing can drift from it, and
- * `npm run preview` serves exactly what deploys.
+ * `pnpm preview` serves exactly what deploys.
  *
  * Everything else — media type, download filename, human-readable title — is
  * the business of a *name*, not of the object:
@@ -158,7 +158,7 @@ function add(args) {
 	console.log(`  url:   /cas/${hash}`);
 	const pointing = Object.keys(m.names).filter((n) => m.names[n].hash === hash);
 	if (pointing.length) console.log(`  names: ${pointing.join(', ')}`);
-	if (names.length) console.log(`\nRun \`npm run cas -- check\` after updating firebase.json.`);
+	if (names.length) console.log(`\nRun \`pnpm cas -- check\` after updating firebase.json.`);
 }
 
 function ls() {
@@ -308,7 +308,7 @@ function check() {
 	}
 
 	if (bad) {
-		console.error(`\n${bad} problem(s) — run \`npm run cas -- aliases\` for the expected entries`);
+		console.error(`\n${bad} problem(s) — run \`pnpm cas -- aliases\` for the expected entries`);
 		process.exit(1);
 	}
 	console.log(`firebase.json agrees with cas.json (${want.rewrites.length} name(s))`);

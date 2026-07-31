@@ -16,11 +16,13 @@
           buildInputs = [
             # 24.x matches the toolchain the lockfile was resolved against.
             pkgs.nodejs_24
+            pkgs.pnpm
 
             # Deploys to Firebase Hosting, and — more useful day to day —
             # provides `firebase emulators:start`, the only way to exercise
-            # firebase.json's cleanUrls/redirects locally. `npm run preview`
+            # firebase.json's cleanUrls/redirects locally. `pnpm preview`
             # serves through Vite and so silently ignores that config.
+            # tests/hosting.test.mjs drives this, so `pnpm test` needs the shell.
             pkgs.firebase-tools
 
             pkgs.bashInteractive
@@ -30,10 +32,11 @@
             export SHELL="${pkgs.bashInteractive}/bin/bash"
 
             echo "tekne.dev dev shell"
-            echo "  npm run dev                     dev server (hot reload)"
-            echo "  npm run build                   static build into build/"
-            echo "  npm run check                   svelte-check"
-            echo "  npm run lint / npm run format   prettier + eslint"
+            echo "  pnpm dev                        dev server (hot reload)"
+            echo "  pnpm build                      static build into build/"
+            echo "  pnpm test                       build, then CAS + hosting tests"
+            echo "  pnpm check                      svelte-check"
+            echo "  pnpm lint / pnpm format         prettier + eslint"
             echo ""
             echo "  firebase emulators:start        serve build/ under the real"
             echo "                                  hosting rules (cleanUrls,"

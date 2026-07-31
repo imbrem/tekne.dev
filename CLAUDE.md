@@ -6,16 +6,28 @@ Personal website and blog for Jad Ghalayini (tekne.dev). Static site built with 
 
 ## Commands
 
-There is a Nix dev shell (`nix develop`, or `direnv allow` via `.envrc`) providing Node 24 and `firebase-tools`.
+**Package manager is pnpm.** There is a Nix dev shell (`nix develop`, or `direnv allow` via `.envrc`) providing Node 24, pnpm, and `firebase-tools`. The tests need `firebase` on PATH, so run them inside the shell.
 
-- `npm run dev` — Start dev server
-- `npm run build` — Build static site to `build/`
-- `npm run preview` — Preview production build (**Vite, not Firebase** — see below)
-- `npm run check` — Type-check with svelte-check
-- `npm run lint` — Prettier + ESLint
-- `npm run format` — Auto-format with Prettier
+- `pnpm dev` — Start dev server
+- `pnpm build` — Build static site to `build/`
+- `pnpm test` — Build, then run the CAS and hosting suites
+- `pnpm test:cas` — CAS invariants only; pure and fast, no build or server
+- `pnpm preview` — Preview production build (**Vite, not Firebase** — see below)
+- `pnpm check` — Type-check with svelte-check
+- `pnpm lint` / `pnpm format` — Prettier + ESLint
+- `pnpm cas -- <add|ls|verify|check|aliases>` — Manage the content-addressed store
 - `firebase emulators:start --only hosting` — Serve `build/` under the real hosting rules
 - `firebase deploy` — Deploy to Firebase Hosting
+
+pnpm's strict `node_modules` is deliberate: it caught `vite-imagetools` being imported by `Img.svelte` while only present as a hoisted transitive dependency. Anything imported must be declared. Dependency install scripts are blocked by default and an unapproved one is a hard error — `pnpm-workspace.yaml` allows `sharp`, which backs `@sveltejs/enhanced-img`.
+
+### Tests
+
+`tests/cas.test.mjs` asserts the store's invariants — every object hashes to its own name, objects carry no extension, names resolve, history never references a dropped object.
+
+`tests/hosting.test.mjs` runs the **real Firebase hosting emulator** and asserts status codes and served bytes. This is the layer `pnpm preview` cannot reach, and the reason it exists is in the file header: the site once served HTTP 404 and an empty shell for every extensionless URL, for about a year, while looking perfect in a browser. So the assertions check the status code and the actual response body, never "does the page look right".
+
+Note the emulator does not implement range requests (returns 200 where production returns 206), so range behaviour — which is what makes range-querying a stored SQLite database viable — can only be confirmed against the deployed site.
 
 ## Architecture
 
@@ -104,16 +116,16 @@ The store holds **bytes, keyed only by BLAKE3 hash**: `static/cas/<hash>` served
 at `/cas/<hash>`. No extension, no media type, no filename — `/cas/<hash>` means
 "give me these bytes" and nothing more. Objects are committed to the repo, so the
 repository _is_ the store: nothing generates it, so nothing can drift from it,
-and `npm run preview` serves exactly what deploys.
+and `pnpm preview` serves exactly what deploys.
 
 Everything else — media type, download filename, title — belongs to a **name**,
 not to the object. `scripts/cas.mjs` manages both:
 
-- `npm run cas -- add <file> [--name <alias>]... [--title <t>]` — store and name
-- `npm run cas -- ls` — list objects, current names, retired bindings
-- `npm run cas -- verify` — re-hash every object; asserts the store's invariant
-- `npm run cas -- check` — assert `firebase.json` agrees with `cas.json`
-- `npm run cas -- aliases` — print the hosting entries `check` expects
+- `pnpm cas -- add <file> [--name <alias>]... [--title <t>]` — store and name
+- `pnpm cas -- ls` — list objects, current names, retired bindings
+- `pnpm cas -- verify` — re-hash every object; asserts the store's invariant
+- `pnpm cas -- check` — assert `firebase.json` agrees with `cas.json`
+- `pnpm cas -- aliases` — print the hosting entries `check` expects
 
 The manifest is `static/cas.json` (served at `/cas.json`): immutable `objects`,
 mutable `names` carrying the semantics, and a `history` of every retired
@@ -139,7 +151,7 @@ Four things here are deliberate and easy to break:
   referencing content by hash still converges.
 - **`firebase.json` is hand-maintained, not generated** (it also holds the blog's
   301s). After any `add` that binds a name, update the rewrite _and_ its header
-  rule, then run `npm run cas -- check` — otherwise a rebound name silently
+  rule, then run `pnpm cas -- check` — otherwise a rebound name silently
   serves the old object, or serves the right bytes untyped. `check` also rejects
   any redirect pointing into `/cas/`.
 
@@ -163,9 +175,9 @@ HTML was ever used. This was live for roughly a year before being caught.
 
 Two consequences worth remembering:
 
-- `npm run preview` serves through Vite and ignores `firebase.json` entirely, so
+- `pnpm preview` serves through Vite and ignores `firebase.json` entirely, so
   it cannot catch this class of bug. Verify hosting behaviour with
-  `firebase emulators:start --only hosting` against a fresh `npm run build`.
+  `firebase emulators:start --only hosting` against a fresh `pnpm build`.
 - Because the failure mode renders correctly in a browser, check the **status
   code**, not the page: `curl -sI https://tekne.dev/blog` must return `200`.
 

@@ -1,0 +1,7 @@
+# pnpm 11 reads settings from here rather than package.json's "pnpm" field.
+#
+# sharp backs @sveltejs/enhanced-img, which every optimised image on the site
+# goes through. pnpm blocks dependency install scripts by default and treats an
+# unapproved one as a hard error, so it has to be allowed explicitly.
+allowBuilds:
+  sharp: true
