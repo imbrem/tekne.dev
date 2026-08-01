@@ -107,6 +107,25 @@ describe('pages are served as real HTML, not a hydrating 404 shell', () => {
 	test('an unknown post still 404s', async () => {
 		assert.equal((await raw('/blog/no-such-post')).status, 404);
 	});
+
+	test('feed item identity is opaque, so reorganising does not re-notify', async () => {
+		// If <guid> is the post URL, moving a post — into a series directory, say —
+		// changes its identity and every subscriber sees the back catalogue return
+		// as unread. The stable `uuid` frontmatter exists to prevent exactly that.
+		const xml = await (await raw('/rss.xml')).text();
+		const guids = [...xml.matchAll(/<guid[^>]*>([^<]+)<\/guid>/g)].map((m) => m[1]);
+
+		assert.ok(guids.length > 0, 'feed should contain items');
+		assert.doesNotMatch(xml, /isPermaLink="true"/, 'no guid should be a permalink');
+		for (const g of guids) {
+			assert.match(g, /^urn:uuid:[0-9a-f-]{36}$/, `guid ${g} should be an opaque uuid URN`);
+		}
+		assert.equal(new Set(guids).size, guids.length, 'guids must be unique across items');
+
+		const items = [...xml.matchAll(/<item>/g)].length;
+		const posts = JSON.parse(readFileSync(join(ROOT, 'build', 'api', 'posts'), 'utf8'));
+		assert.equal(items, posts.length, 'feed should carry every post');
+	});
 });
 
 describe('URL compatibility', () => {
