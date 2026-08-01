@@ -17,6 +17,16 @@ a {
 	color: cyan;
 }
 
+/* enhanced-img emits intrinsic width/height attributes, which browsers apply as
+   presentational hints. Any CSS that sets only the width then leaves the height
+   pinned at the attribute's pixel value and the image is stretched. Author CSS
+   outranks a presentational hint, so this restores proportional scaling for
+   every image on the site — not just those inside an <article>. */
+img {
+	max-width: 100%;
+	height: auto;
+}
+
 .shiki {
 	padding: 0.5rem;
 	border-radius: 5px;

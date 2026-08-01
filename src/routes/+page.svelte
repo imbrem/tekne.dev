@@ -20,7 +20,7 @@
 			sizes="min(300px, 80vw)"
 			fetchpriority="high"
 			decoding="async"
-			style="width:100%; border-radius:5%"
+			style="width:100%; height:auto; border-radius:5%"
 		/>
 	</div>
 
