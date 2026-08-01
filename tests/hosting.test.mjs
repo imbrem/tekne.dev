@@ -125,6 +125,36 @@ describe('URL compatibility', () => {
 		);
 	});
 
+	test('a series directory lists its posts instead of 404ing', async () => {
+		// This segment appears inside every canonical URL in the series, so
+		// trimming a post URL to it must land somewhere real.
+		const res = await raw('/blog/adventures-in-type-theory');
+		assert.equal(res.status, 200);
+		const body = await res.text();
+		assert.match(body, /<title>[^<]*Adventures in Type Theory[^<]*<\/title>/);
+		for (const slug of ['locally-nameless-stlc', 'coming-in-clutch', 'paper-planes']) {
+			assert.match(
+				body,
+				new RegExp(`href="/blog/adventures-in-type-theory/${slug}"`),
+				`topic page should link ${slug}`
+			);
+		}
+		// Oldest first: part one must precede part five in document order.
+		assert.ok(
+			body.indexOf('locally-nameless-stlc') < body.indexOf('paper-planes'),
+			'series should read oldest-first'
+		);
+	});
+
+	test('a post links back to its series', async () => {
+		const res = await raw('/blog/adventures-in-type-theory/paper-planes');
+		assert.match(await res.text(), /href="\/blog\/adventures-in-type-theory"/);
+	});
+
+	test('"old" is not a topic — its posts live in the bare /blog namespace', async () => {
+		assert.equal((await raw('/blog/old')).status, 404);
+	});
+
 	test('every post is reachable by uuid, so links survive reorganisation', async () => {
 		const posts = JSON.parse(readFileSync(join(ROOT, 'build', 'api', 'posts'), 'utf8'));
 		assert.ok(posts.length > 0, 'expected posts in the prerendered API');

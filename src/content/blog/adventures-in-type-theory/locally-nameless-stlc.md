@@ -593,9 +593,9 @@ Toodles.
 
 <script>
     import Img from "$lib/components/Img.svelte"
-    import motorbike_laptop from "$lib/assets/locally-nameless-stlc/motorbike_laptop.jpg?enhanced"
-    import motorbike_ferry from "$lib/assets/locally-nameless-stlc/motorbike_ferry.jpg?enhanced"
-    import dover_cliffs from "$lib/assets/locally-nameless-stlc/dover_cliffs.jpg?enhanced"
-    import ship_office from "$lib/assets/locally-nameless-stlc/ship_office.jpg?enhanced"
-    import clutch_adjustment from "$lib/assets/locally-nameless-stlc/clutch_adjustment.jpg?enhanced"
+    import motorbike_laptop from "$lib/assets/locally-nameless-stlc/motorbike_laptop.jpg?w=480;800;1200;1600&enhanced"
+    import motorbike_ferry from "$lib/assets/locally-nameless-stlc/motorbike_ferry.jpg?w=480;800;1200;1600&enhanced"
+    import dover_cliffs from "$lib/assets/locally-nameless-stlc/dover_cliffs.jpg?w=480;800;1200;1600;2400&enhanced"
+    import ship_office from "$lib/assets/locally-nameless-stlc/ship_office.jpg?w=480;800;1200;1600;2400&enhanced"
+    import clutch_adjustment from "$lib/assets/locally-nameless-stlc/clutch_adjustment.jpg?w=480;800;1200;1600;2400&enhanced"
 </script>

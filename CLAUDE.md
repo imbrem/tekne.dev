@@ -72,21 +72,47 @@ Both consumers glob `/src/content/blog/**/*.md`:
 - `buildPostLookup()` — the `[...slug]` resolution table. Each post registers under
   its canonical path, bare slug, `uuid`, **and** any `aliases`; `entries()`
   prerenders one page per key, so old links keep working.
+- `buildTopics()` — one listing page per content directory, at `/blog/<dir>`,
+  titled from the posts' `series` and ordered oldest-first so a series reads from
+  part one. `old/` is excluded: its posts live in the bare `/blog/` namespace, so
+  "old" is not a segment of any URL. The `[...slug]` route resolves posts first,
+  then topics, so a post slug colliding with a directory name still wins.
 
 Since URLs derive from filenames, **moving or renaming a published post breaks its
 URL** — add the old slug to `aliases` in the same edit.
 
 ## Markdown
 
-- **Code**: Shiki, Nord theme. Languages are preloaded in `svelte.config.js` — add
-  new ones there or highlighting fails.
+- **Code**: Shiki, on a lightly patched Nord (`nord-tekne`, built in
+  `svelte.config.js`). Two patches, both load-bearing: Nord's comment colour
+  fails WCAG AA on its own background, and Nord styles `invalid.illegal` with a
+  _background_ while Shiki emits only `color`, which made Lean's `sorry`
+  indistinguishable from ordinary code.
+- **Lean** needs two extra things, also in `svelte.config.js`. A stub grammar
+  supplies `source.lean4.markdown`, which vscode-lean4's `dashComment` rule
+  includes but Shiki does not ship — an unresolvable include makes the engine
+  drop the whole rule, so `--` comments rendered unscoped. And because that
+  grammar has no tactic or operator patterns at all (VS Code colours those from
+  LSP semantic tokens, which a static site cannot run), `leanExtras` adds a
+  conservative word-boundary pass for common tactics and unicode operators.
+  Without it roughly three quarters of the Lean on the site is undifferentiated
+  grey.
+- Languages resolve on demand via `loadLanguage`, so the `langs` list is mostly
+  a warm-up; an unbundled language fails the build loudly rather than silently.
 - **Math**: remark-math + rehype-katex-svelte (KaTeX CSS from CDN in `app.html`).
 - **Footnotes**: remark-footnotes.
-- **Images**: `@sveltejs/enhanced-img`. Import with `?enhanced` in a `<script module>`
-  block, render via `$lib/components/Img.svelte`.
-- **Mermaid is not available.** The dependency is gone and nothing ever initialised
-  it. `svelte.config.js` still turns a `mermaid` fence into `<pre class="mermaid">`,
-  which nothing renders, so it comes out as unstyled text.
+- **Images**: `@sveltejs/enhanced-img`. Import in a `<script module>` block and
+  render via `$lib/components/Img.svelte`. **Give every photo a width ladder** —
+  `?enhanced&w=480;800;1200;1600;2400` — clamped so no step exceeds the source
+  width. Without explicit widths enhanced-img emits only `[w/2, w]`, so a 4080px
+  phone photo's smallest variant was 2040w and a phone downloaded megabytes per
+  image. `Img.svelte` supplies the matching `sizes`; keep it in step with the
+  `main` width in `+layout.svelte`. Images below ~900px (charts, plots) are fine
+  on the default and should be left alone rather than upscaled.
+- **Mermaid is not supported.** There is no dependency and no renderer. Shiki
+  does bundle a `mermaid` grammar, so a ` ```mermaid ` fence is syntax-highlighted
+  as source rather than drawn as a diagram. Existing diagrams are hand-authored
+  SVG under `src/lib/assets/`.
 
 ## Styling
 

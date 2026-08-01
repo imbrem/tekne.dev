@@ -21,16 +21,25 @@ a {
 	padding: 0.5rem;
 	border-radius: 5px;
 	width: 100%;
+	/* width:100% plus padding would otherwise measure 1rem wider than its
+	   container and push the page sideways. */
+	box-sizing: border-box;
 }
 
 pre.shiki {
 	overflow-x: auto;
 }
 
-@media only screen and (max-width: 600px) {
-	code .line::before {
-		display: none;
-	}
+/* Long identifiers in prose — `split_text_into_sentences` and friends — offer
+   no break opportunity, so on a narrow screen a single one scrolls the whole
+   page horizontally. Block code is deliberately excluded: it scrolls inside
+   pre.shiki rather than wrapping, which keeps code readable. */
+:not(pre) > code {
+	overflow-wrap: break-word;
+}
+
+article {
+	overflow-wrap: break-word;
 }
 
 code .line::before {
@@ -40,7 +49,18 @@ code .line::before {
 	margin-right: 1.5rem;
 	display: inline-block;
 	text-align: right;
-	color: rgba(115, 138, 148, 0.4);
+	/* Was rgba(115,138,148,0.4) — 1.7:1 on the Nord code background, effectively
+	   invisible. This is 3.6:1, which clears the 3:1 bar for incidental UI text
+	   without competing with the code itself. */
+	color: #7b8ba3;
+}
+
+/* Must follow the rule above: same specificity, so the later one wins. When
+   this sat before it, line numbers never actually hid on narrow screens. */
+@media only screen and (max-width: 600px) {
+	code .line::before {
+		display: none;
+	}
 }
 
 .footnotes > ol > li {

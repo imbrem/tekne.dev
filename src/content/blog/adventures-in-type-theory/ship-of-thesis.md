@@ -673,6 +673,6 @@ read_int()` in a loop)
 
 <script>
     import Img from "$lib/components/Img.svelte"
-    import boat_circle from "$lib/assets/ship-of-thesis/boat_circle.jpg?enhanced"
-    import conad_seafood from "$lib/assets/ship-of-thesis/conad_seafood.jpg?enhanced"
+    import boat_circle from "$lib/assets/ship-of-thesis/boat_circle.jpg?w=480;800;1200;1600;2400&enhanced"
+    import conad_seafood from "$lib/assets/ship-of-thesis/conad_seafood.jpg?w=480;800;1200;1600;2400&enhanced"
 </script>

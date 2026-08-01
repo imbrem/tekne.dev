@@ -26,6 +26,55 @@ export interface PostLookupEntry {
 	component: () => Promise<PostModule>;
 }
 
+/**
+ * A directory under src/content/blog that appears in post URLs, listed at
+ * /blog/<slug>. `old/` is excluded: its posts are served from the bare /blog/
+ * namespace, so "old" is not a segment of any URL and has nothing to index.
+ */
+export interface Topic {
+	slug: string;
+	path: string;
+	title: string;
+	posts: Post[];
+}
+
+const UNINDEXED = new Set(['old', '']);
+
+/** Whether a post's directory has a listing page at /blog/<category>. */
+export const isIndexedTopic = (category: string) => !UNINDEXED.has(category);
+
+const humanise = (slug: string) =>
+	slug
+		.split('-')
+		.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+		.join(' ');
+
+export const buildTopics = async (): Promise<Map<string, Topic>> => {
+	const posts = await fetchMarkdownPosts();
+	const topics = new Map<string, Topic>();
+
+	for (const post of posts) {
+		if (UNINDEXED.has(post.category)) continue;
+		const topic = topics.get(post.category) ?? {
+			slug: post.category,
+			path: `/blog/${post.category}`,
+			// Prefer the series name the posts declare over the directory name.
+			title: post.meta.series ?? humanise(post.category),
+			posts: []
+		};
+		topic.posts.push(post);
+		topics.set(post.category, topic);
+	}
+
+	// Oldest first: a series reads from part one, unlike the reverse-chronological
+	// blog index.
+	for (const topic of topics.values()) {
+		topic.posts.sort((a, b) => +new Date(a.meta.published) - +new Date(b.meta.published));
+	}
+
+	return topics;
+};
+
 type PostModule = {
 	default: Component;
 	metadata: PostMeta;

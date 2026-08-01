@@ -342,12 +342,12 @@ So far, we’ve only scratched the surface of the various applications of embedd
 
 <script>
     import Img from "$lib/components/Img.svelte"
-    import embedding_tsne from "$lib/assets/fun-with-sentence-embeddings/embedding_tsne.png?enhanced"
+    import embedding_tsne from "$lib/assets/fun-with-sentence-embeddings/embedding_tsne.png?w=480;800&enhanced"
     import svm_accuracy from "$lib/assets/fun-with-sentence-embeddings/svm_accuracy.png?enhanced"
     import tsne_unlabelled from "$lib/assets/fun-with-sentence-embeddings/tsne_unlabelled.png?enhanced"
-    import contingency_matrix_2 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_2.png?enhanced"
-    import contingency_matrix_3 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_3.png?enhanced"
-    import contingency_matrix_12 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_12.png?enhanced"
-    import contingency_matrix_12_24 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_12_24.png?enhanced"
-    import contingency_matrix_20 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_20.png?enhanced"
+    import contingency_matrix_2 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_2.png?w=480;800&enhanced"
+    import contingency_matrix_3 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_3.png?w=480;800&enhanced"
+    import contingency_matrix_12 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_12.png?w=480;800&enhanced"
+    import contingency_matrix_12_24 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_12_24.png?w=480;800&enhanced"
+    import contingency_matrix_20 from "$lib/assets/fun-with-sentence-embeddings/contingency_matrix_20.png?w=480;800;1200&enhanced"
 </script>

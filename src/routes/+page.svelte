@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as config from '$lib/config';
-	import me from '$lib/assets/me.jpg?enhanced';
+	import me from '$lib/assets/me.jpg?w=300;600;900&enhanced';
 </script>
 
 <svelte:head>
@@ -12,9 +12,14 @@
 
 <div id="profile">
 	<div id="photo">
+		<!-- The largest thing above the fold, so it is eager and prioritised
+		     rather than lazy. #photo caps it at 300px on every breakpoint. -->
 		<enhanced:img
 			src={me}
 			alt="Nanosecond wise, hour foolish"
+			sizes="min(300px, 80vw)"
+			fetchpriority="high"
+			decoding="async"
 			style="width:100%; border-radius:5%"
 		/>
 	</div>
