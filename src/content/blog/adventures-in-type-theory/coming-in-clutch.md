@@ -1,7 +1,6 @@
 ---
 title: Adventures in Type Theory 2 — Coming in Clutch
 published: '2025-08-25'
-description: Clutch semantics and continuation-passing style in type-theoretic SSA
 categories: [type-theory, lean]
 series: Adventures in Type Theory
 uuid: 7d447765-4ca0-415f-a904-1a256aaabcd2

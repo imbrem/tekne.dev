@@ -1,7 +1,6 @@
 ---
 title: Adventures in Type Theory 4 — The Ship of Thesis
 published: '2025-10-01'
-description: From SSA to MLIR — building a typed representation of regions, basic blocks, and control-flow graphs
 categories: [type-theory, lean, compilers]
 series: Adventures in Type Theory
 uuid: f94c16e3-a3da-4150-963b-ef5bce7f2957

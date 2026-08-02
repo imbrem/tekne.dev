@@ -1,7 +1,6 @@
 ---
 title: Adventures in Type Theory 3 — Scraping By
 published: '2025-09-03'
-description: Scraping together a formalization of SSA semantics with de Bruijn indices and substitution lemmas
 categories: [type-theory, lean]
 series: Adventures in Type Theory
 uuid: 0429d73c-09b5-4a44-8e18-7b446f0b518b

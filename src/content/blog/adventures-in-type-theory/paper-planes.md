@@ -1,7 +1,6 @@
 ---
 title: Adventures in Type Theory 5 — Paper Planes
 published: '2025-10-07'
-description: Recapping our POPL submission on iterative expression languages and sketching region-parameterized extensions
 categories: [type-theory, lean, compilers]
 series: Adventures in Type Theory
 uuid: 1cd5e007-6bdf-49b1-bed2-65b1e1139ae2
