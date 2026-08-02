@@ -1,0 +1,23 @@
+{
+	// Mirrors katex-macros.json so VS Code's built-in markdown preview renders the
+	// same shorthands the site does. Keep the two in step — tests/katex.test.mjs
+	// fails if they drift.
+	"markdown.math.macros": {
+		"\\mc": "\\mathcal{#1}",
+		"\\mbb": "\\mathbb{#1}",
+		"\\mb": "\\mathbf{#1}",
+		"\\ms": "\\mathsf{#1}",
+		"\\mf": "\\mathfrak{#1}",
+
+		"\\nats": "\\mathbb{N}",
+		"\\ints": "\\mathbb{Z}",
+		"\\reals": "\\mathbb{R}",
+		"\\cplx": "\\mathbb{C}",
+
+		"\\NN": "\\mathbb{N}",
+		"\\ZZ": "\\mathbb{Z}",
+		"\\QQ": "\\mathbb{Q}",
+		"\\RR": "\\mathbb{R}",
+		"\\CC": "\\mathbb{C}"
+	}
+}

@@ -5,6 +5,7 @@ import { getSingletonHighlighter, bundledLanguages, bundledThemes } from 'shiki'
 import remarkMath from 'remark-math';
 import remarkFootnotes from 'remark-footnotes';
 import rehypeKatexSvelte from 'rehype-katex-svelte';
+import katexMacros from './katex-macros.json' with { type: 'json' };
 
 const CODE_THEME = 'nord-tekne';
 
@@ -97,7 +98,10 @@ const config = {
 				}
 			},
 			remarkPlugins: [remarkMath, remarkFootnotes],
-			rehypePlugins: [rehypeKatexSvelte]
+			// Macros live in katex-macros.json so .vscode/settings.json can point
+			// VS Code's markdown preview at the same definitions — otherwise the
+			// preview and the built site disagree about what \mc means.
+			rehypePlugins: [[rehypeKatexSvelte, { macros: katexMacros }]]
 		})
 	],
 
