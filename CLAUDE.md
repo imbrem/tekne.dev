@@ -18,6 +18,7 @@ so run them inside it.
   scaffold a post at its final path with a fresh `uuid`, inheriting `series` from
   the directory. Refuses to overwrite, and rejects a slug or uuid already in use —
   a duplicate `uuid` would silently shadow another post rather than erroring.
+- `pnpm lean` — build every Lean development under `lean/` (`--list` to enumerate)
 - `pnpm cas -- <add|ls|verify|check|aliases>` — content-addressed store
 - `firebase emulators:start --only hosting` — serve `build/` under real hosting rules
 - `firebase deploy` — publish
@@ -155,6 +156,23 @@ Four things are deliberate and easy to break:
 - **`firebase.json` is hand-maintained** (it also holds the blog's 301s). After any
   `add` that binds a name, update the rewrite _and_ its header rule, then run
   `pnpm cas -- check`.
+
+## Lean
+
+Formalisations accompanying posts live under `lean/`, one Lake project each —
+currently `lean/ProjectBeth`, on Mathlib. `pnpm lean` builds them all; it treats
+any directory holding a `lakefile` as a development and does not descend into
+`.lake`.
+
+The toolchain is pinned per project by `lean-toolchain`, and the dev shell
+provides `elan`, which reads that file and fetches the matching Lean — so the
+repo decides the version, not nixpkgs. `lake-manifest.json` pins the Mathlib
+revision.
+
+`.lake/` is ignored and is **large** — roughly 7.5 GB once Mathlib's oleans are
+in place. `pnpm lean` fetches them with `lake exe cache get` when they are
+missing, because a cold `lake build` would compile Mathlib from source: hours
+rather than seconds.
 
 ## Hosting
 

@@ -2,3 +2,7 @@
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
+
+# Lean developments: .lake vendors Mathlib and its dependencies (thousands of
+# files), and lake-manifest.json is generated — neither should be reformatted.
+lean/

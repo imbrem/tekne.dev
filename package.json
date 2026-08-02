@@ -11,6 +11,7 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"cas": "node scripts/cas.mjs",
+		"lean": "node scripts/lean-check.mjs",
 		"new-post": "node scripts/new-post.mjs",
 		"test": "pnpm run build && node --test tests/*.test.mjs",
 		"test:cas": "node --test tests/cas.test.mjs"
