@@ -51,6 +51,16 @@ tests/                        # cas.test.mjs, hosting.test.mjs
 
 ## Blog
 
+**Do not write prose for the blog unless explicitly asked to.** That covers post
+bodies, titles, `description`, and any other reader-facing copy — the writing is
+Jad's, and an invented summary is worse than none. Editing the site's machinery
+is fine; putting words in his mouth is not. Leave `description` empty when
+scaffolding, and ask rather than fill it in.
+
+Related: while a draft is in progress, **stage explicit paths — never `git add -A`**.
+Unfinished posts live untracked in the working tree, and a blanket add has swept
+one into a commit more than once.
+
 Posts are `.md` under `src/content/blog/`, **not** under `src/routes/`. MDsveX
 preprocesses them into Svelte components. Frontmatter:
 
