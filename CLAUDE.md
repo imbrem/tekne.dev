@@ -14,6 +14,10 @@ so run them inside it.
 - `pnpm test:cas` — CAS invariants only; no build or server
 - `pnpm check` — svelte-check
 - `pnpm lint` / `pnpm format` — Prettier + ESLint
+- `pnpm new-post <category> "<title>" [--slug s] [--description d] [--categories a,b]` —
+  scaffold a post at its final path with a fresh `uuid`, inheriting `series` from
+  the directory. Refuses to overwrite, and rejects a slug or uuid already in use —
+  a duplicate `uuid` would silently shadow another post rather than erroring.
 - `pnpm cas -- <add|ls|verify|check|aliases>` — content-addressed store
 - `firebase emulators:start --only hosting` — serve `build/` under real hosting rules
 - `firebase deploy` — publish
