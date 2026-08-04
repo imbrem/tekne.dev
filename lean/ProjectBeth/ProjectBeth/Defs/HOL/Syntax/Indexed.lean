@@ -152,10 +152,102 @@ def rename (ρ : Nat → Nat) : {s : Category} → Node Base s → Node Base s
   | .tm, .tmAbs A p x => .tmAbs (rename ρ A) (rename (upRen ρ) p) (rename ρ x)
   | .tm, .tmRep A p x => .tmRep (rename ρ A) (rename (upRen ρ) p) (rename ρ x)
 
+theorem upRen_congr {ρ τ : Nat → Nat} (h : ∀ n, ρ n = τ n) :
+    ∀ n, upRen ρ n = upRen τ n
+  | 0 => rfl
+  | n + 1 => congrArg (· + 1) (h n)
+
+theorem rename_congr {ρ τ : Nat → Nat} (h : ∀ n, ρ n = τ n) :
+    {s : Category} → (n : Node Base s) → rename ρ n = rename τ n
+  | _, .tyBase _ => rfl
+  | _, .tyBool => rfl
+  | _, .tyArr A B => by simp [rename, rename_congr h A, rename_congr h B]
+  | _, .tySub A p => by
+      simp [rename, rename_congr h A, rename_congr (upRen_congr h) p]
+  | _, .tmVar n => by simp [rename, h n]
+  | _, .tmApp f x => by simp [rename, rename_congr h f, rename_congr h x]
+  | _, .tmLam A t => by
+      simp [rename, rename_congr h A, rename_congr (upRen_congr h) t]
+  | _, .tmBool _ => rfl
+  | _, .tmEq A x y => by
+      simp [rename, rename_congr h A, rename_congr h x, rename_congr h y]
+  | _, .tmEpsilon A p => by simp [rename, rename_congr h A, rename_congr h p]
+  | _, .tmAbs A p x => by
+      simp [rename, rename_congr h A, rename_congr (upRen_congr h) p,
+        rename_congr h x]
+  | _, .tmRep A p x => by
+      simp [rename, rename_congr h A, rename_congr (upRen_congr h) p,
+        rename_congr h x]
+
+theorem rename_id : {s : Category} → (n : Node Base s) → rename id n = n
+  | _, .tyBase _ => rfl
+  | _, .tyBool => rfl
+  | _, .tyArr A B => by simp [rename, rename_id A, rename_id B]
+  | _, .tySub A p => by
+      simp only [rename, rename_id A]
+      congr 1
+      rw [rename_congr (τ := id) (by intro n; cases n <;> rfl) p, rename_id p]
+  | _, .tmVar _ => rfl
+  | _, .tmApp f x => by simp [rename, rename_id f, rename_id x]
+  | _, .tmLam A t => by
+      simp only [rename, rename_id A]
+      congr 1
+      rw [rename_congr (τ := id) (by intro n; cases n <;> rfl) t, rename_id t]
+  | _, .tmBool _ => rfl
+  | _, .tmEq A x y => by simp [rename, rename_id A, rename_id x, rename_id y]
+  | _, .tmEpsilon A p => by simp [rename, rename_id A, rename_id p]
+  | _, .tmAbs A p x => by
+      simp only [rename, rename_id A, rename_id x]
+      congr 1
+      rw [rename_congr (τ := id) (by intro n; cases n <;> rfl) p, rename_id p]
+  | _, .tmRep A p x => by
+      simp only [rename, rename_id A, rename_id x]
+      congr 1
+      rw [rename_congr (τ := id) (by intro n; cases n <;> rfl) p, rename_id p]
+
+theorem upRen_comp (ρ τ : Nat → Nat) :
+    ∀ n, upRen τ (upRen ρ n) = upRen (τ ∘ ρ) n
+  | 0 => rfl
+  | _ + 1 => rfl
+
+theorem rename_comp (ρ τ : Nat → Nat) : {s : Category} → (n : Node Base s) →
+    rename τ (rename ρ n) = rename (τ ∘ ρ) n
+  | _, .tyBase _ => rfl
+  | _, .tyBool => rfl
+  | _, .tyArr A B => by simp [rename, rename_comp ρ τ A, rename_comp ρ τ B]
+  | _, .tySub A p => by
+      simp only [rename, rename_comp ρ τ A, rename_comp (upRen ρ) (upRen τ) p]
+      have hp := rename_congr (Base := Base) (ρ := upRen τ ∘ upRen ρ)
+        (τ := upRen (τ ∘ ρ)) (upRen_comp ρ τ) p
+      rw [hp]
+  | _, .tmVar _ => rfl
+  | _, .tmApp f x => by simp [rename, rename_comp ρ τ f, rename_comp ρ τ x]
+  | _, .tmLam A t => by
+      simp only [rename, rename_comp ρ τ A, rename_comp (upRen ρ) (upRen τ) t]
+      have ht := rename_congr (Base := Base) (ρ := upRen τ ∘ upRen ρ)
+        (τ := upRen (τ ∘ ρ)) (upRen_comp ρ τ) t
+      rw [ht]
+  | _, .tmBool _ => rfl
+  | _, .tmEq A x y => by
+      simp [rename, rename_comp ρ τ A, rename_comp ρ τ x, rename_comp ρ τ y]
+  | _, .tmEpsilon A p => by simp [rename, rename_comp ρ τ A, rename_comp ρ τ p]
+  | _, .tmAbs A p x => by
+      simp only [rename, rename_comp ρ τ A, rename_comp (upRen ρ) (upRen τ) p,
+        rename_comp ρ τ x]
+      have hp := rename_congr (Base := Base) (ρ := upRen τ ∘ upRen ρ)
+        (τ := upRen (τ ∘ ρ)) (upRen_comp ρ τ) p
+      rw [hp]
+  | _, .tmRep A p x => by
+      simp only [rename, rename_comp ρ τ A, rename_comp (upRen ρ) (upRen τ) p,
+        rename_comp ρ τ x]
+      have hp := rename_congr (Base := Base) (ρ := upRen τ ∘ upRen ρ)
+        (τ := upRen (τ ∘ ρ)) (upRen_comp ρ τ) p
+      rw [hp]
+
 /-- Lift a substitution through one de Bruijn binder. -/
 def upSub (σ : Nat → ITm Base) : Nat → ITm Base
   | 0 => .tmVar 0
-  | n + 1 => rename (upRen Nat.succ) (σ n)
+  | n + 1 => rename Nat.succ (σ n)
 
 def subst (σ : Nat → ITm Base) : {s : Category} → Node Base s → Node Base s
   | .ty, .tyBase A => .tyBase A
@@ -170,6 +262,100 @@ def subst (σ : Nat → ITm Base) : {s : Category} → Node Base s → Node Base
   | .tm, .tmEpsilon A p => .tmEpsilon (subst σ A) (subst σ p)
   | .tm, .tmAbs A p x => .tmAbs (subst σ A) (subst (upSub σ) p) (subst σ x)
   | .tm, .tmRep A p x => .tmRep (subst σ A) (subst (upSub σ) p) (subst σ x)
+
+theorem upSub_congr {σ τ : Nat → ITm Base} (h : ∀ n, σ n = τ n) :
+    ∀ n, upSub σ n = upSub τ n
+  | 0 => rfl
+  | n + 1 => congrArg (rename Nat.succ) (h n)
+
+theorem subst_congr {σ τ : Nat → ITm Base} (h : ∀ n, σ n = τ n) :
+    {s : Category} → (n : Node Base s) → subst σ n = subst τ n
+  | _, .tyBase _ => rfl
+  | _, .tyBool => rfl
+  | _, .tyArr A B => by simp [subst, subst_congr h A, subst_congr h B]
+  | _, .tySub A p => by
+      simp [subst, subst_congr h A, subst_congr (upSub_congr h) p]
+  | _, .tmVar n => h n
+  | _, .tmApp f x => by simp [subst, subst_congr h f, subst_congr h x]
+  | _, .tmLam A t => by
+      simp [subst, subst_congr h A, subst_congr (upSub_congr h) t]
+  | _, .tmBool _ => rfl
+  | _, .tmEq A x y => by
+      simp [subst, subst_congr h A, subst_congr h x, subst_congr h y]
+  | _, .tmEpsilon A p => by simp [subst, subst_congr h A, subst_congr h p]
+  | _, .tmAbs A p x => by
+      simp [subst, subst_congr h A, subst_congr (upSub_congr h) p,
+        subst_congr h x]
+  | _, .tmRep A p x => by
+      simp [subst, subst_congr h A, subst_congr (upSub_congr h) p,
+        subst_congr h x]
+
+theorem upSub_var : ∀ n, upSub (@Node.tmVar Base) n = .tmVar n
+  | 0 => rfl
+  | n + 1 => by simp [upSub, rename]
+
+theorem subst_id : {s : Category} → (n : Node Base s) →
+    subst (@Node.tmVar Base) n = n
+  | _, .tyBase _ => rfl
+  | _, .tyBool => rfl
+  | _, .tyArr A B => by simp [subst, subst_id A, subst_id B]
+  | _, .tySub A p => by
+      simp only [subst, subst_id A]
+      congr 1
+      rw [subst_congr upSub_var p, subst_id p]
+  | _, .tmVar _ => rfl
+  | _, .tmApp f x => by simp [subst, subst_id f, subst_id x]
+  | _, .tmLam A t => by
+      simp only [subst, subst_id A]
+      congr 1
+      rw [subst_congr upSub_var t, subst_id t]
+  | _, .tmBool _ => rfl
+  | _, .tmEq A x y => by simp [subst, subst_id A, subst_id x, subst_id y]
+  | _, .tmEpsilon A p => by simp [subst, subst_id A, subst_id p]
+  | _, .tmAbs A p x => by
+      simp only [subst, subst_id A, subst_id x]
+      congr 1
+      rw [subst_congr upSub_var p, subst_id p]
+  | _, .tmRep A p x => by
+      simp only [subst, subst_id A, subst_id x]
+      congr 1
+      rw [subst_congr upSub_var p, subst_id p]
+
+theorem upSub_var_rename (ρ : Nat → Nat) :
+    ∀ n, upSub (fun k => Node.tmVar (Base := Base) (ρ k)) n =
+      Node.tmVar (upRen ρ n)
+  | 0 => rfl
+  | n + 1 => by simp [upSub, rename, upRen]
+
+/-- Renaming is exactly substitution by variables, including beneath every
+binder occurring in terms and subtype predicates. -/
+theorem rename_eq_subst (ρ : Nat → Nat) : {s : Category} → (n : Node Base s) →
+    rename ρ n = subst (fun k => Node.tmVar (Base := Base) (ρ k)) n
+  | _, .tyBase _ => rfl
+  | _, .tyBool => rfl
+  | _, .tyArr A B => by simp [rename, subst, rename_eq_subst ρ A, rename_eq_subst ρ B]
+  | _, .tySub A p => by
+      simp only [rename, subst, rename_eq_subst ρ A, rename_eq_subst (upRen ρ) p]
+      rw [subst_congr (upSub_var_rename ρ) p]
+  | _, .tmVar _ => rfl
+  | _, .tmApp f x => by simp [rename, subst, rename_eq_subst ρ f, rename_eq_subst ρ x]
+  | _, .tmLam A t => by
+      simp only [rename, subst, rename_eq_subst ρ A, rename_eq_subst (upRen ρ) t]
+      rw [subst_congr (upSub_var_rename ρ) t]
+  | _, .tmBool _ => rfl
+  | _, .tmEq A x y => by
+      simp [rename, subst, rename_eq_subst ρ A, rename_eq_subst ρ x,
+        rename_eq_subst ρ y]
+  | _, .tmEpsilon A p => by
+      simp [rename, subst, rename_eq_subst ρ A, rename_eq_subst ρ p]
+  | _, .tmAbs A p x => by
+      simp only [rename, subst, rename_eq_subst ρ A, rename_eq_subst (upRen ρ) p,
+        rename_eq_subst ρ x]
+      rw [subst_congr (upSub_var_rename ρ) p]
+  | _, .tmRep A p x => by
+      simp only [rename, subst, rename_eq_subst ρ A, rename_eq_subst (upRen ρ) p,
+        rename_eq_subst ρ x]
+      rw [subst_congr (upSub_var_rename ρ) p]
 
 def freeVars : {s : Category} → Node Base s → (Nat → Prop)
   | .ty, .tyBase _ => fun _ => False
