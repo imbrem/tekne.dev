@@ -253,4 +253,55 @@ theorem EqTm.sound {Δ} {Γ : Ctx U Δ} {A : Ty U Δ .star} {t u : Tm U Γ A}
   | tyBeta => exact Tm.tyBeta U _ _
   | tyEta => exact Tm.tyEta U _
 
+def Holds {Δ} {Γ : Ctx U Δ} (p : Tm U Γ (Ty.boolCode U)) : Prop :=
+  ∀ ρ γ, U.boolEquiv (p ρ γ) = true
+
+def Entails {Δ} {Γ : Ctx U Δ} (H : List (Tm U Γ (Ty.boolCode U)))
+    (p : Tm U Γ (Ty.boolCode U)) : Prop :=
+  ∀ ρ γ, (∀ q ∈ H, U.boolEquiv (q ρ γ) = true) → U.boolEquiv (p ρ γ) = true
+
+theorem Tm.equal_true_iff {Δ} {Γ : Ctx U Δ} {A : Ty U Δ .star}
+    (x y : Tm U Γ A) (ρ γ) :
+    U.boolEquiv (Tm.equal U x y ρ γ) = true ↔ x ρ γ = y ρ γ := by
+  classical
+  simp [Tm.equal]
+
+theorem Tm.epsilon_spec {Δ} {Γ : Ctx U Δ} {A : Ty U Δ .star}
+    (p : Tm U Γ (Ty.arr U A (Ty.boolCode U))) (x : Tm U Γ A) (ρ γ)
+    (hx : U.boolEquiv (U.arrEquiv (A ρ) U.boolCode (p ρ γ) (x ρ γ)) = true) :
+    U.boolEquiv (U.arrEquiv (A ρ) U.boolCode (p ρ γ) (Tm.epsilon U p ρ γ)) = true := by
+  classical
+  letI := U.inhabited (A ρ)
+  simp only [Tm.epsilon]
+  split
+  · rename_i h
+    exact Classical.choose_spec h
+  · rename_i h
+    exact False.elim (h ⟨x ρ γ, hx⟩)
+
+/-- Natural-deduction fragment for the primitive truth, equality and choice
+rules.  Each constructor below has a corresponding case in `Derives.sound`. -/
+inductive Derives {Δ} {Γ : Ctx U Δ} (H : List (Tm U Γ (Ty.boolCode U))) :
+    Tm U Γ (Ty.boolCode U) → Prop
+  | hyp : p ∈ H → Derives H p
+  | truth : Derives H (Tm.boolCode U true)
+  | eqRefl (x : Tm U Γ A) : Derives H (Tm.equal U x x)
+  | eqMp (p : Tm U Γ (Ty.arr U A (Ty.boolCode U))) (x y : Tm U Γ A) :
+      Derives H (Tm.equal U x y) → Derives H (Tm.app U p x) → Derives H (Tm.app U p y)
+  | choice (p : Tm U Γ (Ty.arr U A (Ty.boolCode U))) (x : Tm U Γ A) :
+      Derives H (Tm.app U p x) → Derives H (Tm.app U p (Tm.epsilon U p))
+
+theorem Derives.sound {Δ} {Γ : Ctx U Δ} {H : List (Tm U Γ (Ty.boolCode U))}
+    {p : Tm U Γ (Ty.boolCode U)} (h : Derives U H p) : Entails U H p := by
+  intro ρ γ hH
+  induction h with
+  | hyp hp => exact hH _ hp
+  | truth => simp [Tm.boolCode]
+  | eqRefl x => exact (Tm.equal_true_iff U x x ρ γ).2 rfl
+  | eqMp p x y hxy hpx ihxy ihpx =>
+    have heq := (Tm.equal_true_iff U x y ρ γ).1 ihxy
+    simpa [Tm.app, heq] using ihpx
+  | choice p x hp ih =>
+    exact Tm.epsilon_spec U p x ρ γ ih
+
 end ProjectBeth.HOLOmega.Kernel
