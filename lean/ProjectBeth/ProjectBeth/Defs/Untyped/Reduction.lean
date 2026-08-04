@@ -18,11 +18,35 @@ def Tm.rename (ρ : Nat → Nat) : Tm C → Tm C
   | .app f x => .app (rename ρ f) (rename ρ x)
   | .lam t => .lam (rename (fun | 0 => 0 | i + 1 => ρ i + 1) t)
 
+theorem Tm.rename_congr {ρ τ : Nat → Nat} (h : ∀ i, ρ i = τ i) (t : Tm C) :
+    t.rename ρ = t.rename τ := by
+  induction t generalizing ρ τ with
+  | var i => simp [Tm.rename, h]
+  | const c => rfl
+  | app f x ihf ihx => simp [Tm.rename, ihf h, ihx h]
+  | lam t ih =>
+    simp only [Tm.rename]
+    congr 1
+    apply ih
+    intro i; cases i <;> simp [h]
+
 def Tm.subst (σ : Nat → Tm C) : Tm C → Tm C
   | .var i => σ i
   | .const c => .const c
   | .app f x => .app (subst σ f) (subst σ x)
   | .lam t => .lam (subst (fun | 0 => .var 0 | i + 1 => rename Nat.succ (σ i)) t)
+
+theorem Tm.subst_congr {σ τ : Nat → Tm C} (h : ∀ i, σ i = τ i) (t : Tm C) :
+    t.subst σ = t.subst τ := by
+  induction t generalizing σ τ with
+  | var i => exact h i
+  | const c => rfl
+  | app f x ihf ihx => simp [Tm.subst, ihf h, ihx h]
+  | lam t ih =>
+    simp only [Tm.subst]
+    congr 1
+    apply ih
+    intro i; cases i <;> simp [h]
 
 def Tm.subst0 (body x : Tm C) : Tm C :=
   body.subst (fun | 0 => x | i + 1 => .var i)
@@ -100,6 +124,24 @@ theorem Steps.map {S : Signature.{u}} {T : Signature.{v}}
   induction h with
   | refl => exact .refl
   | tail _ hstep ih => exact ih.tail (hstep.map F)
+
+theorem Steps.appLeft {S : Signature} {f f' : Tm S.Const} (x)
+    (h : Steps S f f') : Steps S (.app f x) (.app f' x) := by
+  induction h with
+  | refl => exact .refl
+  | tail _ hs ih => exact ih.tail (Step.appLeft _ hs)
+
+theorem Steps.appRight {S : Signature} (f) {x x' : Tm S.Const}
+    (h : Steps S x x') : Steps S (.app f x) (.app f x') := by
+  induction h with
+  | refl => exact .refl
+  | tail _ hs ih => exact ih.tail (Step.appRight _ hs)
+
+theorem Steps.lam {S : Signature} {t t' : Tm S.Const}
+    (h : Steps S t t') : Steps S (.lam t) (.lam t') := by
+  induction h with
+  | refl => exact .refl
+  | tail _ hs ih => exact ih.tail (Step.lam hs)
 
 /-- A deterministic, fuelled head evaluator. `none` means that fuel was
 exhausted; one beta or constant step is performed when available. -/
