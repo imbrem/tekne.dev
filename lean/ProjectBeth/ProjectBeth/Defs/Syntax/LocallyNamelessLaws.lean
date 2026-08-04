@@ -25,6 +25,25 @@ def openAtTerm (u : Tm Name) : Nat → Tm Name → Tm Name
   | k, .app p q => .app (openAtTerm u k p) (openAtTerm u k q)
   | k, .lam b => .lam (openAtTerm u (k + 1) b)
 
+/-- `Avoids k t` says that opening index `k` has no effect on `t`.  The index
+is shifted beneath binders, exactly as in `openAtTerm`. -/
+def Avoids : Nat → Tm Name → Prop
+  | k, .var (.bound i) => i ≠ k
+  | _, .var (.free _) => True
+  | k, .app p q => Avoids k p ∧ Avoids k q
+  | k, .lam b => Avoids (k + 1) b
+
+theorem openAtTerm_eq_of_avoids (u : Tm Name) (h : Avoids k t) :
+    openAtTerm u k t = t := by
+  induction t generalizing k with
+  | var v =>
+    cases v with
+    | bound i => simp [Avoids] at h; simp [openAtTerm, h]
+    | free x => rfl
+  | app p q ihp ihq =>
+    exact congrArg₂ Tm.app (ihp h.1) (ihq h.2)
+  | lam b ih => exact congrArg Tm.lam (ih h)
+
 @[simp] theorem renameFree_id (t : Tm Name) : renameFree id t = t := by
   induction t with
   | var v => cases v <;> rfl
@@ -78,5 +97,24 @@ theorem renameFree_openAt (f : Name → Name') (x : Name) (k : Nat) (t : Tm Name
     | bound i => by_cases h : i = k <;> simp [openAt, renameFree, h]
   | app p q ihp ihq => simp [openAt, renameFree, ihp, ihq]
   | lam b ih => simp [openAt, renameFree, ih]
+
+theorem substFree_openAt (σ : Name → Tm Name')
+    (hσ : ∀ y j, Avoids j (σ y)) (x : Name) (t : Tm Name) :
+    substFree σ (openAt x k t) =
+      openAtTerm (σ x) k (substFree σ t) := by
+  induction t generalizing k with
+  | var v =>
+    cases v with
+    | free y =>
+      simp only [openAt, substFree]
+      exact (openAtTerm_eq_of_avoids (σ x) (hσ y k)).symm
+    | bound i => by_cases h : i = k <;> simp [openAt, openAtTerm, substFree, h]
+  | app p q ihp ihq =>
+    simp only [openAt, openAtTerm, substFree]
+    exact congrArg₂ Tm.app ihp ihq
+  | lam b ih =>
+    simp only [openAt, openAtTerm, substFree]
+    apply congrArg Tm.lam
+    apply ih
 
 end ProjectBeth.Syntax.LocallyNameless
