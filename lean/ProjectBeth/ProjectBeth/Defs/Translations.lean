@@ -147,6 +147,42 @@ mutual
     | _, _, _, .rep hA hp hx => .rep (wf hA) (by simpa using hasType hp) (hasType hx)
 end
 
+/-- Target of the single-index HOL judgement translation. -/
+def judgementTarget : HOL.JudgementIndex Base → Prop
+  | .wf A => HOLOmega.IndexedKinded [] (ty A) .star
+  | .hasType Γ t A => HOLOmega.IndexedHasType [] (Γ.map ty) (tm t) (ty A)
+
+/-- The typing translation expressed with ordinary induction over the indexed
+judgement view.  This avoids a custom mutual recursor in clients that need to
+translate well-formed types and typed terms together. -/
+theorem judgement : {i : HOL.JudgementIndex Base} →
+    HOL.Judgement i → judgementTarget i
+  | _, .wfBase => .kBase
+  | _, .wfBool => .kBool
+  | _, .wfArr hA hB => .kArr (judgement hA) (judgement hB)
+  | _, .wfSub hA hp => .kSub (judgement hA) (judgement hp)
+  | _, .var h => .var (by simp [List.getElem?_map, h])
+  | _, .app hf hx => .app (judgement hf) (judgement hx)
+  | _, .lam hA ht => .lam (judgement hA)
+      (by simpa [judgementTarget] using judgement ht)
+  | _, .bool => .bool
+  | _, .eq hA hx hy => .eq (judgement hA) (judgement hx) (judgement hy)
+  | _, .epsilon hA hp => .epsilon (judgement hA) (judgement hp)
+  | _, .abs hA hp hx =>
+      .abs (judgement hA) (by simpa [judgementTarget] using judgement hp)
+        (judgement hx)
+  | _, .rep hA hp hx =>
+      .rep (judgement hA) (by simpa [judgementTarget] using judgement hp)
+        (judgement hx)
+
+theorem judgement_wf_agrees (h : HOL.Ty.Wf A) :
+    (judgement h.toJudgement).toKinded = wf h :=
+  Subsingleton.elim _ _
+
+theorem judgement_hasType_agrees (h : HOL.HasType Γ t A) :
+    (judgement h.toJudgement).toHasType = hasType h :=
+  Subsingleton.elim _ _
+
 /-- The embedding preserves all HOL typing derivations, not merely raw syntax. -/
 theorem sound (d : HOL.HasType Γ t A) :
     HOLOmega.HasType [] (Γ.map ty) (tm t) (ty A) := hasType d
