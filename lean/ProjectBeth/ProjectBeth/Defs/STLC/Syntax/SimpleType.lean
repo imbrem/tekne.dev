@@ -141,7 +141,7 @@ private def foldOp (arr : X → X → X) :
 theorem toExpr_fold (base : Base → X) (arr : X → X → X) (A : Ty Base) :
     (toExpr A).fold base (foldOp arr) =
       fold base arr A := by
-  induction A <;> simp [toExpr, TypeExpr.fold, fold, foldOp, args_zero, args_one, *]
+  induction A <;> simp [toExpr, fold, foldOp, args_zero, args_one, *]
 
 end Arrow
 
@@ -241,7 +241,7 @@ private def foldOp (prod sum arr : X → X → X) :
 theorem toExpr_fold (base : Base → X) (prod sum arr : X → X → X) (A : Ty Base) :
     (toExpr A).fold base (foldOp prod sum arr) = fold base prod sum arr A := by
   induction A <;>
-    simp [toExpr, TypeExpr.fold, fold, foldOp, args_zero, args_one, *]
+    simp [toExpr, fold, foldOp, args_zero, args_one, *]
 
 end HighSchool
 
