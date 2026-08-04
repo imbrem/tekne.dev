@@ -348,4 +348,64 @@ def coiter {base : Const → Inductive.Ty} {P : STLC.Poly Const}
       (Syntax.coChurchTy base P) :=
   coPack dseed dstep
 
+@[simp] theorem coChurch_lift (base : Const → Inductive.Ty)
+    (P : STLC.Poly Const) :
+    (Syntax.coChurchTy base P).lift =
+      Syntax.coChurchTy (fun c => (base c).lift) P := by
+  simp only [Syntax.coChurchTy, Inductive.Ty.lift, Inductive.Ty.rename]
+  congr 4
+  rw [polyTy_rename]
+  have hb :
+      (fun c => ((base c).rename Nat.succ).rename Nat.succ |>
+        Inductive.Ty.rename (Inductive.upRen (Inductive.upRen Nat.succ))) =
+        (fun c => ((base c).rename Nat.succ).rename Nat.succ |>
+          Inductive.Ty.rename Nat.succ) := by
+    funext c
+    repeat' rw [Inductive.Ty.rename_comp]
+    apply Inductive.Ty.rename_congr
+    intro n
+    rfl
+  rw [hb]
+  rfl
+
+noncomputable def observe {base : Const → Inductive.Ty}
+    {P : STLC.Poly Const} {co : Inductive.Tm}
+    (dc : Derivation Δ Γ co (Syntax.coChurchTy base P)) :
+    Derivation Δ Γ (Syntax.observe base P co)
+      (Syntax.polyTy base P (Syntax.coChurchTy base P)) := by
+  apply coElim dc
+  have dh : Derivation Δ Γ
+      (.tyLam (.lam (.var 0) (.lam
+        (.arr (.var 0) (Syntax.polyTy (fun c => (base c).lift) P (.var 0)))
+        (Syntax.fmapTm (fun c => (base c).lift) P (.var 0)
+          (Syntax.coChurchTy base P).lift
+          (.lam (.var 0)
+            (Syntax.coiter (fun c => (base c).lift) P (.var 0) (.var 1) (.var 0)))
+          (.app (.var 0) (.var 1))))))
+      (.all (.arr (.var 0)
+        (.arr (.arr (.var 0)
+          (Syntax.polyTy (fun c => (base c).lift) P (.var 0)))
+          (Syntax.polyTy (fun c => (base c).lift) P
+            (Syntax.coChurchTy base P).lift)))) := by
+    apply Derivation.tyLam
+    apply Derivation.lam
+    apply Derivation.lam
+    apply fmapTm (base := fun c => (base c).lift) (P := P)
+    · apply Derivation.lam
+      exact (coiter
+        (Derivation.var (n := 0) (A := (.var 0)) (by simp))
+        (Derivation.var (n := 1)
+          (A := .arr (.var 0)
+            (Syntax.polyTy (fun c => (base c).lift) P (.var 0))) (by simp))).castCtx
+          rfl rfl (coChurch_lift base P).symm
+    · exact Derivation.app
+        (Derivation.var (n := 0)
+          (A := .arr (.var 0)
+            (Syntax.polyTy (fun c => (base c).lift) P (.var 0))) (by simp))
+        (Derivation.var (n := 1) (A := (.var 0)) (by simp))
+  exact dh.castCtx rfl rfl (by
+    congr 3
+    simp only [Inductive.Ty.lift]
+    rw [polyTy_rename])
+
 end ProjectBeth.SystemF.Polynomial.Syntax.Typing

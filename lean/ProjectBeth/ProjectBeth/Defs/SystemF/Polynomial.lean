@@ -213,7 +213,7 @@ def observe (base : Const → Ty) (P : Poly Const) (co : Tm) : Tm :=
   coElim co (polyTy base P (coChurchTy base P))
     (.tyLam (.lam (.var 0) (.lam
       (.arr (.var 0) (polyTy (fun c => (base c).lift) P (.var 0)))
-      (fmapTm (fun c => ((base c).lift).lift) P (.var 0)
+      (fmapTm (fun c => (base c).lift) P (.var 0)
         (coChurchTy base P).lift
         (.lam (.var 0)
           (coiter (fun c => (base c).lift) P (.var 0) (.var 1) (.var 0)))
