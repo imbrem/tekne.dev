@@ -29,6 +29,36 @@ def map {El : Const → Type v} {X Y : Type v} (g : X → Y) :
   | .sum _ Q, .inr x => .inr (map g Q x)
   | .prod P Q, x => (map g P x.1, map g Q x.2)
 
+@[simp]
+theorem map_id {El : Const → Type v} (P : Poly Const) (x : denote El P X) :
+    map id P x = x := by
+  induction P with
+  | var => rfl
+  | const => rfl
+  | pow =>
+      funext a
+      rfl
+  | sum P Q ihP ihQ =>
+      cases x with
+      | inl x => exact congrArg Sum.inl (ihP x)
+      | inr x => exact congrArg Sum.inr (ihQ x)
+  | prod P Q ihP ihQ => exact Prod.ext (ihP x.1) (ihQ x.2)
+
+theorem map_comp {El : Const → Type v} (P : Poly Const)
+    (g : Y → Z) (f : X → Y) (x : denote El P X) :
+    map (g ∘ f) P x = map g P (map f P x) := by
+  induction P with
+  | var => rfl
+  | const => rfl
+  | pow =>
+      funext a
+      rfl
+  | sum P Q ihP ihQ =>
+      cases x with
+      | inl x => exact congrArg Sum.inl (ihP x)
+      | inr x => exact congrArg Sum.inr (ihQ x)
+  | prod P Q ihP ihQ => exact Prod.ext (ihP x.1) (ihQ x.2)
+
 def Shape (El : Const → Type v) : Poly Const → Type v
   | .var => PUnit
   | .const A => El A
