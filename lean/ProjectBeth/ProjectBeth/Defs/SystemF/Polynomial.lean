@@ -168,8 +168,8 @@ def fmapTm (base : Const → Ty) : (P : Poly Const) →
       prodElim x (prodTy (polyTy base P Y) (polyTy base Q Y))
         (.lam (polyTy base P X) (.lam (polyTy base Q X)
           (prodPair (polyTy base P Y) (polyTy base Q Y)
-            (fmapTm base P X Y (f.rename (· + 2)) (.var 1))
-            (fmapTm base Q X Y (f.rename (· + 2)) (.var 0)))))
+            (fmapTm base P X Y ((f.rename Nat.succ).rename Nat.succ) (.var 1))
+            (fmapTm base Q X Y ((f.rename Nat.succ).rename Nat.succ) (.var 0)))))
 
 /-- `∀X. (P X → X) → X`. -/
 def churchMuTy (base : Const → Ty) (P : Poly Const) : Ty :=

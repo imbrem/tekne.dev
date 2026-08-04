@@ -118,4 +118,44 @@ def prodElim (dp : Derivation Δ Γ p (Syntax.prodTy A B))
   · exact dp'
   · exact dk
 
+noncomputable def fmapTm (base : Const → Inductive.Ty) (P : STLC.Poly Const)
+    (df : Derivation Δ Γ f (.arr X Y))
+    (dx : Derivation Δ Γ x (Syntax.polyTy base P X)) :
+    Derivation Δ Γ (Syntax.fmapTm base P X Y f x) (Syntax.polyTy base P Y) := by
+  induction P generalizing Γ f x with
+  | var => exact .app df dx
+  | const => exact dx
+  | pow c =>
+    apply Derivation.lam
+    apply Derivation.app
+    · exact df.renameTm (CtxRen.weaken _ (base c))
+    · apply Derivation.app
+      · exact dx.renameTm (CtxRen.weaken _ (base c))
+      · exact .var (by simp)
+  | sum P Q ihP ihQ =>
+    apply sumElim dx
+    · apply Derivation.lam
+      apply sumInl
+      apply ihP
+      · exact df.renameTm (CtxRen.weaken _ (Syntax.polyTy base P X))
+      · exact .var (by simp)
+    · apply Derivation.lam
+      apply sumInr
+      apply ihQ
+      · exact df.renameTm (CtxRen.weaken _ (Syntax.polyTy base Q X))
+      · exact .var (by simp)
+  | prod P Q ihP ihQ =>
+    apply prodElim dx
+    apply Derivation.lam
+    apply Derivation.lam
+    apply prodPair
+    · apply ihP
+      · exact (df.renameTm (CtxRen.weaken _ (Syntax.polyTy base P X))).renameTm
+          (CtxRen.weaken _ (Syntax.polyTy base Q X))
+      · exact .var (by simp)
+    · apply ihQ
+      · exact (df.renameTm (CtxRen.weaken _ (Syntax.polyTy base P X))).renameTm
+          (CtxRen.weaken _ (Syntax.polyTy base Q X))
+      · exact .var (by simp)
+
 end ProjectBeth.SystemF.Polynomial.Syntax.Typing
