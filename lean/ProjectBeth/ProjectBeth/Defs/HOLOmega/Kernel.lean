@@ -17,6 +17,8 @@ class Universe where
   boolEquiv : El boolCode ≃ Bool
   arr : Code → Code → Code
   arrEquiv : ∀ A B, El (arr A B) ≃ (El A → El B)
+  allCode : (I : Type u) → (I → Code) → Code
+  allEquiv : ∀ I F, El (allCode I F) ≃ ((X : I) → El (F X))
   subCode : (A : Code) → (El A → Prop) → Code
   subEquiv : ∀ A P, El (subCode A P) ≃ ProjectBeth.HOL.TotalSubtype (El A) P
 
@@ -42,6 +44,10 @@ def boolCode : Ty U Δ .star := fun _ => U.boolCode
 def arr (A B : Ty U Δ .star) : Ty U Δ .star := fun ρ => U.arr (A ρ) (B ρ)
 def lam (A : Ty U (K :: Δ) L) : Ty U Δ (.arr K L) := fun ρ X => A (X, ρ)
 def app (F : Ty U Δ (.arr K L)) (A : Ty U Δ K) : Ty U Δ L := fun ρ => F ρ (A ρ)
+def all (A : Ty U (K :: Δ) .star) : Ty U Δ .star :=
+  fun ρ => U.allCode (Kind.Val U K) (fun X => A (X, ρ))
+def inst (A : Ty U (K :: Δ) L) (X : Ty U Δ K) : Ty U Δ L :=
+  fun ρ => A (X ρ, ρ)
 
 def Pred (A : Ty U Δ .star) := ∀ ρ, U.El (A ρ) → Prop
 
@@ -73,6 +79,32 @@ def Ctx.El : (Γ : Ctx U Δ) → (ρ : Kind.Env U Δ) → Type u
   | [], _ => PUnit
   | A :: Γ, ρ => U.El (A ρ) × Ctx.El Γ ρ
 
+def Ctx.weaken (K : ProjectBeth.HOLOmega.Kind) (Γ : Ctx U Δ) : Ctx U (K :: Δ) :=
+  Γ.map fun A ρ => A ρ.2
+
+def Ctx.weakenEl {Δ : List ProjectBeth.HOLOmega.Kind} {ρ : Kind.Env U Δ}
+    (K : ProjectBeth.HOLOmega.Kind) (X : Kind.Val U K) :
+    (Γ : Ctx U Δ) → Ctx.El U Γ ρ → Ctx.El U (Ctx.weaken U K Γ) (X, ρ)
+  | [], _ => PUnit.unit
+  | _ :: Γ, γ => (γ.1, Ctx.weakenEl K X Γ γ.2)
+
+def Ctx.strengthenEl {Δ : List ProjectBeth.HOLOmega.Kind} {ρ : Kind.Env U Δ}
+    (K : ProjectBeth.HOLOmega.Kind) (X : Kind.Val U K) :
+    (Γ : Ctx U Δ) → Ctx.El U (Ctx.weaken U K Γ) (X, ρ) → Ctx.El U Γ ρ
+  | [], _ => PUnit.unit
+  | _ :: Γ, γ => (γ.1, Ctx.strengthenEl K X Γ γ.2)
+
+@[simp] theorem Ctx.strengthen_weaken
+    {Δ : List ProjectBeth.HOLOmega.Kind} {ρ : Kind.Env U Δ}
+    (K : ProjectBeth.HOLOmega.Kind) (X : Kind.Val U K)
+    (Γ : Ctx U Δ) (γ : Ctx.El U Γ ρ) :
+    Ctx.strengthenEl U K X Γ (Ctx.weakenEl U K X Γ γ) = γ := by
+  induction Γ with
+  | nil => rfl
+  | cons A Γ ih =>
+    rcases γ with ⟨x, γ⟩
+    exact congrArg (fun z => (x, z)) (ih γ)
+
 abbrev Tm (Γ : Ctx U Δ) (A : Ty U Δ .star) :=
   ∀ ρ, Ctx.El U Γ ρ → U.El (A ρ)
 
@@ -87,6 +119,30 @@ def app (f : Tm U Γ (Ty.arr U A B)) (x : Tm U Γ A) : Tm U Γ B :=
 
 def lam (t : Tm U (A :: Γ) B) : Tm U Γ (Ty.arr U A B) :=
   fun ρ γ => (U.arrEquiv (A ρ) (B ρ)).symm (fun x => t ρ (x, γ))
+
+def tyLam {Δ : List ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ}
+    (K : ProjectBeth.HOLOmega.Kind) {A : Ty U (K :: Δ) .star}
+    (t : Tm U (Ctx.weaken U K Γ) A) :
+    Tm U Γ (Ty.all U A) :=
+  fun ρ γ => (U.allEquiv (Kind.Val U K) (fun X => A (X, ρ))).symm
+    (fun X => t (X, ρ) (Ctx.weakenEl U K X Γ γ))
+
+def tyApp {Δ : List ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ}
+    {K : ProjectBeth.HOLOmega.Kind} {A : Ty U (K :: Δ) .star}
+    (f : Tm U Γ (Ty.all U A)) (X : Ty U Δ K) :
+    Tm U Γ (Ty.inst U A X) :=
+  fun ρ γ => U.allEquiv (Kind.Val U K) (fun Y => A (Y, ρ)) (f ρ γ) (X ρ)
+
+def instantiateBody {Δ : List ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ}
+    {K : ProjectBeth.HOLOmega.Kind} {A : Ty U (K :: Δ) .star}
+    (t : Tm U (Ctx.weaken U K Γ) A) (X : Ty U Δ K) : Tm U Γ (Ty.inst U A X) :=
+  fun ρ γ => t (X ρ, ρ) (Ctx.weakenEl U K (X ρ) Γ γ)
+
+def weakenTy {Δ : List ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ}
+    (K : ProjectBeth.HOLOmega.Kind) {A : Ty U (K :: Δ) .star}
+    (f : Tm U Γ (Ty.all U A)) : Tm U (Ctx.weaken U K Γ) A :=
+  fun ρ γ => f ρ.2 (Ctx.strengthenEl U K ρ.1 Γ γ) |> fun z =>
+    U.allEquiv (Kind.Val U K) (fun X => A (X, ρ.2)) z ρ.1
 
 def boolCode (b : Bool) : Tm U Γ (Ty.boolCode U) := fun _ _ => U.boolEquiv.symm b
 
@@ -136,20 +192,51 @@ theorem eta (f : Tm U Γ (Ty.arr U A B)) :
       U.arrEquiv (A ρ) (B ρ) (f ρ γ) from rfl]
   exact (U.arrEquiv (A ρ) (B ρ)).symm_apply_apply _
 
+@[simp] theorem tyBeta {Δ : List ProjectBeth.HOLOmega.Kind}
+    {K : ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ} {A : Ty U (K :: Δ) .star}
+    (t : Tm U (Ctx.weaken U K Γ) A) (X : Ty U Δ K) :
+    @tyApp U Δ Γ K A (tyLam U K t) X =
+      @instantiateBody U Δ Γ K A t X := by
+  funext ρ γ
+  change U.allEquiv (Kind.Val U K) (fun Y => A (Y, ρ))
+    ((U.allEquiv (Kind.Val U K) (fun Y => A (Y, ρ))).symm
+      (fun Y => t (Y, ρ) (Ctx.weakenEl U K Y Γ γ))) (X ρ) = _
+  rw [Equiv.apply_symm_apply]
+  rfl
+
+theorem tyEta {Δ : List ProjectBeth.HOLOmega.Kind}
+    {K : ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ} {A : Ty U (K :: Δ) .star}
+    (f : Tm U Γ (Ty.all U A)) :
+    tyLam U K (@weakenTy U Δ Γ K A f) = f := by
+  funext ρ γ
+  apply (U.allEquiv (Kind.Val U K) (fun X => A (X, ρ))).injective
+  funext X
+  simp [tyLam, weakenTy]
+
 end Tm
 
 /-- The equality calculus is intentionally small: congruence is inherited from
 Lean equality, while these constructors expose the HOLω proof rules. -/
-inductive EqTm {Δ} : (Γ : Ctx U Δ) → {A : Ty U Δ .star} → Tm U Γ A → Tm U Γ A → Prop
-  | refl (t) : EqTm Γ t t
+inductive EqTm : {Δ : List ProjectBeth.HOLOmega.Kind} →
+    (Γ : Ctx U Δ) → {A : Ty U Δ .star} → Tm U Γ A → Tm U Γ A → Prop
+  | refl {Δ} {Γ : Ctx U Δ} {A : Ty U Δ .star} (t : Tm U Γ A) : EqTm Γ t t
   | symm : EqTm Γ t u → EqTm Γ u t
   | trans : EqTm Γ t u → EqTm Γ u v → EqTm Γ t v
   | app : EqTm Γ f g → EqTm Γ x y → EqTm Γ (Tm.app U f x) (Tm.app U g y)
   | lam : EqTm (A :: Γ) t u → EqTm Γ (Tm.lam U t) (Tm.lam U u)
+  | tyApp : EqTm Γ (A := Ty.all U A) f g →
+      EqTm Γ (Tm.tyApp U f X) (Tm.tyApp U g X)
+  | tyLam : EqTm (Ctx.weaken U K Γ) t u →
+      EqTm Γ (Tm.tyLam U K t) (Tm.tyLam U K u)
   | beta (t : Tm U (A :: Γ) B) (x : Tm U Γ A) :
       EqTm Γ (Tm.app U (Tm.lam U t) x) (fun ρ γ => t ρ (x ρ γ, γ))
   | eta (f : Tm U Γ (Ty.arr U A B)) :
       EqTm Γ (Tm.lam U (Tm.app U (Tm.vs U f) (Tm.vz U))) f
+  | tyBeta {Δ K Γ A} (t : Tm U (Ctx.weaken U K Γ) A) (X : Ty U Δ K) :
+      EqTm Γ (@Tm.tyApp U Δ Γ K A (Tm.tyLam U K t) X)
+        (@Tm.instantiateBody U Δ Γ K A t X)
+  | tyEta {Δ K Γ A} (f : Tm U Γ (Ty.all U A)) :
+      EqTm Γ (Tm.tyLam U K (@Tm.weakenTy U Δ Γ K A f)) f
 
 theorem EqTm.sound {Δ} {Γ : Ctx U Δ} {A : Ty U Δ .star} {t u : Tm U Γ A}
     (h : EqTm U Γ t u) : t = u := by
@@ -159,7 +246,11 @@ theorem EqTm.sound {Δ} {Γ : Ctx U Δ} {A : Ty U Δ .star} {t u : Tm U Γ A}
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
   | app _ _ ih₁ ih₂ => simp [ih₁, ih₂]
   | lam _ ih => simp [ih]
+  | tyApp _ ih => simp [ih]
+  | tyLam _ ih => simp [ih]
   | beta => exact Tm.beta U _ _
   | eta => exact Tm.eta U _
+  | tyBeta => exact Tm.tyBeta U _ _
+  | tyEta => exact Tm.tyEta U _
 
 end ProjectBeth.HOLOmega.Kernel
