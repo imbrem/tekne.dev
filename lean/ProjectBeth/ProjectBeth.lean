@@ -8,6 +8,7 @@ import ProjectBeth.Defs.ClosureArithmetic
 import ProjectBeth.Defs.ClosureLaws
 import ProjectBeth.Defs.FixedPointClosure
 import ProjectBeth.Defs.HOL.Syntax
+import ProjectBeth.Defs.HOL.SyntaxTower
 import ProjectBeth.Defs.HOL.Semantics
 import ProjectBeth.Defs.HOL.Kernel
 import ProjectBeth.Defs.HOL.KernelLaws
