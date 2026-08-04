@@ -198,4 +198,97 @@ theorem epsilon_selection {Sat : Inductive.Ty → Inductive.Tm → Inductive.Tm 
     (law : SelectionLaw I Sat) (h : ∃ x, Sat A p x) :
     Sat A p (.app (I.epsilon A) p) := law.selected h
 
+/-- A derivation-directed certificate for the HOL fragment accepted by the
+compiler. Its indices retain the original HOL typing derivation. -/
+inductive HOLCompile (I : ClassicalInterface) (base : B → Inductive.Ty) :
+    (h : ProjectBeth.HOL.HasType Γ t A) →
+    (Γ' : List Inductive.Ty) → Inductive.Tm → Inductive.Ty → Prop
+  | var (h : Γ[n]? = some A) (hΓ : Γ'[n]? = some A')
+      (hA : holTy base A = some A') :
+      HOLCompile I base (.var h) Γ' (.var n) A'
+  | app (df : ProjectBeth.HOL.HasType Γ f (.arr A C))
+      (dx : ProjectBeth.HOL.HasType Γ x A)
+      (hf : HOLCompile I base df Γ' f' (.arr A' B'))
+      (hx : HOLCompile I base dx Γ' x' A') :
+      HOLCompile I base (.app df dx) Γ' (.app f' x') B'
+  | lam (wf : ProjectBeth.HOL.Ty.Wf A)
+      (dt : ProjectBeth.HOL.HasType (A :: Γ) t C)
+      (hA : holTy base A = some A')
+      (ht : HOLCompile I base dt (A' :: Γ') t' B') :
+      HOLCompile I base (.lam wf dt) Γ' (.lam A' t') (.arr A' B')
+  | bool (b : Bool) : HOLCompile I base (@ProjectBeth.HOL.HasType.bool _ Γ b) Γ'
+      (if b then Raw.churchTrue else Raw.churchFalse) Raw.boolTy
+  | eq (wf : ProjectBeth.HOL.Ty.Wf A)
+      (dx : ProjectBeth.HOL.HasType Γ x A) (dy : ProjectBeth.HOL.HasType Γ y A)
+      (hA : holTy base A = some A')
+      (hx : HOLCompile I base dx Γ' x' A')
+      (hy : HOLCompile I base dy Γ' y' A') :
+      HOLCompile I base (.eq wf dx dy) Γ'
+        (.app (.app (I.eq A') x') y') Raw.boolTy
+  | epsilon (wf : ProjectBeth.HOL.Ty.Wf A)
+      (dp : ProjectBeth.HOL.HasType Γ p (.arr A .bool))
+      (hA : holTy base A = some A')
+      (hp : HOLCompile I base dp Γ' p' (.arr A' Raw.boolTy)) :
+      HOLCompile I base (.epsilon wf dp) Γ'
+        (.app (I.epsilon A') p') A'
+
+def HOLCompile.typed (base : B → Inductive.Ty) :
+    (d : HOLCompile I base h Γ' t' A') → Inductive.HasType 0 Γ' t' A'
+  | .var _ hΓ _ => .var hΓ
+  | .app _ _ hf hx => .app (typed base hf) (typed base hx)
+  | .lam _ _ _ ht => .lam (typed base ht)
+  | .bool true => Raw.churchTrue_typed
+  | .bool false => Raw.churchFalse_typed
+  | .eq _ _ _ _ hx hy =>
+      .app (.app (I.eq_typed 0 Γ' _) (typed base hx)) (typed base hy)
+  | .epsilon _ _ _ hp => .app (I.epsilon_typed 0 Γ' _) (typed base hp)
+
+/-- The monomorphic portion of HOLω has the same derivation-directed
+translation. Type abstraction/application are intentionally absent here;
+their kind-indexed context translation is a separate compiler. -/
+inductive HOLOmegaCompile (I : ClassicalInterface) (base : B → Inductive.Ty) :
+    (h : ProjectBeth.HOLOmega.HasType Δ Γ t A) →
+    (Γ' : List Inductive.Ty) → Inductive.Tm → Inductive.Ty → Prop
+  | var (h : Γ[n]? = some A) (hΓ : Γ'[n]? = some A')
+      (hA : holOmegaTy base A = some A') :
+      HOLOmegaCompile I base (.var h) Γ' (.var n) A'
+  | app (df : ProjectBeth.HOLOmega.HasType Δ Γ f (.arr A C))
+      (dx : ProjectBeth.HOLOmega.HasType Δ Γ x A)
+      (hf : HOLOmegaCompile I base df Γ' f' (.arr A' B'))
+      (hx : HOLOmegaCompile I base dx Γ' x' A') :
+      HOLOmegaCompile I base (.app df dx) Γ' (.app f' x') B'
+  | lam (kA : ProjectBeth.HOLOmega.Kinded Δ A .star)
+      (dt : ProjectBeth.HOLOmega.HasType Δ (A :: Γ) t C)
+      (hA : holOmegaTy base A = some A')
+      (ht : HOLOmegaCompile I base dt (A' :: Γ') t' B') :
+      HOLOmegaCompile I base (.lam kA dt) Γ' (.lam A' t') (.arr A' B')
+  | bool (b : Bool) : HOLOmegaCompile I base
+      (@ProjectBeth.HOLOmega.HasType.bool _ Δ Γ b) Γ'
+      (if b then Raw.churchTrue else Raw.churchFalse) Raw.boolTy
+  | eq (kA : ProjectBeth.HOLOmega.Kinded Δ A .star)
+      (dx : ProjectBeth.HOLOmega.HasType Δ Γ x A)
+      (dy : ProjectBeth.HOLOmega.HasType Δ Γ y A)
+      (hA : holOmegaTy base A = some A')
+      (hx : HOLOmegaCompile I base dx Γ' x' A')
+      (hy : HOLOmegaCompile I base dy Γ' y' A') :
+      HOLOmegaCompile I base (.eq kA dx dy) Γ'
+        (.app (.app (I.eq A') x') y') Raw.boolTy
+  | epsilon (kA : ProjectBeth.HOLOmega.Kinded Δ A .star)
+      (dp : ProjectBeth.HOLOmega.HasType Δ Γ p (.arr A .bool))
+      (hA : holOmegaTy base A = some A')
+      (hp : HOLOmegaCompile I base dp Γ' p' (.arr A' Raw.boolTy)) :
+      HOLOmegaCompile I base (.epsilon kA dp) Γ'
+        (.app (I.epsilon A') p') A'
+
+def HOLOmegaCompile.typed (base : B → Inductive.Ty) :
+    (d : HOLOmegaCompile I base h Γ' t' A') → Inductive.HasType 0 Γ' t' A'
+  | .var _ hΓ _ => .var hΓ
+  | .app _ _ hf hx => .app (typed base hf) (typed base hx)
+  | .lam _ _ _ ht => .lam (typed base ht)
+  | .bool true => Raw.churchTrue_typed
+  | .bool false => Raw.churchFalse_typed
+  | .eq _ _ _ _ hx hy =>
+      .app (.app (I.eq_typed 0 Γ' _) (typed base hx)) (typed base hy)
+  | .epsilon _ _ _ hp => .app (I.epsilon_typed 0 Γ' _) (typed base hp)
+
 end ProjectBeth.SystemF.HOLTranslation
