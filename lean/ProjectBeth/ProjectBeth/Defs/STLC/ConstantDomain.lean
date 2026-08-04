@@ -170,4 +170,26 @@ theorem TypedTm.erase_eval (M : Model S.toSignature D) (t : TypedTm S Γ A)
     funext x
     exact ih (x, ρ)
 
+noncomputable def Tm.epsilonTerm (fallback : Tm S n) (P : Tm S n → Prop) : Tm S n := by
+  classical
+  exact if h : ∃ t, P t then Classical.choose h else fallback
+
+theorem Tm.epsilonTerm_spec (fallback : Tm S n) (P : Tm S n → Prop)
+    (h : ∃ t, P t) : P (Tm.epsilonTerm fallback P) := by
+  classical
+  simp [Tm.epsilonTerm, h, Classical.choose_spec h]
+
+theorem Tm.epsilonTerm_fallback (fallback : Tm S n) (P : Tm S n → Prop)
+    (h : ¬∃ t, P t) : Tm.epsilonTerm fallback P = fallback := by
+  classical
+  simp [Tm.epsilonTerm, h]
+
+def Tm.Representable (M : Model S D) (ρ : Env D n) (P : D → Prop) : Prop :=
+  ∃ t : Tm S n, P (t.eval M ρ)
+
+theorem Tm.conditional_choice (M : Model S D) (fallback : Tm S n)
+    (ρ : Env D n) (P : D → Prop) (h : Tm.Representable M ρ P) :
+    P ((Tm.epsilonTerm fallback (fun t => P (t.eval M ρ))).eval M ρ) :=
+  Tm.epsilonTerm_spec fallback _ h
+
 end ProjectBeth.STLC.ConstantDomain
