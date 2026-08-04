@@ -2,7 +2,7 @@ import ProjectBeth.Defs.Closure
 
 /-! Concrete closure codes for power levels and their bounded subsets. -/
 
-universe u v
+universe u v w
 
 namespace ProjectBeth
 
@@ -127,12 +127,45 @@ end BethLevel
 
 namespace BoundedSet
 
-variable {Base : Type u} {Base' : Type v}
+variable {Base : Type u} {Base' : Type v} {Base'' : Type w}
 
 def common (A B : BoundedSet Base) := max A.level B.level
 
 def map (f : Base ↪ Base') (A : BoundedSet Base) : BoundedSet Base' :=
   ⟨A.level, PowerLevel.map f A.level '' A.carrier⟩
+
+@[simp]
+theorem map_refl (A : BoundedSet Base) :
+    map (Function.Embedding.refl Base) A = A := by
+  cases A with
+  | mk level carrier =>
+      simp only [map]
+      congr
+      ext x
+      constructor
+      · rintro ⟨y, hy, hxy⟩
+        change PowerLevel.map id level y = x at hxy
+        rw [PowerLevel.map_id] at hxy
+        simpa [← hxy] using hy
+      · intro hx
+        refine ⟨x, hx, ?_⟩
+        change PowerLevel.map id level x = x
+        exact PowerLevel.map_id level x
+
+theorem map_trans (f : Base ↪ Base') (g : Base' ↪ Base'') (A : BoundedSet Base) :
+    map (f.trans g) A = map g (map f A) := by
+  cases A with
+  | mk level carrier =>
+      simp only [map]
+      congr
+      ext x
+      simp only [Set.mem_image]
+      constructor
+      · rintro ⟨y, hy, rfl⟩
+        exact ⟨PowerLevel.map f level y, ⟨y, hy, rfl⟩,
+          (PowerLevel.map_comp g f level y).symm⟩
+      · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+        exact ⟨y, hy, PowerLevel.map_comp g f level y⟩
 
 noncomputable def mapEquiv (f : Base ↪ Base') (A : BoundedSet Base) :
     UEl A ≃ UEl (map f A) where
