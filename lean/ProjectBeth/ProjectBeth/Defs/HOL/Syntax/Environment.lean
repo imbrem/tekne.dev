@@ -111,6 +111,14 @@ def Tm.project : Tm Base → Option (Minimal.Tm Base)
 @[simp] theorem Tm.project_ofMinimal (t : Minimal.Tm Base) : (Tm.ofMinimal t).project = some t := by
   induction t <;> simp [Tm.ofMinimal, Tm.project, Ty.project_ofMinimal, *]
 
+theorem Ty.ofMinimal_injective : Function.Injective (@Ty.ofMinimal Base) := by
+  intro A B h
+  simpa using congrArg Ty.project h
+
+theorem Tm.ofMinimal_injective : Function.Injective (@Tm.ofMinimal Base) := by
+  intro t s h
+  simpa using congrArg Tm.project h
+
 def Ty.toRaw : Ty Base → HOL.Ty Base
   | .base b => .base b
   | .bool => .bool
@@ -218,6 +226,16 @@ def Tm.project : Tm Base TyName ConstName → Except (Obstruction TyName ConstNa
   | bool b => rfl
   | eq A x y ihx ihy => simp only [Tm.ofChoice, Tm.project, Ty.project_ofChoice, ihx, ihy]; rfl
   | epsilon A p ih => simp only [Tm.ofChoice, Tm.project, Ty.project_ofChoice, ih]; rfl
+
+theorem Ty.ofChoice_injective {ConstName : Type w} : Function.Injective
+    (@Ty.ofChoice Base TyName) := by
+  intro A B h
+  simpa using congrArg (Ty.project (ConstName := ConstName)) h
+
+theorem Tm.ofChoice_injective : Function.Injective
+    (@Tm.ofChoice Base TyName ConstName) := by
+  intro t s h
+  simpa using congrArg Tm.project h
 
 /-- Traditional HOL environments introduce constants and types in sequence.
 The definition bodies only mention earlier declarations when `Wf` below holds. -/
