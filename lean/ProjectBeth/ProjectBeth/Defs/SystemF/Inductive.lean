@@ -229,6 +229,37 @@ theorem Tm.rename_renameTy (ρ θ : Nat → Nat) (t : Tm) :
   | bool b => rfl
   | nat n => rfl
 
+theorem Tm.renameTy_congr {ρ θ : Nat → Nat} (h : ∀ n, ρ n = θ n) (t : Tm) :
+    t.renameTy ρ = t.renameTy θ := by
+  induction t generalizing ρ θ with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.renameTy, ihf h, ihx h]
+  | lam A t ih => simp [Tm.renameTy, Ty.rename_congr h, ih h]
+  | tyApp f A ih => simp [Tm.renameTy, Ty.rename_congr h, ih h]
+  | tyLam t ih =>
+    simp only [Tm.renameTy]
+    congr 1
+    apply ih
+    intro n; cases n <;> simp [upRen, h]
+  | bool b => rfl
+  | nat n => rfl
+
+theorem Tm.renameTy_comp (ρ θ : Nat → Nat) (t : Tm) :
+    (t.renameTy ρ).renameTy θ = t.renameTy (θ ∘ ρ) := by
+  induction t generalizing ρ θ with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.renameTy, ihf, ihx]
+  | lam A t ih => simp [Tm.renameTy, Ty.rename_comp, ih]
+  | tyApp f A ih => simp [Tm.renameTy, Ty.rename_comp, ih]
+  | tyLam t ih =>
+    simp only [Tm.renameTy, ih]
+    apply congrArg Tm.tyLam
+    apply Tm.renameTy_congr
+    intro n
+    cases n <;> rfl
+  | bool b => rfl
+  | nat n => rfl
+
 theorem Tm.rename_congr {ρ τ : Nat → Nat} (h : ∀n, ρ n = τ n) (t : Tm) :
     t.rename ρ = t.rename τ := by
   induction t generalizing ρ τ with
