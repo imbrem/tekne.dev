@@ -46,6 +46,98 @@ mutual
         HasType Γ (.rep A p x) A
 end
 
+/-- A single index family for the mutually defined well-formedness and typing
+judgements.  This view has an ordinary (non-mutual) induction principle. -/
+inductive JudgementIndex (Base : Type u) : Type u
+  | wf (A : Ty Base)
+  | hasType (Γ : Ctx Base) (t : Tm Base) (A : Ty Base)
+
+/-- Indexed presentation of `Ty.Wf` and `HasType`.  The original judgements
+remain available, including all of their constructor names. -/
+inductive Judgement {Base : Type u} : JudgementIndex Base → Prop
+  | wfBase : Judgement (.wf (.base A))
+  | wfBool : Judgement (.wf .bool)
+  | wfArr : Judgement (.wf A) → Judgement (.wf B) →
+      Judgement (.wf (.arr A B))
+  | wfSub : Judgement (.wf A) → Judgement (.hasType [A] p .bool) →
+      Judgement (.wf (.sub A p))
+  | var : Γ[n]? = some A → Judgement (.hasType Γ (.var n) A)
+  | app : Judgement (.hasType Γ f (.arr A B)) →
+      Judgement (.hasType Γ x A) → Judgement (.hasType Γ (.app f x) B)
+  | lam : Judgement (.wf A) → Judgement (.hasType (A :: Γ) t B) →
+      Judgement (.hasType Γ (.lam A t) (.arr A B))
+  | bool : Judgement (.hasType Γ (.bool b) .bool)
+  | eq : Judgement (.wf A) → Judgement (.hasType Γ x A) →
+      Judgement (.hasType Γ y A) → Judgement (.hasType Γ (.eq A x y) .bool)
+  | epsilon : Judgement (.wf A) → Judgement (.hasType Γ p (.arr A .bool)) →
+      Judgement (.hasType Γ (.epsilon A p) A)
+  | abs : Judgement (.wf A) → Judgement (.hasType [A] p .bool) →
+      Judgement (.hasType Γ x A) → Judgement (.hasType Γ (.abs A p x) (.sub A p))
+  | rep : Judgement (.wf A) → Judgement (.hasType [A] p .bool) →
+      Judgement (.hasType Γ x (.sub A p)) → Judgement (.hasType Γ (.rep A p x) A)
+
+abbrev IndexedWf {Base : Type u} (A : Ty Base) : Prop :=
+  Judgement (.wf A)
+
+abbrev IndexedHasType {Base : Type u} (Γ : Ctx Base) (t : Tm Base)
+    (A : Ty Base) : Prop :=
+  Judgement (.hasType Γ t A)
+
+mutual
+  theorem Ty.Wf.toJudgement : Ty.Wf A → Judgement (.wf A)
+    | .base => .wfBase
+    | .bool => .wfBool
+    | .arr hA hB => .wfArr hA.toJudgement hB.toJudgement
+    | .sub hA hp => .wfSub hA.toJudgement hp.toJudgement
+
+  theorem HasType.toJudgement : HasType Γ t A → Judgement (.hasType Γ t A)
+    | .var h => .var h
+    | .app hf hx => .app hf.toJudgement hx.toJudgement
+    | .lam hA ht => .lam hA.toJudgement ht.toJudgement
+    | .bool => .bool
+    | .eq hA hx hy => .eq hA.toJudgement hx.toJudgement hy.toJudgement
+    | .epsilon hA hp => .epsilon hA.toJudgement hp.toJudgement
+    | .abs hA hp hx => .abs hA.toJudgement hp.toJudgement hx.toJudgement
+    | .rep hA hp hx => .rep hA.toJudgement hp.toJudgement hx.toJudgement
+end
+
+mutual
+  theorem Judgement.toWf : Judgement (.wf A) → Ty.Wf A
+    | .wfBase => .base
+    | .wfBool => .bool
+    | .wfArr hA hB => .arr hA.toWf hB.toWf
+    | .wfSub hA hp => .sub hA.toWf hp.toHasType
+
+  theorem Judgement.toHasType : Judgement (.hasType Γ t A) → HasType Γ t A
+    | .var h => .var h
+    | .app hf hx => .app hf.toHasType hx.toHasType
+    | .lam hA ht => .lam hA.toWf ht.toHasType
+    | .bool => .bool
+    | .eq hA hx hy => .eq hA.toWf hx.toHasType hy.toHasType
+    | .epsilon hA hp => .epsilon hA.toWf hp.toHasType
+    | .abs hA hp hx => .abs hA.toWf hp.toHasType hx.toHasType
+    | .rep hA hp hx => .rep hA.toWf hp.toHasType hx.toHasType
+end
+
+theorem judgement_wf_iff : Judgement (.wf A) ↔ Ty.Wf A :=
+  ⟨Judgement.toWf, Ty.Wf.toJudgement⟩
+
+theorem judgement_hasType_iff : Judgement (.hasType Γ t A) ↔ HasType Γ t A :=
+  ⟨Judgement.toHasType, HasType.toJudgement⟩
+
+@[simp] theorem Ty.Wf.toJudgement_toWf (h : Ty.Wf A) :
+    h.toJudgement.toWf = h := Subsingleton.elim _ _
+
+@[simp] theorem HasType.toJudgement_toHasType (h : HasType Γ t A) :
+    h.toJudgement.toHasType = h := Subsingleton.elim _ _
+
+@[simp] theorem Judgement.toWf_toJudgement (h : Judgement (.wf A)) :
+    h.toWf.toJudgement = h := Subsingleton.elim _ _
+
+@[simp] theorem Judgement.toHasType_toJudgement
+    (h : Judgement (.hasType Γ t A)) : h.toHasType.toJudgement = h :=
+  Subsingleton.elim _ _
+
 def TotalSubtype (α : Type u) (P : α → Prop) :=
   {x : α // P x ∨ ¬∃ y, P y}
 
