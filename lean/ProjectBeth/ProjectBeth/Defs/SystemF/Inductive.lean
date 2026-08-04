@@ -218,6 +218,17 @@ def Tm.instantiate (t x : Tm) : Tm := t.subst (fun | 0 => x | n + 1 => .var n)
 def Tm.instantiateTy (t : Tm) (X : Ty) : Tm :=
   t.substTy (fun | 0 => X | n + 1 => .var n)
 
+theorem Tm.rename_renameTy (ρ θ : Nat → Nat) (t : Tm) :
+    (t.renameTy θ).rename ρ = (t.rename ρ).renameTy θ := by
+  induction t generalizing ρ θ with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.rename, Tm.renameTy, ihf, ihx]
+  | lam A t ih => simp [Tm.rename, Tm.renameTy, ih]
+  | tyApp f A ih => simp [Tm.rename, Tm.renameTy, ih]
+  | tyLam t ih => simp [Tm.rename, Tm.renameTy, ih]
+  | bool b => rfl
+  | nat n => rfl
+
 theorem Tm.rename_congr {ρ τ : Nat → Nat} (h : ∀n, ρ n = τ n) (t : Tm) :
     t.rename ρ = t.rename τ := by
   induction t generalizing ρ τ with
