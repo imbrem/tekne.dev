@@ -1,10 +1,14 @@
 import ProjectBeth.Defs.SystemF.Polynomial
 import ProjectBeth.Defs.SystemF.ContextMorphisms
 
+universe u
+
 namespace ProjectBeth.SystemF.Polynomial.Syntax.Typing
 
 open ProjectBeth.SystemF.Inductive
 open ProjectBeth.SystemF.Inductive.Semantics
+
+variable {Const : Type u}
 
 def liftTy (d : Derivation Δ Γ t A) :
     Derivation (Δ + 1) (Γ.map Inductive.Ty.lift) (t.renameTy Nat.succ) A.lift :=
@@ -24,6 +28,23 @@ def liftTy (d : Derivation Δ Γ t A) :
 @[simp] theorem subst_lift_inst (A X : Inductive.Ty) :
     A.lift.subst (fun | 0 => X | n + 1 => .var n) = A :=
   lift_instantiate A X
+
+theorem polyTy_rename (base : Const → Inductive.Ty) (P : STLC.Poly Const)
+    (X : Inductive.Ty) (ρ : Nat → Nat) :
+    (Syntax.polyTy base P X).rename ρ =
+      Syntax.polyTy (fun c => (base c).rename ρ) P (X.rename ρ) := by
+  induction P generalizing X ρ with
+  | var => rfl
+  | const => rfl
+  | pow => rfl
+  | sum P Q ihP ihQ =>
+    simp only [Syntax.polyTy, Syntax.sumTy, Inductive.Ty.rename]
+    rw [Inductive.Ty.rename_lift, ihP, Inductive.Ty.rename_lift, ihQ]
+    simp [Inductive.upRen]
+  | prod P Q ihP ihQ =>
+    simp only [Syntax.polyTy, Syntax.prodTy, Inductive.Ty.rename]
+    rw [Inductive.Ty.rename_lift, ihP, Inductive.Ty.rename_lift, ihQ]
+    simp [Inductive.upRen]
 
 def sumInl (d : Derivation Δ Γ a A) :
     Derivation Δ Γ (Syntax.sumInl A B a) (Syntax.sumTy A B) := by
