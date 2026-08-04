@@ -1,4 +1,4 @@
-import ProjectBeth.Defs.STLC.Core
+import ProjectBeth.Defs.STLC.Variants
 import ProjectBeth.Defs.Untyped.Reduction
 
 universe u
@@ -65,5 +65,38 @@ theorem compile_typed {Ty : Type u} {arr : Ty → Ty → Ty}
   | var x => exact .var (varIndex_get? x)
   | app f x ihf ihx => exact .app ihf ihx
   | lam body ih => exact .lam _ ih
+
+namespace Church
+
+def pair (a b : Tm C) : Tm C :=
+  .lam (.app (.app (.var 0) (a.rename Nat.succ)) (b.rename Nat.succ))
+def fst (p : Tm C) : Tm C := .app p (.lam (.lam (.var 1)))
+def snd (p : Tm C) : Tm C := .app p (.lam (.lam (.var 0)))
+def inl (x : Tm C) : Tm C := .lam (.lam (.app (.var 1) (x.rename (fun i => i + 2))))
+def inr (x : Tm C) : Tm C := .lam (.lam (.app (.var 0) (x.rename (fun i => i + 2))))
+def case (s l r : Tm C) : Tm C := .app (.app s l) r
+
+end Church
+
+def compileProd {Base : Type u} {S : Signature} {Γ} {A} :
+    STLC.ArrowProd.Tm (Base := Base) Γ A → Tm S.Const
+  | .var x => .var (varIndex x)
+  | .app f x => .app (compileProd f) (compileProd x)
+  | .lam body => .lam (compileProd body)
+  | .pair a b => Church.pair (compileProd a) (compileProd b)
+  | .fst p => Church.fst (compileProd p)
+  | .snd p => Church.snd (compileProd p)
+
+def compileSum {Base : Type u} {S : Signature} {Γ} {A} :
+    STLC.ArrowProdSum.Tm (Base := Base) Γ A → Tm S.Const
+  | .var x => .var (varIndex x)
+  | .app f x => .app (compileSum f) (compileSum x)
+  | .lam body => .lam (compileSum body)
+  | .pair a b => Church.pair (compileSum a) (compileSum b)
+  | .fst p => Church.fst (compileSum p)
+  | .snd p => Church.snd (compileSum p)
+  | .inl x => Church.inl (compileSum x)
+  | .inr x => Church.inr (compileSum x)
+  | .case s l r => Church.case (compileSum s) (.lam (compileSum l)) (.lam (compileSum r))
 
 end ProjectBeth.STLC.UntypedCompilation
