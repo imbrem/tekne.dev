@@ -238,6 +238,15 @@ def HOLCompile.typed (base : B → Inductive.Ty) :
       .app (.app (I.eq_typed 0 Γ' _) (typed base hx)) (typed base hy)
   | .epsilon _ _ hp => .app (I.epsilon_typed 0 Γ' _) (typed base hp)
 
+def HOLCompile.sourceTyped (base : B → Inductive.Ty) :
+    HOLCompile I base Γ t A Γ' t' A' → ProjectBeth.HOL.HasType Γ t A
+  | .var h _ _ => .var h
+  | .app hf hx => .app (sourceTyped base hf) (sourceTyped base hx)
+  | .lam wf _ ht => .lam wf (sourceTyped base ht)
+  | .bool _ => .bool
+  | .eq wf _ hx hy => .eq wf (sourceTyped base hx) (sourceTyped base hy)
+  | .epsilon wf _ hp => .epsilon wf (sourceTyped base hp)
+
 /-- The monomorphic portion of HOLω has the same derivation-directed
 translation. Type abstraction/application are intentionally absent here;
 their kind-indexed context translation is a separate compiler. -/
@@ -279,6 +288,16 @@ def HOLOmegaCompile.typed (base : B → Inductive.Ty) :
   | .eq _ _ hx hy =>
       .app (.app (I.eq_typed 0 Γ' _) (typed base hx)) (typed base hy)
   | .epsilon _ _ hp => .app (I.epsilon_typed 0 Γ' _) (typed base hp)
+
+def HOLOmegaCompile.sourceTyped (base : B → Inductive.Ty) :
+    HOLOmegaCompile I base Δ Γ t A Γ' t' A' →
+      ProjectBeth.HOLOmega.HasType Δ Γ t A
+  | .var h _ _ => .var h
+  | .app hf hx => .app (sourceTyped base hf) (sourceTyped base hx)
+  | .lam kA _ ht => .lam kA (sourceTyped base ht)
+  | .bool _ => .bool
+  | .eq kA _ hx hy => .eq kA (sourceTyped base hx) (sourceTyped base hy)
+  | .epsilon kA _ hp => .epsilon kA (sourceTyped base hp)
 
 universe v w
 
