@@ -2,8 +2,11 @@ import ProjectBeth.Basic
 import ProjectBeth.Defs.Hierarchy
 import ProjectBeth.Defs.PowerTower
 import ProjectBeth.Defs.Carrier
+import ProjectBeth.Defs.Closure
 import ProjectBeth.Defs.STLC.Core
 import ProjectBeth.Defs.STLC.Variants
+import ProjectBeth.Defs.STLC.Semantics
 import ProjectBeth.Snapshots.A06
 import ProjectBeth.Snapshots.A07
 import ProjectBeth.Snapshots.A08
+import ProjectBeth.Snapshots.A09
