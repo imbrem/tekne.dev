@@ -181,6 +181,25 @@ noncomputable def abs (P : Ty.Pred U A) (x : Tm U Γ A) :
 def rep (P : Ty.Pred U A) (x : Tm U Γ (Ty.sub U A P)) : Tm U Γ A :=
   fun ρ γ => ProjectBeth.HOL.TotalSubtype.rep (U.subEquiv (A ρ) (P ρ) (x ρ γ))
 
+theorem abs_rep (P : Ty.Pred U A) (x : Tm U Γ (Ty.sub U A P)) :
+    abs U P (rep U P x) = x := by
+  funext ρ γ
+  letI := U.inhabited (A ρ)
+  change (U.subEquiv (A ρ) (P ρ)).symm
+    (ProjectBeth.HOL.TotalSubtype.abs (P ρ)
+      (ProjectBeth.HOL.TotalSubtype.rep (U.subEquiv (A ρ) (P ρ) (x ρ γ)))) = x ρ γ
+  apply (U.subEquiv (A ρ) (P ρ)).injective
+  rw [Equiv.apply_symm_apply]
+  exact @ProjectBeth.HOL.TotalSubtype.abs_rep (U.El (A ρ))
+    (U.inhabited (A ρ)) (P ρ) (U.subEquiv (A ρ) (P ρ) (x ρ γ))
+
+theorem rep_abs (P : Ty.Pred U A) (x : Tm U Γ A)
+    (hx : ∀ ρ γ, P ρ (x ρ γ)) : rep U P (abs U P x) = x := by
+  funext ρ γ
+  letI := U.inhabited (A ρ)
+  simp only [rep, abs, Equiv.apply_symm_apply]
+  exact ProjectBeth.HOL.TotalSubtype.rep_abs_of (hx ρ γ)
+
 abbrev Sub (Γ Γ' : Ctx U Δ) := ∀ ρ, Ctx.El U Γ' ρ → Ctx.El U Γ ρ
 
 def subst (t : Tm U Γ A) (σ : Sub U Γ Γ') : Tm U Γ' A := fun ρ γ => t ρ (σ ρ γ)
@@ -315,8 +334,8 @@ theorem Tm.epsilon_spec {Δ} {Γ : Ctx U Δ} {A : Ty U Δ .star}
 
 /-- Natural-deduction fragment for the primitive truth, equality and choice
 rules.  Each constructor below has a corresponding case in `Derives.sound`. -/
-inductive Derives {Δ} {Γ : Ctx U Δ} (H : List (Tm U Γ (Ty.boolCode U))) :
-    Tm U Γ (Ty.boolCode U) → Prop
+inductive Derives {Δ} {Γ : Ctx U Δ} :
+    List (Tm U Γ (Ty.boolCode U)) → Tm U Γ (Ty.boolCode U) → Prop
   | hyp : p ∈ H → Derives H p
   | truth : Derives H (Tm.boolCode U true)
   | eqRefl (x : Tm U Γ A) : Derives H (Tm.equal U x x)
@@ -324,6 +343,14 @@ inductive Derives {Δ} {Γ : Ctx U Δ} (H : List (Tm U Γ (Ty.boolCode U))) :
       Derives H (Tm.equal U x y) → Derives H (Tm.app U p x) → Derives H (Tm.app U p y)
   | choice (p : Tm U Γ (Ty.arr U A (Ty.boolCode U))) (x : Tm U Γ A) :
       Derives H (Tm.app U p x) → Derives H (Tm.app U p (Tm.epsilon U p))
+  | convert : EqTm U Γ p q → Derives H p → Derives H q
+  | eqOfEqTm (x y : Tm U Γ A) : EqTm U Γ x y → Derives H (Tm.equal U x y)
+  | antisymm (p q : Tm U Γ (Ty.boolCode U)) :
+      Derives (p :: H) q → Derives (q :: H) p → Derives H (Tm.equal U p q)
+  | absRep (P : Ty.Pred U A) (x : Tm U Γ (Ty.sub U A P)) :
+      Derives H (Tm.equal U (Tm.abs U P (Tm.rep U P x)) x)
+  | repAbs (P : Ty.Pred U A) (x : Tm U Γ A) :
+      (∀ ρ γ, P ρ (x ρ γ)) → Derives H (Tm.equal U (Tm.rep U P (Tm.abs U P x)) x)
 
 theorem Derives.sound {Δ} {Γ : Ctx U Δ} {H : List (Tm U Γ (Ty.boolCode U))}
     {p : Tm U Γ (Ty.boolCode U)} (h : Derives U H p) : Entails U H p := by
@@ -333,9 +360,41 @@ theorem Derives.sound {Δ} {Γ : Ctx U Δ} {H : List (Tm U Γ (Ty.boolCode U))}
   | truth => simp [Tm.boolCode]
   | eqRefl x => exact (Tm.equal_true_iff U x x ρ γ).2 rfl
   | eqMp p x y hxy hpx ihxy ihpx =>
-    have heq := (Tm.equal_true_iff U x y ρ γ).1 ihxy
-    simpa [Tm.app, heq] using ihpx
+    have heq := (Tm.equal_true_iff U x y ρ γ).1 (ihxy hH)
+    simpa [Tm.app, heq] using ihpx hH
   | choice p x hp ih =>
-    exact Tm.epsilon_spec U p x ρ γ ih
+    exact Tm.epsilon_spec U p x ρ γ (ih hH)
+  | convert heq hp ih =>
+    have he := congrFun (congrFun (heq.sound U) ρ) γ
+    rw [← he]
+    exact ih hH
+  | eqOfEqTm x y heq =>
+    exact (Tm.equal_true_iff U x y ρ γ).2 (congrFun (congrFun (heq.sound U) ρ) γ)
+  | antisymm p q hp hq ihp ihq =>
+    apply (Tm.equal_true_iff U p q ρ γ).2
+    apply U.boolEquiv.injective
+    cases hpv : U.boolEquiv (p ρ γ) <;> cases hqv : U.boolEquiv (q ρ γ) <;> try rfl
+    · have bad := ihq (by
+        intro r hr
+        simp only [List.mem_cons] at hr
+        rcases hr with rfl | hr
+        · exact hqv
+        · exact hH _ hr)
+      rw [hpv] at bad
+      contradiction
+    · have bad := ihp (by
+        intro r hr
+        simp only [List.mem_cons] at hr
+        rcases hr with rfl | hr
+        · exact hpv
+        · exact hH _ hr)
+      rw [hqv] at bad
+      contradiction
+  | absRep P x =>
+    exact (Tm.equal_true_iff U _ _ ρ γ).2
+      (congrFun (congrFun (Tm.abs_rep U P x) ρ) γ)
+  | repAbs P x hx =>
+    exact (Tm.equal_true_iff U _ _ ρ γ).2
+      (congrFun (congrFun (Tm.rep_abs U P x hx) ρ) γ)
 
 end ProjectBeth.HOLOmega.Kernel
