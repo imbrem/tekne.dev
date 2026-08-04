@@ -66,6 +66,12 @@ def subst (A : Ty U Δ K) (σ : Sub U Δ Δ') : Ty U Δ' K := fun ρ => A (σ ρ
 theorem subst_comp (A : Ty U Δ K) (σ : Sub U Δ Δ') (τ : Sub U Δ' Δ'') :
     (A.subst U σ).subst U τ = A.subst U (σ ∘ τ) := rfl
 
+theorem subst_arr (A B : Ty U Δ .star) (σ : Sub U Δ Δ') :
+    (arr U A B).subst U σ = arr U (A.subst U σ) (B.subst U σ) := rfl
+
+theorem subst_app (F : Ty U Δ (.arr K L)) (A : Ty U Δ K) (σ : Sub U Δ Δ') :
+    (app U F A).subst U σ = app U (F.subst U σ) (A.subst U σ) := rfl
+
 @[simp] theorem beta (A : Ty U (K :: Δ) L) (X : Ty U Δ K) :
     app U (lam U A) X = fun ρ => A (X ρ, ρ) := rfl
 
@@ -81,6 +87,14 @@ def Ctx.El : (Γ : Ctx U Δ) → (ρ : Kind.Env U Δ) → Type u
 
 def Ctx.weaken (K : ProjectBeth.HOLOmega.Kind) (Γ : Ctx U Δ) : Ctx U (K :: Δ) :=
   Γ.map fun A ρ => A ρ.2
+
+def Ctx.subst (Γ : Ctx U Δ) (σ : Ty.Sub U Δ Δ') : Ctx U Δ' :=
+  Γ.map fun A => A.subst U σ
+
+def Ctx.substEl (σ : Ty.Sub U Δ Δ') :
+    (Γ : Ctx U Δ) → Ctx.El U (Ctx.subst U Γ σ) ρ → Ctx.El U Γ (σ ρ)
+  | [], _ => PUnit.unit
+  | _ :: Γ, γ => (γ.1, Ctx.substEl σ Γ γ.2)
 
 def Ctx.weakenEl {Δ : List ProjectBeth.HOLOmega.Kind} {ρ : Kind.Env U Δ}
     (K : ProjectBeth.HOLOmega.Kind) (X : Kind.Val U K) :
@@ -170,6 +184,26 @@ def rep (P : Ty.Pred U A) (x : Tm U Γ (Ty.sub U A P)) : Tm U Γ A :=
 abbrev Sub (Γ Γ' : Ctx U Δ) := ∀ ρ, Ctx.El U Γ' ρ → Ctx.El U Γ ρ
 
 def subst (t : Tm U Γ A) (σ : Sub U Γ Γ') : Tm U Γ' A := fun ρ γ => t ρ (σ ρ γ)
+
+def substTy {Δ Δ' : List ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ}
+    {A : Ty U Δ .star} (t : Tm U Γ A) (σ : Ty.Sub U Δ Δ') :
+    Tm U (Ctx.subst U Γ σ) (A.subst U σ) :=
+  fun ρ γ => t (σ ρ) (Ctx.substEl U σ Γ γ)
+
+@[simp] theorem substTy_apply {Δ Δ' : List ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ}
+    {A : Ty U Δ .star} (t : Tm U Γ A) (σ : Ty.Sub U Δ Δ') ρ γ :
+    t.substTy U σ ρ γ = t (σ ρ) (Ctx.substEl U σ Γ γ) := rfl
+
+theorem substTy_app {Δ Δ' : List ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ}
+    {A B : Ty U Δ .star} (f : Tm U Γ (Ty.arr U A B)) (x : Tm U Γ A)
+    (σ : Ty.Sub U Δ Δ') :
+    (Tm.app U f x).substTy U σ =
+      Tm.app U (f.substTy U σ) (x.substTy U σ) := rfl
+
+theorem substTy_bool {Δ Δ' : List ProjectBeth.HOLOmega.Kind} {Γ : Ctx U Δ}
+    (b : Bool) (σ : Ty.Sub U Δ Δ') :
+    (Tm.boolCode U (Γ := Γ) b).substTy U σ =
+      Tm.boolCode U (Γ := Ctx.subst U Γ σ) b := rfl
 
 @[simp] theorem subst_id (t : Tm U Γ A) : t.subst U (fun _ γ => γ) = t := rfl
 
