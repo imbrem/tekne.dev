@@ -7,6 +7,8 @@ namespace ProjectBeth.Syntax
 
 namespace LocallyNameless
 
+variable {Name : Type u}
+
 /-- A generic locally-nameless transformer for syntax signatures parameterized by
 their variable type. -/
 abbrev Transform (Syntax : Type u → Type v) (Name : Type u) : Type v :=
