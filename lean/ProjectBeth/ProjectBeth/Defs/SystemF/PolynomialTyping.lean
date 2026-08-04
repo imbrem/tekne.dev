@@ -157,6 +157,7 @@ noncomputable def fmapTm (base : Const → Inductive.Ty) (P : STLC.Poly Const)
     · apply Derivation.app
       · exact dx.renameTm (CtxRen.weaken _ (base c))
       · exact .var (by simp)
+
   | sum P Q ihP ihQ =>
     apply sumElim dx
     · apply Derivation.lam
@@ -164,11 +165,13 @@ noncomputable def fmapTm (base : Const → Inductive.Ty) (P : STLC.Poly Const)
       apply ihP
       · exact df.renameTm (CtxRen.weaken _ (Syntax.polyTy base P X))
       · exact .var (by simp)
+
     · apply Derivation.lam
       apply sumInr
       apply ihQ
       · exact df.renameTm (CtxRen.weaken _ (Syntax.polyTy base Q X))
       · exact .var (by simp)
+
   | prod P Q ihP ihQ =>
     apply prodElim dx
     apply Derivation.lam
@@ -178,9 +181,31 @@ noncomputable def fmapTm (base : Const → Inductive.Ty) (P : STLC.Poly Const)
       · exact (df.renameTm (CtxRen.weaken _ (Syntax.polyTy base P X))).renameTm
           (CtxRen.weaken _ (Syntax.polyTy base Q X))
       · exact .var (by simp)
+
     · apply ihQ
       · exact (df.renameTm (CtxRen.weaken _ (Syntax.polyTy base P X))).renameTm
           (CtxRen.weaken _ (Syntax.polyTy base Q X))
       · exact .var (by simp)
+
+@[simp] theorem churchMu_instantiate (base : Const → Inductive.Ty)
+    (P : STLC.Poly Const) (X : Inductive.Ty) :
+    ((.arr (.arr (Syntax.polyTy (fun c => (base c).lift) P (.var 0)) (.var 0))
+      (.var 0) : Inductive.Ty).instantiate X) =
+      .arr (.arr (Syntax.polyTy base P X) X) X := by
+  simp only [Inductive.Ty.instantiate, Inductive.Ty.subst]
+  change (Inductive.Ty.arr (Inductive.Ty.arr
+    ((Syntax.polyTy (fun c => (base c).lift) P (.var 0)).instantiate X) X) X) = _
+  rw [polyTy_lift_instantiate]
+
+def churchFold {base : Const → Inductive.Ty} {P : STLC.Poly Const}
+    {m alg : Inductive.Tm} {X : Inductive.Ty}
+    (dm : Derivation Δ Γ m (Syntax.churchMuTy base P))
+    (da : Derivation Δ Γ alg (.arr (Syntax.polyTy base P X) X)) :
+    Derivation Δ Γ (Syntax.churchFold m X alg) X := by
+  have dm' : Derivation Δ Γ (.tyApp m X)
+      (.arr (.arr (Syntax.polyTy base P X) X) X) :=
+    (Derivation.tyApp (X := X) dm).castCtx rfl rfl
+      (churchMu_instantiate base P X)
+  exact .app dm' da
 
 end ProjectBeth.SystemF.Polynomial.Syntax.Typing
