@@ -1,6 +1,8 @@
 import ProjectBeth.Defs.Carrier
 import ProjectBeth.Defs.STLC.Variants
 
+/-! Direct, shape, and coded semantics for intrinsically typed arrow terms. -/
+
 universe u v
 
 namespace ProjectBeth.STLC.Arrow
@@ -33,13 +35,13 @@ def Agree {Base : Type u} {Ω : Type v} (baseSet : Base → Set Ω) :
     {Γ : List (Ty Base)} →
     STLC.Env (Ty.Direct baseSet) Γ → STLC.Env (Ty.Shape Ω) Γ → Prop
   | [], _, _ => True
-  | A :: Γ, d, s =>
+  | A :: _Γ, d, s =>
       Ty.Agree baseSet A d.1 s.1 ∧ Agree baseSet d.2 s.2
 
 def Rel {Base : Type u} {Ω : Type v} (baseSet : Base → Set Ω) :
     {Γ : List (Ty Base)} → STLC.Env (Ty.Shape Ω) Γ → Prop
   | [], _ => True
-  | A :: Γ, env => Ty.Rel baseSet A env.1 ∧ Rel baseSet env.2
+  | A :: _Γ, env => Ty.Rel baseSet A env.1 ∧ Rel baseSet env.2
 
 theorem lookup_agree {Base : Type u} {Ω : Type v}
     {baseSet : Base → Set Ω} {Γ : List (Ty Base)} {A : Ty Base}

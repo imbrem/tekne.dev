@@ -1,6 +1,8 @@
 import ProjectBeth.Basic
 import ProjectBeth.Defs.PowerTower
 
+/-! Common carriers assembled from families of base-type interpretations. -/
+
 universe u v w
 
 namespace ProjectBeth
@@ -20,7 +22,7 @@ def TypeCarrier.ofBase {BaseTy : Type u} (El : BaseTy → Type v) (A : BaseTy) :
     El A ↪ TypeCarrier BaseTy El :=
   (BaseCarrier.of El A).trans PowerTower.base
 
-def TypeCarrier.mapBase
+def BaseCarrier.map
     {BaseTy : Type u} {BaseTy' : Type v}
     {El : BaseTy → Type w} {El' : BaseTy' → Type w}
     (onTy : BaseTy ↪ BaseTy')
@@ -39,6 +41,27 @@ def TypeCarrier.mapBase
         have := (onEl A).injective hxy
         cases this
         rfl
+
+namespace TypeCarrier
+
+def mapBase
+    {BaseTy : Type u} {BaseTy' : Type v}
+    {El : BaseTy → Type w} {El' : BaseTy' → Type w}
+    (onTy : BaseTy ↪ BaseTy')
+    (onEl : ∀ A, El A ↪ El' (onTy A)) :
+    TypeCarrier BaseTy El ↪ TypeCarrier BaseTy' El' :=
+  PowerTower.mapEmbedding (BaseCarrier.map onTy onEl)
+
+@[simp]
+theorem mapBase_ofBase
+    {BaseTy : Type u} {BaseTy' : Type v}
+    {El : BaseTy → Type w} {El' : BaseTy' → Type w}
+    (onTy : BaseTy ↪ BaseTy') (onEl : ∀ A, El A ↪ El' (onTy A))
+    (A : BaseTy) (x : El A) :
+    mapBase onTy onEl (ofBase El A x) = ofBase El' (onTy A) (onEl A x) :=
+  rfl
+
+end TypeCarrier
 
 namespace Code
 

@@ -1,3 +1,5 @@
+/-! Composable syntax extenders and their folds. -/
+
 universe u v w
 
 namespace ProjectBeth.STLC.Ext

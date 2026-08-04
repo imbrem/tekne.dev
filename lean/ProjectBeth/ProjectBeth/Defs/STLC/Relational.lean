@@ -1,6 +1,8 @@
 import ProjectBeth.Defs.STLC.Variants
 import ProjectBeth.Defs.PowerTower
 
+/-! Relational and partial-equivalence-relation semantics for STLC fragments. -/
+
 universe u v w
 
 namespace ProjectBeth.STLC.Relational
@@ -40,6 +42,14 @@ structure PER (α : Type u) where
   rel : Rel α α
   symm : ∀ {x y}, rel x y → rel y x
   trans : ∀ {x y z}, rel x y → rel y z → rel x z
+
+def PER.Field (R : PER α) (x : α) : Prop := R.rel x x
+
+theorem PER.left_mem {R : PER α} (h : R.rel x y) : R.Field x :=
+  R.trans h (R.symm h)
+
+theorem PER.right_mem {R : PER α} (h : R.rel x y) : R.Field y :=
+  R.trans (R.symm h) h
 
 def PER.id (α : Type u) : PER α where
   rel := Eq
@@ -91,7 +101,7 @@ def Env.rel {Base : Type u} {El : Base → Type v} {El' : Base → Type w}
     STLC.Env (STLC.Arrow.Ty.denote El) Γ →
     STLC.Env (STLC.Arrow.Ty.denote El') Γ → Prop
   | [], _, _ => True
-  | A :: Γ, ρ, ρ' => Ty.rel base A ρ.1 ρ'.1 ∧ Env.rel base ρ.2 ρ'.2
+  | A :: _Γ, ρ, ρ' => Ty.rel base A ρ.1 ρ'.1 ∧ Env.rel base ρ.2 ρ'.2
 
 theorem lookup {Base : Type u} {El : Base → Type v} {El' : Base → Type w}
     (base : ∀ X, Rel (El X) (El' X)) {Γ} {A}
@@ -132,7 +142,7 @@ def Env.rel {Base : Type u} {El : Base → Type v} {El' : Base → Type w}
     STLC.Env (STLC.ArrowProd.Ty.denote El) Γ →
     STLC.Env (STLC.ArrowProd.Ty.denote El') Γ → Prop
   | [], _, _ => True
-  | A :: Γ, ρ, ρ' => Ty.rel base A ρ.1 ρ'.1 ∧ Env.rel base ρ.2 ρ'.2
+  | A :: _Γ, ρ, ρ' => Ty.rel base A ρ.1 ρ'.1 ∧ Env.rel base ρ.2 ρ'.2
 
 theorem lookup {Base : Type u} {El : Base → Type v} {El' : Base → Type w}
     (base : ∀ X, Rel (El X) (El' X)) {Γ} {A} (x : STLC.Var Γ A)
@@ -178,7 +188,7 @@ def Env.rel {Base : Type u} {El : Base → Type v} {El' : Base → Type w}
     STLC.Env (STLC.ArrowProdSum.Ty.denote El) Γ →
     STLC.Env (STLC.ArrowProdSum.Ty.denote El') Γ → Prop
   | [], _, _ => True
-  | A :: Γ, ρ, ρ' => Ty.rel base A ρ.1 ρ'.1 ∧ Env.rel base ρ.2 ρ'.2
+  | A :: _Γ, ρ, ρ' => Ty.rel base A ρ.1 ρ'.1 ∧ Env.rel base ρ.2 ρ'.2
 
 theorem lookup {Base : Type u} {El : Base → Type v} {El' : Base → Type w}
     (base : ∀ X, Rel (El X) (El' X)) {Γ} {A} (x : STLC.Var Γ A)
@@ -236,7 +246,7 @@ def Env.rel {Base : Type u} {El : Base → Type v} {El' : Base → Type w}
     STLC.Env (STLC.Full.Ty.denote El) Γ →
     STLC.Env (STLC.Full.Ty.denote El') Γ → Prop
   | [], _, _ => True
-  | A :: Γ, ρ, ρ' => Ty.rel base A ρ.1 ρ'.1 ∧ Env.rel base ρ.2 ρ'.2
+  | A :: _Γ, ρ, ρ' => Ty.rel base A ρ.1 ρ'.1 ∧ Env.rel base ρ.2 ρ'.2
 
 theorem lookup {Base : Type u} {El : Base → Type v} {El' : Base → Type w}
     (base : ∀ X, Rel (El X) (El' X)) {Γ} {A} (x : STLC.Var Γ A)

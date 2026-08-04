@@ -100,6 +100,17 @@ def mapHom (f : α ↪ β) :
   app := mapEmbedding f
   naturality := map_ix f
 
+@[simp]
+theorem mapHom_refl :
+    mapHom (Function.Embedding.refl α) = NatHierarchy.Hom.id (hierarchy α) := by
+  ext n x
+  exact map_id n x
+
+theorem mapHom_trans (f : α ↪ β) (g : β ↪ γ) :
+    mapHom (f.trans g) = NatHierarchy.Hom.comp (mapHom g) (mapHom f) := by
+  ext n x
+  exact map_comp g f n x
+
 end PowerLevel
 
 namespace PowerTower
@@ -147,6 +158,19 @@ theorem map_comp (g : β → γ) (f : α → β) (x : PowerTower α) :
     map (g ∘ f) x = map g (map f x) := by
   rcases x with ⟨n, x⟩
   simp [map, PowerLevel.map_comp]
+
+@[simp]
+theorem mapEmbedding_refl :
+    mapEmbedding (Function.Embedding.refl α) = Function.Embedding.refl (PowerTower α) := by
+  apply Function.Embedding.ext
+  intro x
+  exact map_id x
+
+theorem mapEmbedding_trans (f : α ↪ β) (g : β ↪ γ) :
+    mapEmbedding (f.trans g) = (mapEmbedding f).trans (mapEmbedding g) := by
+  apply Function.Embedding.ext
+  intro x
+  exact map_comp g f x
 
 end PowerTower
 

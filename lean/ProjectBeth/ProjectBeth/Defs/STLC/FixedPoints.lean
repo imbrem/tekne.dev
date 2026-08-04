@@ -1,3 +1,5 @@
+/-! Polynomial functors and their container-based least and greatest fixed points. -/
+
 universe u v
 
 namespace ProjectBeth.STLC
