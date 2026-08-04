@@ -277,4 +277,116 @@ theorem fundamental {Base : Type u} {El : Base → Type v} {El' : Base → Type 
 
 end Full
 
+namespace Arrow
+
+abbrev Ty.bethRel {Base : Type u} (base : Base → BethRel) :=
+  Ty.rel base
+abbrev Ty.bethPER {Base : Type u} (base : Base → BethPER) :=
+  Ty.per base
+
+theorem Ty.per_rel_iff {Base : Type u} {El : Base → Type v} (base : ∀ X : Base, PER (El X))
+    (A : STLC.Arrow.Ty Base) (x y) :
+    (Ty.per base A).rel x y ↔ Ty.rel (fun X => (base X).rel) A x y := by
+  induction A with
+  | base X => rfl
+  | arr A B ihA ihB =>
+    constructor
+    · intro h a b hab; exact (ihB _ _).mp (h a b ((ihA _ _).mpr hab))
+    · intro h a b hab; exact (ihB _ _).mpr (h a b ((ihA _ _).mp hab))
+
+theorem fundamental_beth {Base : Type u} (base : Base → BethRel) {Γ} {A}
+    (t : STLC.Arrow.Tm Γ A) {ρ ρ'} (h : Env.rel base ρ ρ') :
+    Ty.bethRel base A (t.denote (fun _ => ProjectBeth.BethOmega) ρ)
+      (t.denote (fun _ => ProjectBeth.BethOmega) ρ') :=
+  fundamental base t h
+
+end Arrow
+
+namespace ArrowProd
+
+abbrev Ty.bethRel {Base : Type u} (base : Base → BethRel) := Ty.rel base
+abbrev Ty.bethPER {Base : Type u} (base : Base → BethPER) := Ty.per base
+
+theorem Ty.per_rel_iff {Base : Type u} {El : Base → Type v} (base : ∀ X : Base, PER (El X))
+    (A : STLC.ArrowProd.Ty Base) (x y) :
+    (Ty.per base A).rel x y ↔ Ty.rel (fun X => (base X).rel) A x y := by
+  induction A with
+  | base X => rfl
+  | arr A B ihA ihB =>
+    exact ⟨fun h a b hab => (ihB _ _).mp (h a b ((ihA _ _).mpr hab)),
+      fun h a b hab => (ihB _ _).mpr (h a b ((ihA _ _).mp hab))⟩
+  | prod A B ihA ihB =>
+    exact ⟨fun h => ⟨(ihA _ _).mp h.1, (ihB _ _).mp h.2⟩,
+      fun h => ⟨(ihA _ _).mpr h.1, (ihB _ _).mpr h.2⟩⟩
+
+theorem fundamental_beth {Base : Type u} (base : Base → BethRel) {Γ} {A}
+    (t : STLC.ArrowProd.Tm Γ A) {ρ ρ'} (h : Env.rel base ρ ρ') :
+    Ty.bethRel base A (t.denote (fun _ => ProjectBeth.BethOmega) ρ)
+      (t.denote (fun _ => ProjectBeth.BethOmega) ρ') :=
+  fundamental base t h
+
+end ArrowProd
+
+namespace ArrowProdSum
+
+abbrev Ty.bethRel {Base : Type u} (base : Base → BethRel) := Ty.rel base
+abbrev Ty.bethPER {Base : Type u} (base : Base → BethPER) := Ty.per base
+
+theorem Ty.per_rel_iff {Base : Type u} {El : Base → Type v} (base : ∀ X : Base, PER (El X))
+    (A : STLC.ArrowProdSum.Ty Base) (x y) :
+    (Ty.per base A).rel x y ↔ Ty.rel (fun X => (base X).rel) A x y := by
+  induction A with
+  | base X => rfl
+  | arr A B ihA ihB =>
+    exact ⟨fun h a b hab => (ihB _ _).mp (h a b ((ihA _ _).mpr hab)),
+      fun h a b hab => (ihB _ _).mpr (h a b ((ihA _ _).mp hab))⟩
+  | prod A B ihA ihB =>
+    exact ⟨fun h => ⟨(ihA _ _).mp h.1, (ihB _ _).mp h.2⟩,
+      fun h => ⟨(ihA _ _).mpr h.1, (ihB _ _).mpr h.2⟩⟩
+  | sum A B ihA ihB =>
+    cases x <;> cases y <;> simp [Ty.per, Ty.rel, PER.sum, Rel.sum, ihA, ihB]
+
+theorem fundamental_beth {Base : Type u} (base : Base → BethRel) {Γ} {A}
+    (t : STLC.ArrowProdSum.Tm Γ A) {ρ ρ'} (h : Env.rel base ρ ρ') :
+    Ty.bethRel base A (t.denote (fun _ => ProjectBeth.BethOmega) ρ)
+      (t.denote (fun _ => ProjectBeth.BethOmega) ρ') :=
+  fundamental base t h
+
+end ArrowProdSum
+
+namespace Full
+
+abbrev Ty.bethRel {Base : Type u} (base : Base → BethRel) := Ty.rel base
+abbrev Ty.bethPER {Base : Type u} (base : Base → BethPER) := Ty.per base
+
+theorem Ty.per_rel_iff {Base : Type u} {El : Base → Type v} (base : ∀ X : Base, PER (El X))
+    (A : STLC.Full.Ty Base) (x y) :
+    (Ty.per base A).rel x y ↔ Ty.rel (fun X => (base X).rel) A x y := by
+  induction A with
+  | base X => rfl
+  | arr A B ihA ihB =>
+    exact ⟨fun h a b hab => (ihB _ _).mp (h a b ((ihA _ _).mpr hab)),
+      fun h a b hab => (ihB _ _).mpr (h a b ((ihA _ _).mp hab))⟩
+  | prod A B ihA ihB =>
+    exact ⟨fun h => ⟨(ihA _ _).mp h.1, (ihB _ _).mp h.2⟩,
+      fun h => ⟨(ihA _ _).mpr h.1, (ihB _ _).mpr h.2⟩⟩
+  | sum A B ihA ihB =>
+    cases x <;> cases y <;> simp [Ty.per, Ty.rel, PER.sum, Rel.sum, ihA, ihB]
+  | bool =>
+    cases x with | up x =>
+      cases y with | up y =>
+        exact ⟨fun h => congrArg ULift.down h, fun h => by cases h; rfl⟩
+  | nat =>
+    cases x with | up x =>
+      cases y with | up y =>
+        exact ⟨fun h => congrArg ULift.down h, fun h => by cases h; rfl⟩
+
+theorem fundamental_beth {Base : Type u} (base : Base → BethRel) {Γ} {A}
+    (t : STLC.Full.Tm Γ A) {ρ ρ'} (h : Env.rel base ρ ρ') :
+    Ty.bethRel base A (t.denote (fun _ => ProjectBeth.BethOmega) ρ)
+      (t.denote (fun _ => ProjectBeth.BethOmega) ρ') :=
+  fundamental base t h
+
+end Full
+
 end ProjectBeth.STLC.Relational
