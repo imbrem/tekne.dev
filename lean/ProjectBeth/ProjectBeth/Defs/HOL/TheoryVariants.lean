@@ -1,6 +1,10 @@
 import ProjectBeth.Defs.HOL.Syntax
 
+universe u
+
 namespace ProjectBeth.HOL.TheoryVariants
+
+variable {Content : Type u}
 
 /-- The two conservative declaration forms used by definitional HOL extensions. -/
 inductive DeclKind

@@ -9,10 +9,13 @@ import ProjectBeth.Defs.FixedPointClosure
 import ProjectBeth.Defs.HOL.Syntax
 import ProjectBeth.Defs.HOL.Semantics
 import ProjectBeth.Defs.HOL.Kernel
+import ProjectBeth.Defs.HOL.Contexts
+import ProjectBeth.Defs.HOL.TheoryVariants
 import ProjectBeth.Defs.HOLOmega.Syntax
 import ProjectBeth.Defs.HOLOmega.Semantics
 import ProjectBeth.Defs.HOLOmega.Substitution
 import ProjectBeth.Defs.HOLOmega.Soundness
+import ProjectBeth.Defs.HOLOmega.Kernel
 import ProjectBeth.Defs.STLC.Core
 import ProjectBeth.Defs.STLC.Variants
 import ProjectBeth.Defs.STLC.FixedPoints
