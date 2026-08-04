@@ -182,6 +182,16 @@ def Tm.rename (ρ : Nat → Nat) : Tm → Tm
   | .nat n => .nat n
 
 def Tm.lift (t : Tm) : Tm := t.rename Nat.succ
+
+def Tm.renameTy (ρ : Nat → Nat) : Tm → Tm
+  | .var n => .var n
+  | .app f x => .app (f.renameTy ρ) (x.renameTy ρ)
+  | .lam A t => .lam (A.rename ρ) (t.renameTy ρ)
+  | .tyApp f A => .tyApp (f.renameTy ρ) (A.rename ρ)
+  | .tyLam t => .tyLam (t.renameTy (upRen ρ))
+  | .bool b => .bool b
+  | .nat n => .nat n
+
 def upTmSub (σ : Nat → Tm) : Nat → Tm
   | 0 => .var 0
   | n + 1 => (σ n).lift
@@ -192,15 +202,6 @@ def Tm.subst (σ : Nat → Tm) : Tm → Tm
   | .lam A t => .lam A (t.subst (upTmSub σ))
   | .tyApp f A => .tyApp (f.subst σ) A
   | .tyLam t => .tyLam (t.subst σ)
-  | .bool b => .bool b
-  | .nat n => .nat n
-
-def Tm.renameTy (ρ : Nat → Nat) : Tm → Tm
-  | .var n => .var n
-  | .app f x => .app (f.renameTy ρ) (x.renameTy ρ)
-  | .lam A t => .lam (A.rename ρ) (t.renameTy ρ)
-  | .tyApp f A => .tyApp (f.renameTy ρ) (A.rename ρ)
-  | .tyLam t => .tyLam (t.renameTy (upRen ρ))
   | .bool b => .bool b
   | .nat n => .nat n
 
