@@ -9,7 +9,7 @@ structure Ty where
   El : Type 1
   default : El
 
-def Ty.bool : Ty := ⟨ULift Bool, ⟨false⟩⟩
+abbrev Ty.bool : Ty := ⟨ULift Bool, ⟨false⟩⟩
 def Ty.arr (A B : Ty) : Ty := ⟨A.El → B.El, fun _ => B.default⟩
 noncomputable def Ty.sub (A : Ty) (P : A.El → Prop) : Ty :=
   ⟨TotalSubtype A.El P, @TotalSubtype.abs _ ⟨A.default⟩ P A.default⟩
@@ -31,6 +31,7 @@ inductive Tm : Ctx → Ty → Type 2
   | app : Tm Γ (A.arr B) → Tm Γ A → Tm Γ B
   | lam : Tm (A :: Γ) B → Tm Γ (A.arr B)
   | bool : Bool → Tm Γ .bool
+  | conj : Tm Γ .bool → Tm Γ .bool → Tm Γ .bool
   | eq : Tm Γ A → Tm Γ A → Tm Γ .bool
   | epsilon : Tm Γ (A.arr .bool) → Tm Γ A
   | abs (P : A.El → Prop) : Tm Γ A → Tm Γ (A.sub P)
@@ -41,7 +42,8 @@ noncomputable def Tm.eval : Tm Γ A → Env Γ → A.El
   | .app f x, ρ => f.eval ρ (x.eval ρ)
   | .lam t, ρ => fun x => t.eval (ρ.cons x)
   | .bool b, _ => ⟨b⟩
-  | .eq x y, ρ => ⟨decide (x.eval ρ = y.eval ρ)⟩
+  | .conj p q, ρ => ⟨(p.eval ρ).down && (q.eval ρ).down⟩
+  | .eq x y, ρ => if x.eval ρ = y.eval ρ then ⟨true⟩ else ⟨false⟩
   | @epsilon _ A p, ρ =>
       if h : ∃ x, (p.eval ρ x).down = true then Classical.choose h else A.default
   | @abs _ A P x, ρ => @TotalSubtype.abs _ ⟨A.default⟩ P (x.eval ρ)
@@ -60,6 +62,7 @@ noncomputable def Tm.rename (σ : Ren Γ Δ) : Tm Γ A → Tm Δ A
   | .app f x => .app (f.rename σ) (x.rename σ)
   | .lam t => .lam (t.rename σ.lift)
   | .bool b => .bool b
+  | .conj p q => .conj (p.rename σ) (q.rename σ)
   | .eq x y => .eq (x.rename σ) (y.rename σ)
   | .epsilon p => .epsilon (p.rename σ)
   | .abs P x => .abs P (x.rename σ)
@@ -78,7 +81,8 @@ theorem Tm.eval_rename (t : Tm Γ A) (σ : Ren Γ Δ) (ρ : Env Δ) :
     funext B v
     cases v <;> rfl
   | bool => rfl
-  | eq x y ihx ihy => simp [rename, eval, ihx, ihy]; rfl
+  | conj p q ihp ihq => simp [rename, eval, ihp, ihq]
+  | eq x y ihx ihy => simp [rename, eval, ihx, ihy]
   | epsilon p ih => simp [rename, eval, ih]
   | abs P x ih => simp [rename, eval, ih]; rfl
   | rep P x ih => simp [rename, eval, ih]
@@ -94,6 +98,7 @@ noncomputable def Tm.subst (σ : Sub Γ Δ) : Tm Γ A → Tm Δ A
   | .app f x => .app (f.subst σ) (x.subst σ)
   | .lam t => .lam (t.subst σ.lift)
   | .bool b => .bool b
+  | .conj p q => .conj (p.subst σ) (q.subst σ)
   | .eq x y => .eq (x.subst σ) (y.subst σ)
   | .epsilon p => .epsilon (p.subst σ)
   | .abs P x => .abs P (x.subst σ)
@@ -119,7 +124,8 @@ theorem Tm.eval_subst (t : Tm Γ A) (σ : Sub Γ Δ) (ρ : Env Δ) :
     change (t.subst σ.lift).eval (Env.cons x ρ) = t.eval (Env.cons x (Sub.env σ ρ))
     rw [ih, Sub.env_lift]
   | bool => rfl
-  | eq x y ihx ihy => simp [subst, eval, ihx, ihy]; rfl
+  | conj p q ihp ihq => simp [subst, eval, ihp, ihq]
+  | eq x y ihx ihy => simp [subst, eval, ihx, ihy]
   | epsilon p ih => simp [subst, eval, ih]
   | abs P x ih => simp [subst, eval, ih]; rfl
   | rep P x ih => simp [subst, eval, ih]
