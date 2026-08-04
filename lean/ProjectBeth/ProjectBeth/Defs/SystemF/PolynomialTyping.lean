@@ -208,6 +208,44 @@ def churchFold {base : Const → Inductive.Ty} {P : STLC.Poly Const}
       (churchMu_instantiate base P X)
   exact .app dm' da
 
+@[simp] theorem churchMu_lift (base : Const → Inductive.Ty)
+    (P : STLC.Poly Const) :
+    (Syntax.churchMuTy base P).lift =
+      Syntax.churchMuTy (fun c => (base c).lift) P := by
+  simp only [Syntax.churchMuTy, Inductive.Ty.lift, Inductive.Ty.rename]
+  congr 3
+  rw [polyTy_rename]
+  congr 2
+  funext c
+  rw [Inductive.Ty.rename_comp, Inductive.Ty.rename_comp]
+  apply Inductive.Ty.rename_congr
+  intro n
+  rfl
+
+noncomputable def churchRoll {base : Const → Inductive.Ty}
+    {P : STLC.Poly Const} {layer : Inductive.Tm}
+    (dlayer : Derivation Δ Γ layer
+      (Syntax.polyTy base P (Syntax.churchMuTy base P))) :
+    Derivation Δ Γ (Syntax.churchRoll base P layer)
+      (Syntax.churchMuTy base P) := by
+  apply Derivation.tyLam
+  let Alg : Inductive.Ty :=
+    .arr (Syntax.polyTy (fun c => (base c).lift) P (.var 0)) (.var 0)
+  apply Derivation.lam
+  apply Derivation.app
+  · exact Derivation.var (n := 0) (A := Alg) (by simp [Alg])
+  · apply fmapTm (base := fun c => (base c).lift) (P := P)
+    · apply Derivation.lam
+      apply churchFold (base := fun c => (base c).lift) (P := P)
+      · exact (Derivation.var (n := 0)
+          (A := (Syntax.churchMuTy base P).lift) (by simp)).castCtx
+            rfl rfl (churchMu_lift base P)
+      · exact Derivation.var (n := 1) (A := Alg) (by simp [Alg])
+    · have dl := (liftTy dlayer).renameTm (CtxRen.weaken _ Alg)
+      exact dl.castCtx rfl rfl (by
+        simp only [Inductive.Ty.lift]
+        rw [polyTy_rename])
+
 @[simp] theorem coChurch_instantiate (base : Const → Inductive.Ty)
     (P : STLC.Poly Const) (R : Inductive.Ty) :
     ((.arr
