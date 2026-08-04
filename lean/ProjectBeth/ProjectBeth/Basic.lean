@@ -360,10 +360,63 @@ def Code.set {α κ : Type _}
   code s := coding.code '' s
   code_inj := by simp [Set.image_injective]
 
-instance PairCode.set {κ : Type _} [Hκ : PairCode κ] : PairCode (Set κ) where
-  code | (sa, sb) => Hκ.code '' (Set.prod sa sb)
-  code_inj := sorry
-  car_eq_range := sorry
+/--
+A union of two images along injections with disjoint ranges is injective in both
+arguments: the workhorse behind any *tagged* encoding.
+-/
+theorem Set.union_image_injective {α β κ} {f : α → κ} {g : β → κ}
+    (hf : Function.Injective f) (hg : Function.Injective g) (hd : ∀ a b, f a ≠ g b) :
+    Function.Injective (fun p : Set α × Set β => f '' p.1 ∪ g '' p.2) := by
+  have left : ∀ (s s' : Set α) (t t' : Set β),
+      f '' s ∪ g '' t = f '' s' ∪ g '' t' → s ⊆ s' := by
+    intro s s' t t' h x hx
+    have hmem : f x ∈ f '' s' ∪ g '' t' := h ▸ Or.inl ⟨x, hx, rfl⟩
+    rcases hmem with ⟨y, hy, hxy⟩ | ⟨y, hy, hxy⟩
+    · exact hf hxy ▸ hy
+    · exact absurd hxy.symm (hd x y)
+  have right : ∀ (s s' : Set α) (t t' : Set β),
+      f '' s ∪ g '' t = f '' s' ∪ g '' t' → t ⊆ t' := by
+    intro s s' t t' h x hx
+    have hmem : g x ∈ f '' s' ∪ g '' t' := h ▸ Or.inr ⟨x, hx, rfl⟩
+    rcases hmem with ⟨y, hy, hxy⟩ | ⟨y, hy, hxy⟩
+    · exact absurd hxy (hd y x)
+    · exact hg hxy ▸ hy
+  rintro ⟨sa, sb⟩ ⟨sa', sb'⟩ h
+  simp only at h
+  exact Prod.ext
+    (Set.Subset.antisymm (left _ _ _ _ h) (left _ _ _ _ h.symm))
+    (Set.Subset.antisymm (right _ _ _ _ h) (right _ _ _ _ h.symm))
+
+/-- A choice of two distinct elements, used below as disjoint tags. -/
+noncomputable def Nontrivial.tag₀ (κ : Type _) [Nontrivial κ] : κ :=
+  (exists_pair_ne (α := κ)).choose
+
+noncomputable def Nontrivial.tag₁ (κ : Type _) [Nontrivial κ] : κ :=
+  (exists_pair_ne (α := κ)).choose_spec.choose
+
+theorem Nontrivial.tag₀_ne_tag₁ (κ : Type _) [Nontrivial κ] : tag₀ κ ≠ tag₁ κ :=
+  (exists_pair_ne (α := κ)).choose_spec.choose_spec
+
+/--
+Pairing on `Set κ`.
+
+Note this *tags* each side rather than taking `Hκ.code '' (sa ×ˢ sb)`. The
+product image is not injective: `sa ×ˢ sb` is empty as soon as `sa` is, so every
+`(∅, sb)` collides. Tagging with two distinct elements keeps the two halves in
+disjoint ranges, which is what makes the union recoverable.
+-/
+@[instance_reducible]
+noncomputable instance PairCode.set {κ : Type _} [Hκ : PairCode κ] [Nontrivial κ]
+    : PairCode (Set κ) where
+  code p := (fun a => Hκ.code (Nontrivial.tag₀ κ, a)) '' p.1 ∪
+     (fun b => Hκ.code (Nontrivial.tag₁ κ, b)) '' p.2
+  code_inj := Set.union_image_injective
+    (fun a b h => by have := Hκ.code_inj h; simp only [Prod.mk.injEq] at this; exact this.2)
+    (fun a b h => by have := Hκ.code_inj h; simp only [Prod.mk.injEq] at this; exact this.2)
+    (fun a b h => by
+      have := Hκ.code_inj h
+      simp only [Prod.mk.injEq] at this
+      exact Nontrivial.tag₀_ne_tag₁ κ this.1)
 
 def FunCode.graph {α β κ : Type _}
   (lcode : Code α κ) (rcode : Code β κ)
@@ -424,6 +477,15 @@ instance ℶ.instCompleteLattice {n} : CompleteLattice (ℶ (n + 1))
 instance ℶ.instLinearOrder : LinearOrder (ℶ 0)
   := inferInstanceAs (LinearOrder ℕ)
 
+instance ℶ.instNonempty : ∀ {n}, Nonempty (ℶ n)
+  | 0 => inferInstanceAs (Nonempty ℕ)
+  | _ + 1 => inferInstanceAs (Nonempty (Set _))
+
+instance ℶ.instNontrivial : ∀ {n}, Nontrivial (ℶ n)
+  | 0 => inferInstanceAs (Nontrivial ℕ)
+  | n + 1 => have : Nonempty (ℶ n) := ℶ.instNonempty
+             inferInstanceAs (Nontrivial (Set _))
+
 def ℶ.toNat (i : ℶ 0) : ℕ := i
 
 @[match_pattern]
@@ -456,9 +518,21 @@ def ℶ.hi {n} (i : ℶ n) : ℶ (n + 1) := .set (Set.Ioi i)
 @[simp]
 theorem ℶ.toSet_hi {n} (i : ℶ n) : ℶ.toSet (ℶ.hi i) = Set.Ioi i := rfl
 
--- TODO: hi is mono as well
+/--
+`hi` is *anti*tone, not monotone: a larger cut-off admits strictly fewer
+elements above it.
+-/
+theorem ℶ.hi_anti {n} {i j : ℶ n} (h : i ≤ j) : ℶ.hi j ≤ ℶ.hi i :=
+  fun _ hx => lt_of_le_of_lt h hx
 
--- TODO: lo and hi are disjoint
+theorem ℶ.lo_inter_hi {n} (i : ℶ n) : ℶ.toSet (ℶ.lo i) ∩ ℶ.toSet (ℶ.hi i) = ∅ := by
+  simp only [toSet_lo, toSet_hi]
+  exact Set.eq_empty_of_forall_notMem fun x ⟨h1, h2⟩ => absurd (h2.trans h1) (lt_irrefl _)
+
+theorem ℶ.disjoint_lo_hi {n} (i : ℶ n) : Disjoint (ℶ.lo i) (ℶ.hi i) := by
+  rw [disjoint_iff_inf_le]
+  intro x ⟨h1, h2⟩
+  exact absurd (h2.trans h1) (lt_irrefl _)
 
 def ℶ.toType : ∀{n}, ℶ n → Type
 | 0 => Fin
@@ -497,6 +571,10 @@ theorem ℶ.set_toSet {n} (i : ℶ (n + 1)) : ℶ.set i.toSet = i := rfl
 @[simp]
 theorem ℶ.toSet_set {n} (s : Set (ℶ n)) : ℶ.toSet (ℶ.set s) = s := rfl
 
+theorem ℶ.toSet_injective {n} : Function.Injective (ℶ.toSet (n := n)) := fun _ _ h => h
+
+theorem ℶ.set_injective {n} : Function.Injective (ℶ.set (n := n)) := fun _ _ h => h
+
 def ℶ.ix {n} (i : ℶ n) : ℶ (n + 1) := .set {i}
 
 @[simp]
@@ -505,14 +583,32 @@ theorem ℶ.ix_toSet {n} (i : ℶ n) : ℶ.toSet (ℶ.ix i) = {i} := rfl
 theorem ℶ.lo_inj_0 : Function.Injective (ℶ.lo : ℶ 0 → ℶ 1)
   := by apply Set.Iio_injective
 
--- theorem ℶ.lo_inj_succ : Function.Injective (ℶ.lo : ℶ (n + 1) → ℶ (n + 2)) := by
---   intro a b h
---   apply Set.ext
---   intro x
---   constructor
---   · intro h
---     sorry
---   sorry
+/-- The only thing strictly below a singleton is `∅`. -/
+theorem ℶ.toSet_lo_singleton {n} (i : ℶ n)
+    : ℶ.toSet (ℶ.lo (ℶ.set {i})) = {(∅ : Set (ℶ n))} := by
+  simp only [toSet_lo]
+  apply Set.ext
+  intro s
+  simp only [Set.mem_Iio]
+  exact Set.ssubset_singleton_iff
+
+/--
+`lo` is injective at level `0`, but **not** at any level above it.
+
+At level `0` the order is linear, so `Set.Iio` determines its bound. From level
+`1` the order is only partial, and `lo` collapses: every singleton has exactly
+`∅` strictly below it, so `lo {i} = lo {j} = {∅}` for any `i ≠ j`.
+
+This is why `Canonℶ.succ` embeds along `ℶ.ix` rather than `ℶ.lo` — `ix` is
+injective (`ℶ.ix_inj`) and `lo` is not.
+-/
+theorem ℶ.lo_not_injective {n} : ¬ Function.Injective (ℶ.lo (n := n + 1)) := by
+  intro h
+  obtain ⟨i, j, hij⟩ := exists_pair_ne (α := ℶ n)
+  refine hij ?_
+  have hlo : ℶ.lo (ℶ.set {i}) = ℶ.lo (ℶ.set {j}) :=
+    ℶ.toSet_injective (by rw [toSet_lo_singleton, toSet_lo_singleton])
+  exact Set.singleton_eq_singleton_iff.mp (ℶ.set_injective (h hlo))
 
 instance ℶ.coeSucc {n} : CoeOut (ℶ n) (ℶ (n + 1)) where
   coe := lo
@@ -537,7 +633,7 @@ instance Canonℶ.nat : Canonℶ ℕ 0 where
 instance Canonℶ.refl {n} : Canonℶ (ℶ n) n where
   toCanon := inferInstanceAs (Canon (ℶ n) (ℶ n))
 
--- TODO: change to lo?
+-- Not `lo`: it is not injective above level 0 (see `ℶ.lo_not_injective`).
 instance Canonℶ.succ {n} [Hn : Canonℶ α n] : Canonℶ α (n + 1) where
   code := ℶ.ix ∘ Hn.code
   code_inj := ℶ.ix_inj.comp Hn.code_inj
@@ -545,16 +641,47 @@ instance Canonℶ.succ {n} [Hn : Canonℶ α n] : Canonℶ α (n + 1) where
 @[instance_reducible]
 def ℶ.pairCodeZero : PairCode (ℶ 0) := inferInstanceAs (PairCode ℕ)
 
--- @[instance_reducible]
--- def ℶ.pairCodeSucc {n} : PairCode (ℶ (n + 1)) := inferInstanceAs (PairCode (Set (ℶ n)))
+/--
+Every level of the ℶ hierarchy admits a pairing: level `0` is `ℕ`, and each
+successor is a `Set`, which inherits one by tagging (`PairCode.set`) since every
+`ℶ n` is nontrivial.
+-/
+@[instance_reducible]
+noncomputable def ℶ.pairCode : ∀ {n}, PairCode (ℶ n)
+  | 0 => ℶ.pairCodeZero
+  | _ + 1 => @PairCode.set _ pairCode ℶ.instNontrivial
 
--- instance ℶ.instPairCode {n} : PairCode (ℶ n) where
---   toCode := Code.eqv Nat.pairEquiv
+noncomputable instance ℶ.instPairCode {n} : PairCode (ℶ n) := ℶ.pairCode
 
--- instance Canonℶ.pair {n}
---   [Hn : Canonℶ α n] [Hm : Canonℶ β n] : Canonℶ (α × β) n
---   where
---   toCode := Code.pair Hn Hm
+/--
+A pairing plus two distinct tags already gives an injection `κ ⊕ κ → κ`: tag the
+left summand with one and the right with the other. This is weaker than
+`CopyCode`, which additionally demands the injection be onto.
+-/
+@[instance_reducible]
+noncomputable def SumCode.ofPair {κ : Type _} [Hκ : PairCode κ] [Nontrivial κ]
+    : SumCode κ κ κ where
+  code := Sum.elim (fun a => Hκ.code (Nontrivial.tag₀ κ, a))
+                   (fun b => Hκ.code (Nontrivial.tag₁ κ, b))
+  code_inj := by
+    rintro (a | a) (b | b) h <;>
+      simp only [Sum.elim_inl, Sum.elim_inr, Sum.inl.injEq, Sum.inr.injEq] at h ⊢ <;>
+      have h' := Hκ.code_inj h <;>
+      simp only [Prod.mk.injEq] at h'
+    · exact h'.2
+    · exact absurd h'.1 (Nontrivial.tag₀_ne_tag₁ κ)
+    · exact absurd h'.1.symm (Nontrivial.tag₀_ne_tag₁ κ)
+    · exact h'.2
+
+/-- Sums of canonically-coded types are themselves canonically coded. -/
+noncomputable instance Canonℶ.sum {n} [Hn : Canonℶ α n] [Hm : Canonℶ β n]
+    : Canonℶ (α ⊕ β) n where
+  toCanon := { toCode := (Hn.toCode.sum Hm.toCode).comp SumCode.ofPair }
+
+/-- Products of canonically-coded types are themselves canonically coded. -/
+noncomputable instance Canonℶ.pair {n} [Hn : Canonℶ α n] [Hm : Canonℶ β n]
+    : Canonℶ (α × β) n where
+  toCanon := { toCode := Code.pair Hn.toCode Hm.toCode }
 
 /--
 ℶω := ⊔_n ℶ n
