@@ -68,7 +68,7 @@ theorem polyTy_subst (base : Const → Inductive.Ty) (P : STLC.Poly Const)
     (Syntax.polyTy (fun c => (base c).lift) P (.var 0)).instantiate X =
       Syntax.polyTy base P X := by
   rw [Inductive.Ty.instantiate, polyTy_subst]
-  congr 1
+  congr 3
   funext c
   exact subst_lift_inst (base c) X
 def sumInl (d : Derivation Δ Γ a A) :
@@ -255,5 +255,59 @@ def coElim {base : Const → Inductive.Ty} {P : STLC.Poly Const}
     (Derivation.tyApp (X := R) dc).castCtx rfl rfl
       (coChurch_instantiate base P R)
   exact .app dc' dh
+
+@[simp] theorem coHandler_instantiate (base : Const → Inductive.Ty)
+    (P : STLC.Poly Const) (X : Inductive.Ty) :
+    ((.arr (.var 0)
+      (.arr (.arr (.var 0)
+        (Syntax.polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1)) :
+      Inductive.Ty).instantiate X.lift) =
+      .arr X.lift
+        (.arr (.arr X.lift
+          (Syntax.polyTy (fun c => (base c).lift) P X.lift)) (.var 0)) := by
+  simp only [Inductive.Ty.instantiate, Inductive.Ty.subst]
+  exact congrArg (fun Z => Inductive.Ty.arr X.lift Z)
+    (congrArg (fun Z => Inductive.Ty.arr Z (.var 0))
+      (congrArg (fun Z => Inductive.Ty.arr X.lift Z)
+        (polyTy_lift_instantiate (fun c => (base c).lift) P X.lift)))
+
+def coPack {base : Const → Inductive.Ty} {P : STLC.Poly Const}
+    {X : Inductive.Ty} {seed step : Inductive.Tm}
+    (dseed : Derivation Δ Γ seed X)
+    (dstep : Derivation Δ Γ step (.arr X (Syntax.polyTy base P X))) :
+    Derivation Δ Γ (Syntax.coPack base P X seed step)
+      (Syntax.coChurchTy base P) := by
+  apply Derivation.tyLam
+  let H : Inductive.Ty :=
+    .all (.arr (.var 0)
+      (.arr (.arr (.var 0)
+        (Syntax.polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1)))
+  apply Derivation.lam
+  have dh : Derivation (Δ + 1) (H :: Γ.map Inductive.Ty.lift) (.var 0) H :=
+    .var (by simp)
+  have dh' : Derivation (Δ + 1) (H :: Γ.map Inductive.Ty.lift)
+      (.tyApp (.var 0) X.lift)
+      (.arr X.lift
+        (.arr (.arr X.lift
+          (Syntax.polyTy (fun c => (base c).lift) P X.lift)) (.var 0))) :=
+    (Derivation.tyApp (X := X.lift) dh).castCtx rfl rfl
+      (coHandler_instantiate base P X)
+  apply Derivation.app
+  · apply Derivation.app
+    · exact dh'
+    · exact (liftTy dseed).renameTm (CtxRen.weaken _ H)
+  · have ds := (liftTy dstep).renameTm (CtxRen.weaken _ H)
+    exact ds.castCtx rfl rfl (by
+      simp only [Inductive.Ty.lift, Inductive.Ty.rename]
+      congr 1
+      exact polyTy_rename base P X Nat.succ)
+
+def coiter {base : Const → Inductive.Ty} {P : STLC.Poly Const}
+    {X : Inductive.Ty} {seed step : Inductive.Tm}
+    (dseed : Derivation Δ Γ seed X)
+    (dstep : Derivation Δ Γ step (.arr X (Syntax.polyTy base P X))) :
+    Derivation Δ Γ (Syntax.coiter base P X step seed)
+      (Syntax.coChurchTy base P) :=
+  coPack dseed dstep
 
 end ProjectBeth.SystemF.Polynomial.Syntax.Typing
