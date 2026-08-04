@@ -41,6 +41,7 @@ import ProjectBeth.Defs.Syntax.NatReifier
 import ProjectBeth.Defs.Syntax.BoundedLaws
 import ProjectBeth.Defs.Syntax.IntrinsicLaws
 import ProjectBeth.Defs.SystemF.Kernel
+import ProjectBeth.Defs.SystemF.Polynomial
 import ProjectBeth.Defs.Translations
 import ProjectBeth.Defs.Untyped.Reduction
 import ProjectBeth.Snapshots.A06

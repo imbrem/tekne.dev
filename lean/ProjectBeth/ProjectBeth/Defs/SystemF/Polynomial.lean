@@ -245,6 +245,36 @@ theorem erase_coiter_square (S : ProjectBeth.Untyped.Signature)
         ((Inductive.Untyped.erase S step).rename Nat.succ)) := by
   simp [coiter, coPack, Inductive.Untyped.erase]
 
+theorem coElim_pack_typeBeta (base : Const → Ty) (P : Poly Const)
+    (X R : Ty) (seed step handler : Tm) :
+    SmallStep (coElim (coPack base P X seed step) R handler)
+      (Tm.app
+        ((Tm.lam
+          (.all (.arr (.var 0)
+            (.arr (.arr (.var 0)
+              (polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1))))
+          (Tm.app (Tm.app (.tyApp (.var 0) X.lift) (seed.rename Nat.succ))
+            (step.rename Nat.succ))).instantiateTy R)
+        handler) := by
+  exact SmallStep.app_left SmallStep.tyBeta
+
+theorem erase_coElim_pack_steps (S : ProjectBeth.Untyped.Signature)
+    (base : Const → Ty) (P : Poly Const) (X R : Ty)
+    (seed step handler : Tm) :
+    ProjectBeth.Untyped.Steps S
+      (Inductive.Untyped.erase S (coElim (coPack base P X seed step) R handler))
+      (Inductive.Untyped.erase S
+        ((Tm.app
+          ((Tm.lam
+            (.all (.arr (.var 0)
+              (.arr (.arr (.var 0)
+                (polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1))))
+            (Tm.app (Tm.app (.tyApp (.var 0) X.lift) (seed.rename Nat.succ))
+              (step.rename Nat.succ))).instantiateTy R)
+          handler))) :=
+  Inductive.Untyped.smallStep_steps S
+    (coElim_pack_typeBeta base P X R seed step handler)
+
 /-- Erasure ignores the polynomial type annotation, as required for System F
 type abstraction/application squares. -/
 theorem erase_tyApp_square (S : ProjectBeth.Untyped.Signature) (t : Tm)
