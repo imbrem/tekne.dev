@@ -1,7 +1,7 @@
 import ProjectBeth.Defs.STLC.FixedPoints
 import ProjectBeth.Defs.STLC.Variants
 
-universe u
+universe u v
 
 namespace ProjectBeth.STLC
 
@@ -56,9 +56,9 @@ inductive Tm (Base : Type u) : Type u
   | roll : Poly Base → Tm Base → Tm Base
   | fold : Poly Base → Ty Base → Tm Base → Tm Base → Tm Base
 
-abbrev Carrier {Base : Type u} (El : Base → Type u) (P : Poly Base) := Poly.Mu El P
+abbrev Carrier {Base : Type u} (El : Base → Type v) (P : Poly Base) := Poly.Mu El P
 
-def recursor {Base : Type u} {El : Base → Type u} {P : Poly Base} {X : Type u}
+def recursor {Base : Type u} {El : Base → Type v} {P : Poly Base} {X : Type v}
     (alg : ∀ s, (Poly.Pos El P s → X) → X) :
     Carrier El P → X :=
   Poly.Mu.fold alg
@@ -79,13 +79,13 @@ inductive Tm (Base : Type u) : Type u
   | observe : Poly Base → Tm Base → Tm Base
   | corec : Poly Base → Ty Base → Tm Base → Tm Base → Tm Base
 
-abbrev Carrier {Base : Type u} (El : Base → Type u) (P : Poly Base) := Poly.CoFix El P
+abbrev Carrier {Base : Type u} (El : Base → Type v) (P : Poly Base) := Poly.CoFix El P
 
-def corecursor {Base : Type u} {El : Base → Type u} {P : Poly Base} {X : Type u}
+def corecursor {Base : Type u} {El : Base → Type v} {P : Poly Base} {X : Type v}
     (step : Poly.Coalgebra El P X) : X → Carrier El P :=
   fun seed => Poly.CoFix.unfold step seed
 
-def observe {Base : Type u} {El : Base → Type u} {P : Poly Base} :
+def observe {Base : Type u} {El : Base → Type v} {P : Poly Base} :
     Carrier El P → Σ s, Poly.Pos El P s → Carrier El P :=
   Poly.CoFix.observe
 

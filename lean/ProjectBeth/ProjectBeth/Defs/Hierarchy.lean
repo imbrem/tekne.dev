@@ -1,6 +1,8 @@
 import Mathlib.Data.FunLike.Embedding
 import Mathlib.Order.Hom.Basic
 
+/-! Hierarchies of types and their level-preserving or reindexing morphisms. -/
+
 universe u v w
 
 namespace ProjectBeth
@@ -18,6 +20,15 @@ structure Hom (F G : NatHierarchy) where
   app : ∀ i, F.level i ↪ G.level i
   naturality : ∀ i x, app (i + 1) (F.lift i x) = G.lift i (app i x)
 
+@[ext]
+theorem Hom.ext {F G : NatHierarchy} {f g : Hom F G}
+    (h : ∀ i, f.app i = g.app i) : f = g := by
+  cases f
+  cases g
+  have happ := funext h
+  subst happ
+  rfl
+
 def Hom.id (F : NatHierarchy) : Hom F F where
   app _ := Function.Embedding.refl _
   naturality _ _ := rfl
@@ -29,6 +40,22 @@ def Hom.comp {F G H : NatHierarchy}
     change g.app (i + 1) (f.app (i + 1) (F.lift i x)) =
       H.lift i (g.app i (f.app i x))
     rw [f.naturality, g.naturality]
+
+@[simp] theorem Hom.id_comp {F G : NatHierarchy} (f : Hom F G) :
+    Hom.comp (Hom.id G) f = f := by
+  ext
+  rfl
+
+@[simp] theorem Hom.comp_id {F G : NatHierarchy} (f : Hom F G) :
+    Hom.comp f (Hom.id F) = f := by
+  ext
+  rfl
+
+theorem Hom.comp_assoc {F G H K : NatHierarchy}
+    (h : Hom H K) (g : Hom G H) (f : Hom F G) :
+    Hom.comp (Hom.comp h g) f = Hom.comp h (Hom.comp g f) := by
+  ext
+  rfl
 
 end NatHierarchy
 
@@ -47,6 +74,15 @@ structure Hom {I : Type u} [Preorder I]
   naturality : ∀ {i j} (h : i ≤ j) x,
     app j (F.lift h x) = G.lift h (app i x)
 
+@[ext]
+theorem Hom.ext {I : Type u} [Preorder I] {F G : OrderHierarchy I}
+    {f g : Hom F G} (h : ∀ i, f.app i = g.app i) : f = g := by
+  cases f
+  cases g
+  have happ := funext h
+  subst happ
+  rfl
+
 def Hom.id {I : Type u} [Preorder I] (F : OrderHierarchy I) : Hom F F where
   app _ := Function.Embedding.refl _
   naturality _ _ := rfl
@@ -57,6 +93,22 @@ def Hom.comp {I : Type u} [Preorder I] {F G H : OrderHierarchy I}
   naturality h x := by
     change g.app _ (f.app _ (F.lift h x)) = H.lift h (g.app _ (f.app _ x))
     rw [f.naturality, g.naturality]
+
+@[simp] theorem Hom.id_comp {I : Type u} [Preorder I]
+    {F G : OrderHierarchy I} (f : Hom F G) : Hom.comp (Hom.id G) f = f := by
+  ext
+  rfl
+
+@[simp] theorem Hom.comp_id {I : Type u} [Preorder I]
+    {F G : OrderHierarchy I} (f : Hom F G) : Hom.comp f (Hom.id F) = f := by
+  ext
+  rfl
+
+theorem Hom.comp_assoc {I : Type u} [Preorder I] {F G H K : OrderHierarchy I}
+    (h : Hom H K) (g : Hom G H) (f : Hom F G) :
+    Hom.comp (Hom.comp h g) f = Hom.comp h (Hom.comp g f) := by
+  ext
+  rfl
 
 structure ReindexHom {I : Type u} {J : Type v} [Preorder I] [Preorder J]
     (F : OrderHierarchy I) (G : OrderHierarchy J) where
