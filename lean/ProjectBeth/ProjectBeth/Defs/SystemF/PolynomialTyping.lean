@@ -408,4 +408,42 @@ noncomputable def observe {base : Const → Inductive.Ty}
     simp only [Inductive.Ty.lift]
     rw [polyTy_rename])
 
+theorem churchFold_hasType {base : Const → Inductive.Ty}
+    {P : STLC.Poly Const} {m alg : Inductive.Tm} {X : Inductive.Ty}
+    (dm : Derivation Δ Γ m (Syntax.churchMuTy base P))
+    (da : Derivation Δ Γ alg (.arr (Syntax.polyTy base P X) X)) :
+    Inductive.HasType Δ Γ (Syntax.churchFold m X alg) X :=
+  (churchFold dm da).toHasType
+
+theorem churchRoll_hasType {base : Const → Inductive.Ty}
+    {P : STLC.Poly Const} {layer : Inductive.Tm}
+    (dlayer : Derivation Δ Γ layer
+      (Syntax.polyTy base P (Syntax.churchMuTy base P))) :
+    Inductive.HasType Δ Γ (Syntax.churchRoll base P layer)
+      (Syntax.churchMuTy base P) :=
+  (churchRoll dlayer).toHasType
+
+theorem coPack_hasType {base : Const → Inductive.Ty}
+    {P : STLC.Poly Const} {X : Inductive.Ty} {seed step : Inductive.Tm}
+    (dseed : Derivation Δ Γ seed X)
+    (dstep : Derivation Δ Γ step (.arr X (Syntax.polyTy base P X))) :
+    Inductive.HasType Δ Γ (Syntax.coPack base P X seed step)
+      (Syntax.coChurchTy base P) :=
+  (coPack dseed dstep).toHasType
+
+theorem coiter_hasType {base : Const → Inductive.Ty}
+    {P : STLC.Poly Const} {X : Inductive.Ty} {seed step : Inductive.Tm}
+    (dseed : Derivation Δ Γ seed X)
+    (dstep : Derivation Δ Γ step (.arr X (Syntax.polyTy base P X))) :
+    Inductive.HasType Δ Γ (Syntax.coiter base P X step seed)
+      (Syntax.coChurchTy base P) :=
+  (coiter dseed dstep).toHasType
+
+theorem observe_hasType {base : Const → Inductive.Ty}
+    {P : STLC.Poly Const} {co : Inductive.Tm}
+    (dc : Derivation Δ Γ co (Syntax.coChurchTy base P)) :
+    Inductive.HasType Δ Γ (Syntax.observe base P co)
+      (Syntax.polyTy base P (Syntax.coChurchTy base P)) :=
+  (observe dc).toHasType
+
 end ProjectBeth.SystemF.Polynomial.Syntax.Typing
