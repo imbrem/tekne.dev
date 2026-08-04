@@ -5,6 +5,8 @@ import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Fintype.Pi
 import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.Fintype.Sum
+import Mathlib.Logic.Equiv.Prod
+import Mathlib.Logic.Equiv.Set
 
 universe u v
 
@@ -35,6 +37,22 @@ class ProdExact (U : Type v) [CoeSort U (Type u)] extends ProdClosed U where
 class ArrowExact (U : Type v) [CoeSort U (Type u)] extends ArrowClosed U where
   equiv : ∀ (A B : U), (UEl A → UEl B) ≃ UEl (arrow A B)
   embed_eq : ∀ (A B : U), toArrowClosed.embed A B = (equiv A B).toEmbedding
+
+class NatClosed (U : Type v) [CoeSort U (Type u)] where
+  nat : U
+  embed : Nat ↪ UEl nat
+
+class NatExact (U : Type v) [CoeSort U (Type u)] extends NatClosed U where
+  equiv : Nat ≃ UEl nat
+  embed_eq : toNatClosed.embed = equiv.toEmbedding
+
+class PowersetClosed (U : Type v) [CoeSort U (Type u)] where
+  powerset : U → U
+  embed : ∀ A, Set (UEl A) ↪ UEl (powerset A)
+
+class PowersetExact (U : Type v) [CoeSort U (Type u)] extends PowersetClosed U where
+  equiv : ∀ A, Set (UEl A) ≃ UEl (powerset A)
+  embed_eq : ∀ A, toPowersetClosed.embed A = (equiv A).toEmbedding
 
 structure FinLevel where
   card : Nat
