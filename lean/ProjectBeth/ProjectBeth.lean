@@ -12,6 +12,7 @@ import ProjectBeth.Defs.STLC.Core
 import ProjectBeth.Defs.STLC.Variants
 import ProjectBeth.Defs.STLC.FixedPoints
 import ProjectBeth.Defs.STLC.ExtendedVariants
+import ProjectBeth.Defs.STLC.Extenders
 import ProjectBeth.Defs.STLC.Semantics
 import ProjectBeth.Snapshots.A06
 import ProjectBeth.Snapshots.A07

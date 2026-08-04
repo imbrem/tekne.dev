@@ -1,5 +1,6 @@
 import ProjectBeth.Defs.FixedPointClosure
 import ProjectBeth.Defs.STLC.ExtendedVariants
+import ProjectBeth.Defs.STLC.Extenders
 import ProjectBeth.Snapshots.A07
 
 universe u
@@ -101,5 +102,43 @@ abbrev StreamCarrier {Base : Type u} (El : Base → Type u) (A : Base) :=
   STLC.Coinductive.Carrier El (streamPoly A)
 
 end Coinductive
+
+namespace Extenders
+
+
+open STLC.Ext
+
+abbrev Ty (Base : Type u) := STLC.Arrow.Ty Base
+abbrev Ctx (Base : Type u) := List (Ty Base)
+abbrev Variables {Base : Type u} : Lang (Ctx Base) (Ty Base) := STLC.Var
+
+def push {Base : Type u} : Ty Base → Ctx Base → Ctx Base := List.cons
+
+abbrev Lam {Base : Type u} (V : Lang (Ctx Base) (Ty Base)) :=
+  STLC.Ext.Lam push STLC.Arrow.Ty.arr V
+
+abbrev Let {Base : Type u} (V : Lang (Ctx Base) (Ty Base)) :=
+  STLC.Ext.Let push V
+
+abbrev LetLam {Base : Type u} (V : Lang (Ctx Base) (Ty Base)) :=
+  STLC.Ext.LetLam push STLC.Arrow.Ty.arr V
+
+def flattenLam {Base : Type u} :
+    Hom (Lam (Lam (Variables (Base := Base)))) (Lam (Variables (Base := Base))) :=
+  STLC.Ext.Lam.flatten
+
+def eliminateLet {Base : Type u} :
+    Hom (Let (Lam (Variables (Base := Base)))) (Lam (Variables (Base := Base))) :=
+  STLC.Ext.Let.intoLam
+
+def lamLetToCombined {Base : Type u} :
+    Hom (Lam (Let (Variables (Base := Base)))) (LetLam (Variables (Base := Base))) :=
+  STLC.Ext.LetLam.fromLamLet
+
+def letLamToCombined {Base : Type u} :
+    Hom (Let (Lam (Variables (Base := Base)))) (LetLam (Variables (Base := Base))) :=
+  STLC.Ext.LetLam.fromLetLam
+
+end Extenders
 
 end ProjectBeth.Snapshots.A08
