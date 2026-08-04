@@ -208,4 +208,52 @@ def churchFold {base : Const → Inductive.Ty} {P : STLC.Poly Const}
       (churchMu_instantiate base P X)
   exact .app dm' da
 
+@[simp] theorem coChurch_instantiate (base : Const → Inductive.Ty)
+    (P : STLC.Poly Const) (R : Inductive.Ty) :
+    ((.arr
+      (.all (.arr (.var 0)
+        (.arr (.arr (.var 0)
+          (Syntax.polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1))))
+      (.var 0) : Inductive.Ty).instantiate R) =
+      .arr
+        (.all (.arr (.var 0)
+          (.arr (.arr (.var 0)
+            (Syntax.polyTy (fun c => (base c).lift) P (.var 0))) R.lift)))
+        R := by
+  simp [Inductive.Ty.instantiate, Inductive.Ty.subst, Inductive.upTySub,
+    polyTy_subst, Inductive.Ty.lift]
+  congr 2
+  funext c
+  rw [Inductive.Ty.subst_rename, Inductive.Ty.subst_rename]
+  calc
+    (base c).subst
+        (((Inductive.upTySub fun x => match x with
+          | 0 => R
+          | n + 1 => .var n) ∘ Nat.succ) ∘ Nat.succ) =
+      (base c).subst (Inductive.Ty.var ∘ Nat.succ) := by
+        apply Inductive.Ty.subst_congr
+        intro n
+        rfl
+    _ = (base c).rename Nat.succ := by
+      rw [← Inductive.Ty.subst_rename Inductive.Ty.var]
+      simp
+
+def coElim {base : Const → Inductive.Ty} {P : STLC.Poly Const}
+    {co handler : Inductive.Tm} {R : Inductive.Ty}
+    (dc : Derivation Δ Γ co (Syntax.coChurchTy base P))
+    (dh : Derivation Δ Γ handler
+      (.all (.arr (.var 0)
+        (.arr (.arr (.var 0)
+          (Syntax.polyTy (fun c => (base c).lift) P (.var 0))) R.lift)))) :
+    Derivation Δ Γ (Syntax.coElim co R handler) R := by
+  have dc' : Derivation Δ Γ (.tyApp co R)
+      (.arr
+        (.all (.arr (.var 0)
+          (.arr (.arr (.var 0)
+            (Syntax.polyTy (fun c => (base c).lift) P (.var 0))) R.lift)))
+        R) :=
+    (Derivation.tyApp (X := R) dc).castCtx rfl rfl
+      (coChurch_instantiate base P R)
+  exact .app dc' dh
+
 end ProjectBeth.SystemF.Polynomial.Syntax.Typing
