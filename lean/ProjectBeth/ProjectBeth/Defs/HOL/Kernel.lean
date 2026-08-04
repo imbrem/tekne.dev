@@ -145,6 +145,8 @@ inductive Eqv : Tm Γ A → Tm Γ A → Type 2
   | conj : Eqv p p' → Eqv q q' → Eqv (.conj p q) (.conj p' q')
   | lam : Eqv s t → Eqv (.lam s) (.lam t)
   | beta (t : Tm (A :: Γ) B) (x : Tm Γ A) : Eqv (.app (.lam t) x) (t.subst0 x)
+  | eta {A C : Ty} (f : Tm Γ (A.arr C)) :
+      Eqv (.lam (.app (f.rename (fun v => .there v)) (.var .here))) f
   | boolExt {p q : Tm Γ Ty.bool} :
       (∀ ρ, (p.eval ρ).down = (q.eval ρ).down) → Eqv p q
   | abs_rep {A : Ty} (P : A.El → Prop) (x : Tm Γ (A.sub P)) :
@@ -173,6 +175,10 @@ theorem Eqv.valid {s t : Tm Γ A} (h : Eqv s t) (ρ : Env Γ) : s.eval ρ = t.ev
         cases v <;> rfl
       rw [Tm.eval, Tm.subst0, Tm.eval_subst, he]
       rfl
+  | eta f =>
+    funext x
+    simp only [Tm.eval, Tm.eval_rename]
+    congr 2
   | boolExt h => exact uliftBool_ext (h ρ)
   | @abs_rep _ A P x => exact @TotalSubtype.abs_rep _ ⟨A.default⟩ P _
   | @rep_abs _ A P x hP => exact @TotalSubtype.rep_abs_of _ ⟨A.default⟩ P _ (hP ρ)
