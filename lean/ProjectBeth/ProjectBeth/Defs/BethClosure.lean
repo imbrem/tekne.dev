@@ -13,6 +13,13 @@ def raise {Base : Type u} : {n m : Nat} → n ≤ m → PowerLevel Base n ↪ Po
   | n + 1, m + 1, h =>
       mapEmbedding (raise (Nat.succ_le_succ_iff.mp h)) 1
 
+@[simp]
+theorem raise_ix {Base : Type u} {n m : Nat} (h : n ≤ m)
+    (x : PowerLevel Base n) :
+    raise (Nat.succ_le_succ h) (ix x) = ix (raise h x) := by
+  change Set.image (raise h) {x} = {raise h x}
+  simp
+
 end PowerLevel
 
 structure BethLevel where
