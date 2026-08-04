@@ -46,6 +46,31 @@ theorem polyTy_rename (base : Const → Inductive.Ty) (P : STLC.Poly Const)
     rw [Inductive.Ty.rename_lift, ihP, Inductive.Ty.rename_lift, ihQ]
     simp [Inductive.upRen]
 
+theorem polyTy_subst (base : Const → Inductive.Ty) (P : STLC.Poly Const)
+    (X : Inductive.Ty) (σ : Nat → Inductive.Ty) :
+    (Syntax.polyTy base P X).subst σ =
+      Syntax.polyTy (fun c => (base c).subst σ) P (X.subst σ) := by
+  induction P generalizing X σ with
+  | var => rfl
+  | const => rfl
+  | pow => rfl
+  | sum P Q ihP ihQ =>
+    simp only [Syntax.polyTy, Syntax.sumTy, Inductive.Ty.subst]
+    rw [Inductive.Ty.subst_lift, ihP, Inductive.Ty.subst_lift, ihQ]
+    rfl
+  | prod P Q ihP ihQ =>
+    simp only [Syntax.polyTy, Syntax.prodTy, Inductive.Ty.subst]
+    rw [Inductive.Ty.subst_lift, ihP, Inductive.Ty.subst_lift, ihQ]
+    rfl
+
+@[simp] theorem polyTy_lift_instantiate (base : Const → Inductive.Ty)
+    (P : STLC.Poly Const) (X : Inductive.Ty) :
+    (Syntax.polyTy (fun c => (base c).lift) P (.var 0)).instantiate X =
+      Syntax.polyTy base P X := by
+  rw [Inductive.Ty.instantiate, polyTy_subst]
+  congr 1
+  funext c
+  exact subst_lift_inst (base c) X
 def sumInl (d : Derivation Δ Γ a A) :
     Derivation Δ Γ (Syntax.sumInl A B a) (Syntax.sumTy A B) := by
   apply Derivation.tyLam
