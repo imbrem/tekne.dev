@@ -184,6 +184,95 @@ def Derivation.substTm (s : CtxSub Δ Γ Γ' σ) :
   | .bool b => .bool b
   | .nat n => .nat n
 
+def CtxSub.instantiate (x : Derivation Δ Γ s A) :
+    CtxSub Δ (A :: Γ) Γ (fun | 0 => s | n + 1 => .var n) where
+  lookup := by
+    intro n B h
+    cases n with
+    | zero =>
+      simp at h
+      subst B
+      exact x
+    | succ n => exact .var (by simpa using h)
+
+def Derivation.instantiateTm (body : Derivation Δ (A :: Γ) t B)
+    (x : Derivation Δ Γ s A) : Derivation Δ Γ (t.instantiate s) B :=
+  body.substTm (CtxSub.instantiate x)
+
+theorem map_lift_instantiate (Γ : List Inductive.Ty) (X : Inductive.Ty) :
+    (Γ.map Inductive.Ty.lift).map
+      (Inductive.Ty.subst (fun | 0 => X | n + 1 => .var n)) = Γ := by
+  induction Γ with
+  | nil => rfl
+  | cons A Γ ih =>
+    simp only [List.map_cons, List.map_map, List.cons.injEq, ih, and_true]
+    exact Inductive.Ty.lift_instantiate A X
+
+def Derivation.instantiateTy (body :
+    Derivation (Δ + 1) (Γ.map Inductive.Ty.lift) t A) (X : Inductive.Ty) :
+    Derivation Δ Γ (t.instantiateTy X) (A.instantiate X) :=
+  (body.substTy (Δ' := Δ) (fun | 0 => X | n + 1 => .var n)).castCtx
+    (map_lift_instantiate Γ X) rfl rfl
+
+theorem preservation (d : Derivation Δ Γ t A)
+    (h : Inductive.SmallStep t t') : Nonempty (Derivation Δ Γ t' A) := by
+  induction h generalizing Δ Γ A with
+  | beta =>
+    cases d with
+    | app df dx =>
+      cases df with
+      | lam db => exact ⟨db.instantiateTm dx⟩
+  | tyBeta =>
+    cases d with
+    | tyApp df =>
+      cases df with
+      | tyLam db => exact ⟨db.instantiateTy _⟩
+  | app_left hs ih =>
+    cases d with
+    | app df dx =>
+      obtain ⟨df'⟩ := ih df
+      exact ⟨.app df' dx⟩
+  | app_right hs ih =>
+    cases d with
+    | app df dx =>
+      obtain ⟨dx'⟩ := ih dx
+      exact ⟨.app df dx'⟩
+  | lam hs ih =>
+    cases d with
+    | lam db =>
+      obtain ⟨db'⟩ := ih db
+      exact ⟨.lam db'⟩
+  | tyApp hs ih =>
+    cases d with
+    | tyApp df =>
+      obtain ⟨df'⟩ := ih df
+      exact ⟨.tyApp df'⟩
+  | tyLam hs ih =>
+    cases d with
+    | tyLam db =>
+      obtain ⟨db'⟩ := ih db
+      exact ⟨.tyLam db'⟩
+
+theorem derivation_of_hasType (d : Inductive.HasType Δ Γ t A) :
+    Nonempty (Derivation Δ Γ t A) := by
+  induction d with
+  | var h => exact ⟨.var h⟩
+  | app f x ihf ihx =>
+    obtain ⟨df⟩ := ihf
+    obtain ⟨dx⟩ := ihx
+    exact ⟨.app df dx⟩
+  | lam body ih => obtain ⟨db⟩ := ih; exact ⟨.lam db⟩
+  | tyApp f ih => obtain ⟨df⟩ := ih; exact ⟨.tyApp df⟩
+  | tyLam body ih => obtain ⟨db⟩ := ih; exact ⟨.tyLam db⟩
+  | bool => exact ⟨.bool _⟩
+  | nat => exact ⟨.nat _⟩
+
+theorem hasType_preservation (d : Inductive.HasType Δ Γ t A)
+    (h : Inductive.SmallStep t t') : Inductive.HasType Δ Γ t' A := by
+  obtain ⟨d⟩ := derivation_of_hasType d
+  obtain ⟨d'⟩ := preservation d h
+  exact d'.toHasType
+
 @[simp] theorem Derivation.renameTm_term (d : Derivation Δ Γ t A)
     (r : CtxRen Γ Γ' ρ) : (d.renameTm r).toHasType = (d.renameTm r).toHasType := rfl
 
