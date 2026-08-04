@@ -8,6 +8,9 @@ import ProjectBeth.Defs.ClosureArithmetic
 import ProjectBeth.Defs.ClosureLaws
 import ProjectBeth.Defs.FixedPointClosure
 import ProjectBeth.Defs.HOL.Syntax
+import ProjectBeth.Defs.HOL.Syntax.Indexed
+import ProjectBeth.Defs.HOL.Syntax.Environment
+import ProjectBeth.Defs.HOL.Syntax.Connections
 import ProjectBeth.Defs.HOL.SyntaxTower
 import ProjectBeth.Defs.HOL.Semantics
 import ProjectBeth.Defs.HOL.Kernel
@@ -17,6 +20,12 @@ import ProjectBeth.Defs.HOL.Entailment
 import ProjectBeth.Defs.HOL.TheoryVariants
 import ProjectBeth.Defs.HOL.FiniteModels
 import ProjectBeth.Defs.HOLOmega.Syntax
+import ProjectBeth.Defs.HOLOmega.Syntax.Indexed
+import ProjectBeth.Defs.HOLOmega.Syntax.Levels
+import ProjectBeth.Defs.HOLOmega.Syntax.Environment
+import ProjectBeth.Defs.HOLOmega.Syntax.HOLBridge
+import ProjectBeth.Defs.HOLOmega.Syntax.HOLLevelsBridge
+import ProjectBeth.Defs.HOLOmega.Syntax.EnvironmentBridge
 import ProjectBeth.Defs.HOLOmega.Semantics
 import ProjectBeth.Defs.HOLOmega.Substitution
 import ProjectBeth.Defs.HOLOmega.Soundness
