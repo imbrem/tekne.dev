@@ -139,4 +139,50 @@ theorem eval_natural {S : Signature.{u}} {T : Signature.{v}}
           rw [F.apply_natural]
           cases h : S.apply c d <;> rw [eval, h] <;> rfl
 
+theorem eval_steps (S : Signature) (fuel t r) (h : eval S (fuel + 1) t = some r) :
+    Steps S t r := by
+  cases t with
+  | var i =>
+    have hr : r = .var i := by simpa [eval] using h.symm
+    subst r; exact .refl
+  | const c =>
+    have hr : r = .const c := by simpa [eval] using h.symm
+    subst r; exact .refl
+  | lam body =>
+    have hr : r = .lam body := by simpa [eval] using h.symm
+    subst r; exact .refl
+  | app f x =>
+    cases f with
+    | var i =>
+      have hr : r = .app (.var i) x := by simpa [eval] using h.symm
+      subst r; exact .refl
+    | app a b =>
+      have hr : r = .app (.app a b) x := by simpa [eval] using h.symm
+      subst r; exact .refl
+    | lam body =>
+      have hr : r = body.subst0 x := by simpa [eval] using h.symm
+      subst r
+      exact .tail .refl (Step.beta body x)
+    | const c =>
+      cases x with
+      | var i =>
+        have hr : r = .app (.const c) (.var i) := by simpa [eval] using h.symm
+        subst r; exact .refl
+      | app a b =>
+        have hr : r = .app (.const c) (.app a b) := by simpa [eval] using h.symm
+        subst r; exact .refl
+      | lam body =>
+        have hr : r = .app (.const c) (.lam body) := by simpa [eval] using h.symm
+        subst r; exact .refl
+      | const d =>
+        cases hd : S.apply c d with
+        | none =>
+          have hr : r = .app (.const c) (.const d) := by simpa [eval, hd] using h.symm
+          subst r
+          exact .refl
+        | some q =>
+          have hr : r = .const q := by simpa [eval, hd] using h.symm
+          subst r
+          exact .tail .refl (Step.delta hd)
+
 end ProjectBeth.Untyped
