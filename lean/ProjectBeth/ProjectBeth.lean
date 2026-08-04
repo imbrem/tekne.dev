@@ -14,6 +14,7 @@ import ProjectBeth.Defs.HOL.KernelLaws
 import ProjectBeth.Defs.HOL.Contexts
 import ProjectBeth.Defs.HOL.Entailment
 import ProjectBeth.Defs.HOL.TheoryVariants
+import ProjectBeth.Defs.HOL.FiniteModels
 import ProjectBeth.Defs.HOLOmega.Syntax
 import ProjectBeth.Defs.HOLOmega.Semantics
 import ProjectBeth.Defs.HOLOmega.Substitution
