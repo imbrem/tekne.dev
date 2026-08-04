@@ -80,6 +80,10 @@ def erase (S : ProjectBeth.Untyped.Signature) : Tm → UTm S
   | bool b => simp [erase, Tm.rename]
   | nat n => simp [erase, Tm.rename]
 
+@[simp] theorem erase_renameTy (S : ProjectBeth.Untyped.Signature)
+    (ρ : Nat → Nat) (t : Tm) : erase S (t.renameTy ρ) = erase S t := by
+  induction t generalizing ρ <;> simp [erase, Tm.renameTy, *]
+
 @[simp] theorem erase_subst (S : ProjectBeth.Untyped.Signature)
     (σ : Nat → Tm) (t : Tm) :
     erase S (t.subst σ) =
@@ -96,13 +100,14 @@ def erase (S : ProjectBeth.Untyped.Signature) : Tm → UTm S
     | zero => rfl
     | succ i => simpa [upTmSub, Tm.lift] using erase_rename S Nat.succ (σ i)
   | tyApp f A ih => exact ih σ
-  | tyLam t ih => exact ih σ
+  | tyLam t ih =>
+    simp only [Tm.subst, erase]
+    rw [ih (liftTmSubTy σ)]
+    apply ProjectBeth.Untyped.Tm.subst_congr
+    intro i
+    simp [liftTmSubTy, erase_renameTy]
   | bool b => simp [erase, Tm.subst]
   | nat n => simp [erase, Tm.subst]
-
-@[simp] theorem erase_renameTy (S : ProjectBeth.Untyped.Signature)
-    (ρ : Nat → Nat) (t : Tm) : erase S (t.renameTy ρ) = erase S t := by
-  induction t generalizing ρ <;> simp [erase, Tm.renameTy, *]
 
 @[simp] theorem erase_substTy (S : ProjectBeth.Untyped.Signature)
     (σ : Nat → Ty) (t : Tm) : erase S (t.substTy σ) = erase S t := by
