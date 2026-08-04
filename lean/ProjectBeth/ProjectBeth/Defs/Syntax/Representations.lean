@@ -145,7 +145,7 @@ inductive Tm (Name : Type u) : Type u
   | lam : Tm Name → Tm Name
   deriving DecidableEq
 
-private def indexOf? [DecidableEq Name] (x : Name) : List Name → Option Nat
+def indexOf? [DecidableEq Name] (x : Name) : List Name → Option Nat
   | [] => none
   | y :: ys => if x = y then some 0 else (indexOf? x ys).map Nat.succ
 
