@@ -360,11 +360,6 @@ def Code.set {α κ : Type _}
   code s := coding.code '' s
   code_inj := by simp [Set.image_injective]
 
-instance PairCode.set {κ : Type _} [Hκ : PairCode κ] : PairCode (Set κ) where
-  code | (sa, sb) => Hκ.code '' (Set.prod sa sb)
-  code_inj := sorry
-  car_eq_range := sorry
-
 def FunCode.graph {α β κ : Type _}
   (lcode : Code α κ) (rcode : Code β κ)
   [PairCode κ] : FunCode α β (Set κ)
