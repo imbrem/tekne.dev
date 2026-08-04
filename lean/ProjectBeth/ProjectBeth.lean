@@ -3,6 +3,7 @@ import ProjectBeth.Defs.Hierarchy
 import ProjectBeth.Defs.PowerTower
 import ProjectBeth.Defs.Carrier
 import ProjectBeth.Defs.Closure
+import ProjectBeth.Defs.BethClosure
 import ProjectBeth.Defs.FixedPointClosure
 import ProjectBeth.Defs.HOL.Syntax
 import ProjectBeth.Defs.HOL.Semantics
@@ -14,6 +15,8 @@ import ProjectBeth.Defs.STLC.FixedPoints
 import ProjectBeth.Defs.STLC.ExtendedVariants
 import ProjectBeth.Defs.STLC.Extenders
 import ProjectBeth.Defs.STLC.Semantics
+import ProjectBeth.Defs.Syntax.Representations
+import ProjectBeth.Defs.Translations
 import ProjectBeth.Snapshots.A06
 import ProjectBeth.Snapshots.A07
 import ProjectBeth.Snapshots.A08

@@ -132,6 +132,8 @@ end Named
 
 namespace LocallyNameless
 
+variable {Name : Type u}
+
 inductive Var (Name : Type u) : Type u
   | bound : Nat → Var Name
   | free : Name → Var Name

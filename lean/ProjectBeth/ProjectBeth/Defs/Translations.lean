@@ -49,6 +49,8 @@ end PolyAtom
 
 namespace Polynomial
 
+variable {Const : Type u}
+
 def familyHOL (P : STLC.Poly Const) : HOL.Ty (PolyAtom Const) :=
   .base (.family P)
 
@@ -101,6 +103,8 @@ def greatestDenote (El : Const → Type v) (P : STLC.Poly Const) : Type (v + 1) 
 end Polynomial
 
 namespace HOLToOmega
+
+variable {Base : Type u}
 
 mutual
   def ty : HOL.Ty Base → HOLOmega.Ty Base
