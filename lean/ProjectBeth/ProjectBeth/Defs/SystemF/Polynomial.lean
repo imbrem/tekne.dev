@@ -122,18 +122,21 @@ def prodTy (A B : Ty) : Ty :=
 
 def sumInl (A B : Ty) (a : Tm) : Tm :=
   .tyLam (.lam (.arr A.lift (.var 0))
-    (.lam (.arr B.lift (.var 0)) (.app (.var 1) (a.rename (· + 2)))))
+    (.lam (.arr B.lift (.var 0))
+      (.app (.var 1) (((a.renameTy Nat.succ).rename Nat.succ).rename Nat.succ))))
 
 def sumInr (A B : Ty) (b : Tm) : Tm :=
   .tyLam (.lam (.arr A.lift (.var 0))
-    (.lam (.arr B.lift (.var 0)) (.app (.var 0) (b.rename (· + 2)))))
+    (.lam (.arr B.lift (.var 0))
+      (.app (.var 0) (((b.renameTy Nat.succ).rename Nat.succ).rename Nat.succ))))
 
 def sumElim (s : Tm) (R : Ty) (left right : Tm) : Tm :=
   .app (.app (.tyApp s R) left) right
 
 def prodPair (A B : Ty) (a b : Tm) : Tm :=
   .tyLam (.lam (.arr A.lift (.arr B.lift (.var 0)))
-    (.app (.app (.var 0) (a.rename Nat.succ)) (b.rename Nat.succ)))
+    (.app (.app (.var 0) ((a.renameTy Nat.succ).rename Nat.succ))
+      ((b.renameTy Nat.succ).rename Nat.succ)))
 
 def prodElim (p : Tm) (R : Ty) (k : Tm) : Tm := .app (.tyApp p R) k
 
