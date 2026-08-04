@@ -182,6 +182,40 @@ def churchRoll (base : Const → Ty) (P : Poly Const) (layer : Tm) : Tm :=
           (churchFold (.var 0) (.var 0) (.var 1)))
         (layer.rename Nat.succ))))
 
+/-- `∃X. X × (X → P X)`, encoded impredicatively as
+`∀R. (∀X. X → (X → P X) → R) → R`. -/
+def coChurchTy (base : Const → Ty) (P : Poly Const) : Ty :=
+  .all (.arr
+    (.all (.arr (.var 0)
+      (.arr (.arr (.var 0)
+        (polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1))))
+    (.var 0))
+
+def coPack (base : Const → Ty) (P : Poly Const)
+    (X : Ty) (seed step : Tm) : Tm :=
+  .tyLam (.lam
+    (.all (.arr (.var 0)
+      (.arr (.arr (.var 0)
+        (polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1))))
+    (.app (.app (.tyApp (.var 0) X.lift) (seed.rename Nat.succ))
+      (step.rename Nat.succ)))
+
+def coElim (co : Tm) (R : Ty) (handler : Tm) : Tm :=
+  .app (.tyApp co R) handler
+
+def coiter (base : Const → Ty) (P : Poly Const)
+    (X : Ty) (step seed : Tm) : Tm := coPack base P X seed step
+
+def observe (base : Const → Ty) (P : Poly Const) (co : Tm) : Tm :=
+  coElim co (polyTy base P (coChurchTy base P))
+    (.tyLam (.lam (.var 0) (.lam
+      (.arr (.var 0) (polyTy (fun c => (base c).lift) P (.var 0)))
+      (fmapTm (fun c => ((base c).lift).lift) P (.var 0)
+        (coChurchTy base P).lift
+        (.lam (.var 0)
+          (coiter (fun c => (base c).lift) P (.var 0) (.var 1) (.var 0)))
+        (.app (.var 0) (.var 1))))))
+
 theorem erase_churchFold_square (S : ProjectBeth.Untyped.Signature)
     (m alg : Tm) (X : Ty) :
     Inductive.Untyped.erase S (churchFold m X alg) =
@@ -197,6 +231,19 @@ theorem erase_prodElim_square (S : ProjectBeth.Untyped.Signature)
     (p k : Tm) (R : Ty) :
     Inductive.Untyped.erase S (prodElim p R k) =
       .app (Inductive.Untyped.erase S p) (Inductive.Untyped.erase S k) := rfl
+
+theorem erase_coElim_square (S : ProjectBeth.Untyped.Signature)
+    (co handler : Tm) (R : Ty) :
+    Inductive.Untyped.erase S (coElim co R handler) =
+      .app (Inductive.Untyped.erase S co) (Inductive.Untyped.erase S handler) := rfl
+
+theorem erase_coiter_square (S : ProjectBeth.Untyped.Signature)
+    (base : Const → Ty) (P : Poly Const) (X : Ty) (step seed : Tm) :
+    Inductive.Untyped.erase S (coiter base P X step seed) =
+      .lam (.app (.app (.var 0)
+        ((Inductive.Untyped.erase S seed).rename Nat.succ))
+        ((Inductive.Untyped.erase S step).rename Nat.succ)) := by
+  simp [coiter, coPack, Inductive.Untyped.erase]
 
 /-- Erasure ignores the polynomial type annotation, as required for System F
 type abstraction/application squares. -/
