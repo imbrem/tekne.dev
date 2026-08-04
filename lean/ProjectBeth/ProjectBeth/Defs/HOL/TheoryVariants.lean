@@ -32,8 +32,12 @@ def Address (Content : Type u) := Tree Content
 
 def address (t : Tree Content) : Address Content := t
 
-def Wf : Tree Content → Prop
-  | .decl _ _ ds => ∀ d ∈ ds, Wf d
+/-- Compatibility predicate for clients that state well-formedness uniformly
+across tree and sequential presentations.  It is automatic for `Tree`: finite
+acyclic dependency structure is enforced by the inductive datatype itself. -/
+def Wf (_ : Tree Content) : Prop := True
+
+theorem wf (t : Tree Content) : t.Wf := trivial
 
 /-- Postorder flattening: every dependency is emitted before its user. -/
 def flatten : Tree Content → List (Tree Content)
