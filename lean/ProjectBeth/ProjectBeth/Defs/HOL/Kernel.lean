@@ -5,18 +5,20 @@ namespace ProjectBeth.HOL.Kernel
 noncomputable section
 attribute [local instance] Classical.propDecidable
 
+universe u
+
 structure Ty where
-  El : Type 1
+  El : Type u
   default : El
 
-abbrev Ty.bool : Ty := ⟨ULift Bool, ⟨false⟩⟩
+abbrev Ty.bool : Ty.{u} := ⟨ULift.{u, 0} Bool, ⟨false⟩⟩
 def Ty.arr (A B : Ty) : Ty := ⟨A.El → B.El, fun _ => B.default⟩
 noncomputable def Ty.sub (A : Ty) (P : A.El → Prop) : Ty :=
   ⟨TotalSubtype A.El P, @TotalSubtype.abs _ ⟨A.default⟩ P A.default⟩
 
 abbrev Ctx := List Ty
 
-inductive Var : Ctx → Ty → Type 2
+inductive Var : Ctx → Ty → Type (u + 1)
   | here : Var (A :: Γ) A
   | there : Var Γ A → Var (B :: Γ) A
 
@@ -26,7 +28,7 @@ def Env.cons (x : A.El) (ρ : Env Γ) : Env (A :: Γ)
   | _, .here => x
   | _, .there v => ρ v
 
-inductive Tm : Ctx → Ty → Type 2
+inductive Tm : Ctx → Ty → Type (u + 1)
   | var : Var Γ A → Tm Γ A
   | app : Tm Γ (A.arr B) → Tm Γ A → Tm Γ B
   | lam : Tm (A :: Γ) B → Tm Γ (A.arr B)
@@ -137,7 +139,7 @@ noncomputable def Sub.single (x : Tm Γ A) : Sub (A :: Γ) Γ
 noncomputable def Tm.subst0 (t : Tm (A :: Γ) B) (x : Tm Γ A) : Tm Γ B :=
   t.subst (Sub.single x)
 
-inductive Eqv : Tm Γ A → Tm Γ A → Type 2
+inductive Eqv : Tm Γ A → Tm Γ A → Type (u + 1)
   | refl (t) : Eqv t t
   | symm : Eqv s t → Eqv t s
   | trans : Eqv r s → Eqv s t → Eqv r t

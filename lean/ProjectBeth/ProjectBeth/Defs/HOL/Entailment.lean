@@ -5,10 +5,12 @@ namespace ProjectBeth.HOL.Kernel
 noncomputable section
 attribute [local instance] Classical.propDecidable
 
+universe u
+
 def Extend (Assume : Tm Γ Ty.bool → Prop) (p : Tm Γ Ty.bool) :=
   fun q => Assume q ∨ q = p
 
-inductive Derives : (Tm Γ Ty.bool → Prop) → Tm Γ Ty.bool → Type 2
+inductive Derives : (Tm Γ Ty.bool → Prop) → Tm Γ Ty.bool → Type (u + 1)
   | assumption {Assume : Tm Γ Ty.bool → Prop} (p) : Assume p → Derives Assume p
   | truth {Assume : Tm Γ Ty.bool → Prop} : Derives Assume (.bool true)
   | eqRefl {Assume : Tm Γ Ty.bool → Prop} (x : Tm Γ A) : Derives Assume (.eq x x)

@@ -6,6 +6,8 @@ namespace ProjectBeth.HOL.Kernel
 noncomputable section
 attribute [local instance] Classical.propDecidable
 
+universe u
+
 def Tm.IsTrue (p : Tm Γ Ty.bool) (ρ : Env Γ) : Prop :=
   (p.eval ρ).down = true
 
@@ -23,7 +25,7 @@ theorem Tm.isTrue_conj (p q : Tm Γ Ty.bool) (ρ : Env Γ) :
   cases hp : (p.eval ρ).down <;> cases hq : (q.eval ρ).down <;>
     simp [IsTrue, Tm.eval, hp, hq]
 
-inductive AssumptionTree (α : Type 2)
+inductive AssumptionTree (α : Type u)
   | empty
   | leaf (value : α)
   | node (left right : AssumptionTree α)
