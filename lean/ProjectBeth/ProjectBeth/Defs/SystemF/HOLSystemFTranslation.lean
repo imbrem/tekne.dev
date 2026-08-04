@@ -280,4 +280,66 @@ def HOLOmegaCompile.typed (base : B → Inductive.Ty) :
       .app (.app (I.eq_typed 0 Γ' _) (typed base hx)) (typed base hy)
   | .epsilon _ _ hp => .app (I.epsilon_typed 0 Γ' _) (typed base hp)
 
+universe v w
+
+structure SemanticCompatibility (I : ClassicalInterface) (B : Type u)
+    (E : Type v) (V : Type w) where
+  holEval : ProjectBeth.HOL.Tm B → E → V
+  omegaEval : ProjectBeth.HOLOmega.Tm B → E → V
+  systemFEval : Inductive.Tm → E → V
+  hol_var : ∀ n e, holEval (.var n) e = systemFEval (.var n) e
+  hol_app : ∀ f x f' x' e, holEval f e = systemFEval f' e →
+    holEval x e = systemFEval x' e →
+    holEval (.app f x) e = systemFEval (.app f' x') e
+  hol_lam : ∀ A t A' t' e, holEval t e = systemFEval t' e →
+    holEval (.lam A t) e = systemFEval (.lam A' t') e
+  hol_bool : ∀ b e, holEval (.bool b) e =
+    systemFEval (if b then Raw.churchTrue else Raw.churchFalse) e
+  hol_eq : ∀ A x y A' x' y' e, holEval x e = systemFEval x' e →
+    holEval y e = systemFEval y' e →
+    holEval (.eq A x y) e = systemFEval (.app (.app (I.eq A') x') y') e
+  hol_epsilon : ∀ A p A' p' e, holEval p e = systemFEval p' e →
+    holEval (.epsilon A p) e = systemFEval (.app (I.epsilon A') p') e
+  omega_var : ∀ n e, omegaEval (.var n) e = systemFEval (.var n) e
+  omega_app : ∀ f x f' x' e, omegaEval f e = systemFEval f' e →
+    omegaEval x e = systemFEval x' e →
+    omegaEval (.app f x) e = systemFEval (.app f' x') e
+  omega_lam : ∀ A t A' t' e, omegaEval t e = systemFEval t' e →
+    omegaEval (.lam A t) e = systemFEval (.lam A' t') e
+  omega_bool : ∀ b e, omegaEval (.bool b) e =
+    systemFEval (if b then Raw.churchTrue else Raw.churchFalse) e
+  omega_eq : ∀ A x y A' x' y' e, omegaEval x e = systemFEval x' e →
+    omegaEval y e = systemFEval y' e →
+    omegaEval (.eq A x y) e = systemFEval (.app (.app (I.eq A') x') y') e
+  omega_epsilon : ∀ A p A' p' e, omegaEval p e = systemFEval p' e →
+    omegaEval (.epsilon A p) e = systemFEval (.app (I.epsilon A') p') e
+
+def HOLCompile.semantic_square (base : B → Inductive.Ty)
+    (C : SemanticCompatibility I B E V) :
+    (d : HOLCompile I base Γ t A Γ' t' A') → ∀ e,
+      C.holEval t e = C.systemFEval t' e
+  | .var _ _ _, e => C.hol_var _ e
+  | .app df dx, e => C.hol_app _ _ _ _ e
+      (semantic_square base C df e) (semantic_square base C dx e)
+  | .lam _ _ dt, e => C.hol_lam _ _ _ _ e (semantic_square base C dt e)
+  | .bool b, e => C.hol_bool b e
+  | .eq _ _ dx dy, e => C.hol_eq _ _ _ _ _ _ e
+      (semantic_square base C dx e) (semantic_square base C dy e)
+  | .epsilon _ _ dp, e => C.hol_epsilon _ _ _ _ e (semantic_square base C dp e)
+
+def HOLOmegaCompile.semantic_square (base : B → Inductive.Ty)
+    (C : SemanticCompatibility I B E V) :
+    (d : HOLOmegaCompile I base Δ Γ t A Γ' t' A') → ∀ e,
+      C.omegaEval t e = C.systemFEval t' e
+  | .var _ _ _, e => C.omega_var _ e
+  | .app df dx, e => C.omega_app _ _ _ _ e
+      (semantic_square base C df e) (semantic_square base C dx e)
+  | .lam _ _ dt, e => C.omega_lam _ _ _ _ e (semantic_square base C dt e)
+  | .bool b, e => C.omega_bool b e
+  | .eq _ _ dx dy, e => C.omega_eq _ _ _ _ _ _ e
+      (semantic_square base C dx e) (semantic_square base C dy e)
+  | .epsilon _ _ dp, e => C.omega_epsilon _ _ _ _ e
+      (semantic_square base C dp e)
+
+
 end ProjectBeth.SystemF.HOLTranslation
