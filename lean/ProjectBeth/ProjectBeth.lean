@@ -4,11 +4,15 @@ import ProjectBeth.Defs.PowerTower
 import ProjectBeth.Defs.Carrier
 import ProjectBeth.Defs.Closure
 import ProjectBeth.Defs.BethClosure
+import ProjectBeth.Defs.ClosureArithmetic
 import ProjectBeth.Defs.FixedPointClosure
 import ProjectBeth.Defs.HOL.Syntax
 import ProjectBeth.Defs.HOL.Semantics
+import ProjectBeth.Defs.HOL.Kernel
 import ProjectBeth.Defs.HOLOmega.Syntax
 import ProjectBeth.Defs.HOLOmega.Semantics
+import ProjectBeth.Defs.HOLOmega.Substitution
+import ProjectBeth.Defs.HOLOmega.Soundness
 import ProjectBeth.Defs.STLC.Core
 import ProjectBeth.Defs.STLC.Variants
 import ProjectBeth.Defs.STLC.FixedPoints
@@ -16,6 +20,8 @@ import ProjectBeth.Defs.STLC.ExtendedVariants
 import ProjectBeth.Defs.STLC.Extenders
 import ProjectBeth.Defs.STLC.Semantics
 import ProjectBeth.Defs.Syntax.Representations
+import ProjectBeth.Defs.Syntax.Alpha
+import ProjectBeth.Defs.Syntax.LanguageEnums
 import ProjectBeth.Defs.Translations
 import ProjectBeth.Snapshots.A06
 import ProjectBeth.Snapshots.A07
