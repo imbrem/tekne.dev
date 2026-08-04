@@ -120,6 +120,23 @@ def sumTy (A B : Ty) : Ty :=
 def prodTy (A B : Ty) : Ty :=
   .all (.arr (.arr A.lift (.arr B.lift (.var 0))) (.var 0))
 
+def sumInl (A B : Ty) (a : Tm) : Tm :=
+  .tyLam (.lam (.arr A.lift (.var 0))
+    (.lam (.arr B.lift (.var 0)) (.app (.var 1) (a.rename (· + 2)))))
+
+def sumInr (A B : Ty) (b : Tm) : Tm :=
+  .tyLam (.lam (.arr A.lift (.var 0))
+    (.lam (.arr B.lift (.var 0)) (.app (.var 0) (b.rename (· + 2)))))
+
+def sumElim (s : Tm) (R : Ty) (left right : Tm) : Tm :=
+  .app (.app (.tyApp s R) left) right
+
+def prodPair (A B : Ty) (a b : Tm) : Tm :=
+  .tyLam (.lam (.arr A.lift (.arr B.lift (.var 0)))
+    (.app (.app (.var 0) (a.rename Nat.succ)) (b.rename Nat.succ)))
+
+def prodElim (p : Tm) (R : Ty) (k : Tm) : Tm := .app (.tyApp p R) k
+
 def polyTy (base : Const → Ty) : Poly Const → Ty → Ty
   | .var, X => X
   | .const c, _ => base c
@@ -127,9 +144,59 @@ def polyTy (base : Const → Ty) : Poly Const → Ty → Ty
   | .sum P Q, X => sumTy (polyTy base P X) (polyTy base Q X)
   | .prod P Q, X => prodTy (polyTy base P X) (polyTy base Q X)
 
+/-- Raw System F action of a polynomial on a morphism.  The accompanying
+typing theorem can be layered independently; this definition is useful for
+erasure and reduction squares already. -/
+def fmapTm (base : Const → Ty) : (P : Poly Const) →
+    (X Y : Ty) → Tm → Tm → Tm
+  | .var, _, _, f, x => .app f x
+  | .const _, _, _, _, x => x
+  | .pow c, _, _, f, x =>
+      .lam (base c) (.app (f.rename Nat.succ) (.app (x.rename Nat.succ) (.var 0)))
+  | .sum P Q, X, Y, f, x =>
+      sumElim x (sumTy (polyTy base P Y) (polyTy base Q Y))
+        (.lam (polyTy base P X)
+          (sumInl (polyTy base P Y) (polyTy base Q Y)
+            (fmapTm base P X Y (f.rename Nat.succ) (.var 0))))
+        (.lam (polyTy base Q X)
+          (sumInr (polyTy base P Y) (polyTy base Q Y)
+            (fmapTm base Q X Y (f.rename Nat.succ) (.var 0))))
+  | .prod P Q, X, Y, f, x =>
+      prodElim x (prodTy (polyTy base P Y) (polyTy base Q Y))
+        (.lam (polyTy base P X) (.lam (polyTy base Q X)
+          (prodPair (polyTy base P Y) (polyTy base Q Y)
+            (fmapTm base P X Y (f.rename (· + 2)) (.var 1))
+            (fmapTm base Q X Y (f.rename (· + 2)) (.var 0)))))
+
 /-- `∀X. (P X → X) → X`. -/
 def churchMuTy (base : Const → Ty) (P : Poly Const) : Ty :=
   .all (.arr (.arr (polyTy (fun c => (base c).lift) P (.var 0)) (.var 0)) (.var 0))
+
+def churchFold (m : Tm) (X : Ty) (alg : Tm) : Tm := .app (.tyApp m X) alg
+
+def churchRoll (base : Const → Ty) (P : Poly Const) (layer : Tm) : Tm :=
+  .tyLam (.lam (.arr (polyTy (fun c => (base c).lift) P (.var 0)) (.var 0))
+    (.app (.var 0)
+      (fmapTm (fun c => (base c).lift) P (churchMuTy base P).lift (.var 0)
+        (.lam (churchMuTy base P).lift
+          (churchFold (.var 0) (.var 0) (.var 1)))
+        (layer.rename Nat.succ))))
+
+theorem erase_churchFold_square (S : ProjectBeth.Untyped.Signature)
+    (m alg : Tm) (X : Ty) :
+    Inductive.Untyped.erase S (churchFold m X alg) =
+      .app (Inductive.Untyped.erase S m) (Inductive.Untyped.erase S alg) := rfl
+
+theorem erase_sumElim_square (S : ProjectBeth.Untyped.Signature)
+    (s l r : Tm) (R : Ty) :
+    Inductive.Untyped.erase S (sumElim s R l r) =
+      .app (.app (Inductive.Untyped.erase S s) (Inductive.Untyped.erase S l))
+        (Inductive.Untyped.erase S r) := rfl
+
+theorem erase_prodElim_square (S : ProjectBeth.Untyped.Signature)
+    (p k : Tm) (R : Ty) :
+    Inductive.Untyped.erase S (prodElim p R k) =
+      .app (Inductive.Untyped.erase S p) (Inductive.Untyped.erase S k) := rfl
 
 /-- Erasure ignores the polynomial type annotation, as required for System F
 type abstraction/application squares. -/
