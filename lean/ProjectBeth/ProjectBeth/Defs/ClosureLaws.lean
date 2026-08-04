@@ -1,5 +1,7 @@
 import ProjectBeth.Defs.Closure
 
+/-! Codes and surjectivity laws induced by the closure interfaces. -/
+
 universe u v
 
 namespace ProjectBeth

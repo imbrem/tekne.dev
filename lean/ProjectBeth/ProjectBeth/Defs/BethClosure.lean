@@ -11,8 +11,8 @@ namespace PowerLevel
 def raise {Base : Type u} : {n m : Nat} → n ≤ m → PowerLevel Base n ↪ PowerLevel Base m
   | 0, 0, _ => Function.Embedding.refl _
   | 0, m + 1, _ => (raise (Nat.zero_le m)).trans ix
-  | n + 1, 0, h => nomatch h
-  | n + 1, m + 1, h =>
+  | _n + 1, 0, h => nomatch h
+  | _n + 1, _m + 1, h =>
       mapEmbedding (raise (Nat.succ_le_succ_iff.mp h)) 1
 
 @[simp]
