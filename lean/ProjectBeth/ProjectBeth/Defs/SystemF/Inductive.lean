@@ -100,6 +100,66 @@ theorem Ty.subst_congr {σ τ : Nat → Ty} (h : ∀n, σ n = τ n) :
     simp only [Ty.subst]
     rw [show upTySub Ty.var = Ty.var by funext n; cases n <;> rfl, ih]
 
+theorem Ty.rename_lift (ρ : Nat → Nat) (A : Ty) :
+    (A.lift).rename (upRen ρ) = (A.rename ρ).lift := by
+  simp only [Ty.lift, Ty.rename_comp]
+  apply Ty.rename_congr
+  intro n
+  rfl
+
+theorem Ty.rename_subst (ρ : Nat → Nat) (σ : Nat → Ty) (A : Ty) :
+    (A.subst σ).rename ρ = A.subst (fun n => (σ n).rename ρ) := by
+  induction A generalizing ρ σ with
+  | var n => rfl
+  | bool => rfl
+  | nat => rfl
+  | arr A B ihA ihB => simp [Ty.rename, Ty.subst, ihA, ihB]
+  | all A ih =>
+    simp only [Ty.rename, Ty.subst, ih]
+    apply congrArg Ty.all
+    apply Ty.subst_congr
+    intro n
+    cases n with
+    | zero => rfl
+    | succ n => exact Ty.rename_lift ρ (σ n)
+
+theorem Ty.subst_rename (σ : Nat → Ty) (ρ : Nat → Nat) (A : Ty) :
+    (A.rename ρ).subst σ = A.subst (σ ∘ ρ) := by
+  induction A generalizing σ ρ with
+  | var n => rfl
+  | bool => rfl
+  | nat => rfl
+  | arr A B ihA ihB => simp [Ty.rename, Ty.subst, ihA, ihB]
+  | all A ih =>
+    simp only [Ty.rename, Ty.subst, ih]
+    apply congrArg Ty.all
+    apply Ty.subst_congr
+    intro n
+    cases n <;> rfl
+
+theorem Ty.subst_lift (σ : Nat → Ty) (A : Ty) :
+    (A.lift).subst (upTySub σ) = (A.subst σ).lift := by
+  rw [Ty.lift, Ty.subst_rename, Ty.lift, Ty.rename_subst]
+  apply Ty.subst_congr
+  intro n
+  rfl
+
+theorem Ty.subst_comp (σ τ : Nat → Ty) (A : Ty) :
+    (A.subst σ).subst τ = A.subst (fun n => (σ n).subst τ) := by
+  induction A generalizing σ τ with
+  | var n => rfl
+  | bool => rfl
+  | nat => rfl
+  | arr A B ihA ihB => simp [Ty.subst, ihA, ihB]
+  | all A ih =>
+    simp only [Ty.subst, ih]
+    apply congrArg Ty.all
+    apply Ty.subst_congr
+    intro n
+    cases n with
+    | zero => rfl
+    | succ n => exact Ty.subst_lift τ (σ n)
+
 inductive Tm : Type
   | var : Nat → Tm
   | app : Tm → Tm → Tm
@@ -198,6 +258,146 @@ theorem Tm.rename_comp (ρ τ : Nat → Nat) (t : Tm) :
     cases n <;> rfl
   | tyApp f A ih => simp [Tm.rename, ih]
   | tyLam t ih => simp [Tm.rename, ih]
+  | bool b => rfl
+  | nat n => rfl
+
+theorem Tm.subst_congr {σ τ : Nat → Tm} (h : ∀n, σ n = τ n) (t : Tm) :
+    t.subst σ = t.subst τ := by
+  induction t generalizing σ τ with
+  | var n => exact h n
+  | app f x ihf ihx => simp [Tm.subst, ihf h, ihx h]
+  | lam A t ih =>
+    simp only [Tm.subst]
+    congr 1
+    apply ih
+    intro n
+    cases n <;> simp [upTmSub, h]
+  | tyApp f A ih => simp [Tm.subst, ih h]
+  | tyLam t ih => simp [Tm.subst, ih h]
+  | bool b => rfl
+  | nat n => rfl
+
+@[simp] theorem Tm.subst_var (t : Tm) : t.subst Tm.var = t := by
+  induction t with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.subst, ihf, ihx]
+  | lam A t ih =>
+    simp only [Tm.subst]
+    rw [show upTmSub Tm.var = Tm.var by funext n; cases n <;> rfl, ih]
+  | tyApp f A ih => simp [Tm.subst, ih]
+  | tyLam t ih => simp [Tm.subst, ih]
+  | bool b => rfl
+  | nat n => rfl
+
+theorem Tm.rename_lift (ρ : Nat → Nat) (t : Tm) :
+    t.lift.rename (upTmRen ρ) = (t.rename ρ).lift := by
+  simp only [Tm.lift, Tm.rename_comp]
+  apply Tm.rename_congr
+  intro n
+  rfl
+
+theorem Tm.rename_subst (ρ : Nat → Nat) (σ : Nat → Tm) (t : Tm) :
+    (t.subst σ).rename ρ = t.subst (fun n => (σ n).rename ρ) := by
+  induction t generalizing ρ σ with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.rename, Tm.subst, ihf, ihx]
+  | lam A t ih =>
+    simp only [Tm.rename, Tm.subst, ih]
+    apply congrArg (Tm.lam A)
+    apply Tm.subst_congr
+    intro n
+    cases n with
+    | zero => rfl
+    | succ n => exact Tm.rename_lift ρ (σ n)
+  | tyApp f A ih => simp [Tm.rename, Tm.subst, ih]
+  | tyLam t ih => simp [Tm.rename, Tm.subst, ih]
+  | bool b => rfl
+  | nat n => rfl
+
+theorem Tm.subst_rename (σ : Nat → Tm) (ρ : Nat → Nat) (t : Tm) :
+    (t.rename ρ).subst σ = t.subst (σ ∘ ρ) := by
+  induction t generalizing σ ρ with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.rename, Tm.subst, ihf, ihx]
+  | lam A t ih =>
+    simp only [Tm.rename, Tm.subst, ih]
+    apply congrArg (Tm.lam A)
+    apply Tm.subst_congr
+    intro n
+    cases n <;> rfl
+  | tyApp f A ih => simp [Tm.rename, Tm.subst, ih]
+  | tyLam t ih => simp [Tm.rename, Tm.subst, ih]
+  | bool b => rfl
+  | nat n => rfl
+
+theorem Tm.subst_lift (σ : Nat → Tm) (t : Tm) :
+    t.lift.subst (upTmSub σ) = (t.subst σ).lift := by
+  rw [Tm.lift, Tm.subst_rename, Tm.lift, Tm.rename_subst]
+  apply Tm.subst_congr
+  intro n
+  rfl
+
+theorem Tm.subst_comp (σ τ : Nat → Tm) (t : Tm) :
+    (t.subst σ).subst τ = t.subst (fun n => (σ n).subst τ) := by
+  induction t generalizing σ τ with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.subst, ihf, ihx]
+  | lam A t ih =>
+    simp only [Tm.subst, ih]
+    apply congrArg (Tm.lam A)
+    apply Tm.subst_congr
+    intro n
+    cases n with
+    | zero => rfl
+    | succ n => exact Tm.subst_lift τ (σ n)
+  | tyApp f A ih => simp [Tm.subst, ih]
+  | tyLam t ih => simp [Tm.subst, ih]
+  | bool b => rfl
+  | nat n => rfl
+
+theorem Tm.substTy_congr {σ τ : Nat → Ty} (h : ∀n, σ n = τ n) (t : Tm) :
+    t.substTy σ = t.substTy τ := by
+  induction t generalizing σ τ with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.substTy, ihf h, ihx h]
+  | lam A t ih => simp [Tm.substTy, Ty.subst_congr h A, ih h]
+  | tyApp f A ih => simp [Tm.substTy, Ty.subst_congr h A, ih h]
+  | tyLam t ih =>
+    simp only [Tm.substTy]
+    congr 1
+    apply ih
+    intro n
+    cases n <;> simp [upTySub, h]
+  | bool b => rfl
+  | nat n => rfl
+
+@[simp] theorem Tm.substTy_var (t : Tm) : t.substTy Ty.var = t := by
+  induction t with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.substTy, ihf, ihx]
+  | lam A t ih => simp [Tm.substTy, ih]
+  | tyApp f A ih => simp [Tm.substTy, ih]
+  | tyLam t ih =>
+    simp only [Tm.substTy]
+    rw [show upTySub Ty.var = Ty.var by funext n; cases n <;> rfl, ih]
+  | bool b => rfl
+  | nat n => rfl
+
+theorem Tm.substTy_comp (σ τ : Nat → Ty) (t : Tm) :
+    (t.substTy σ).substTy τ = t.substTy (fun n => (σ n).subst τ) := by
+  induction t generalizing σ τ with
+  | var n => rfl
+  | app f x ihf ihx => simp [Tm.substTy, ihf, ihx]
+  | lam A t ih => simp [Tm.substTy, Ty.subst_comp, ih]
+  | tyApp f A ih => simp [Tm.substTy, Ty.subst_comp, ih]
+  | tyLam t ih =>
+    simp only [Tm.substTy, ih]
+    apply congrArg Tm.tyLam
+    apply Tm.substTy_congr
+    intro n
+    cases n with
+    | zero => rfl
+    | succ n => exact Ty.subst_lift τ (σ n)
   | bool b => rfl
   | nat n => rfl
 
