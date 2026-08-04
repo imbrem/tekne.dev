@@ -1,5 +1,9 @@
 import ProjectBeth.Defs.HOL.Contexts
 
+/-! Proof-relevant derivations for the shallow intrinsic HOL kernel.  These
+inherit the universe of `Kernel.Tm`; raw HOL typing judgements are the
+proof-irrelevant predicates in `ProjectBeth.HOL.Syntax`. -/
+
 namespace ProjectBeth.HOL.Kernel
 
 noncomputable section

@@ -1,5 +1,9 @@
 import ProjectBeth.Defs.STLC.Core
 
+/-! Raw, extrinsically typed HOL syntax.  Both `Ty Base` and `Tm Base` are
+small in the universe of `Base`; well-formedness and typing are separate
+judgements below. -/
+
 universe u
 
 namespace ProjectBeth.HOL

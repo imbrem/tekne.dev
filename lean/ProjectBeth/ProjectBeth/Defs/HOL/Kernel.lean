@@ -1,5 +1,12 @@
 import ProjectBeth.Defs.HOL.Syntax
 
+/-! A shallow intrinsically typed semantic HOL kernel.
+
+Unlike `ProjectBeth.HOL.Syntax`, `Ty` here is a Russell-style universe element:
+it stores an arbitrary inhabited `El : Type u`.  Consequently `Ty.{u}` and the
+proof-relevant syntax indexed by it live in `Type (u + 1)`.  Use the raw syntax
+module when a small syntactic AST is required. -/
+
 namespace ProjectBeth.HOL.Kernel
 
 noncomputable section
