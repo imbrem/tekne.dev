@@ -60,4 +60,32 @@ def eraseRen (ρ : Fin n → Fin m) (i : Nat) : Nat :=
 @[simp] theorem eraseRen_fin (ρ : Fin n → Fin m) (i : Fin n) :
     eraseRen ρ i = (ρ i).val := by simp [eraseRen, i.isLt]
 
+/-- A total natural renaming represents a finite renaming on the only indices
+that can occur freely in a bounded term. -/
+def RepresentsRen (ρ : Fin n → Fin m) (r : Nat → Nat) : Prop :=
+  ∀ i : Fin n, r i.val = (ρ i).val
+
+theorem RepresentsRen.lift {ρ : Fin n → Fin m} {r : Nat → Nat}
+    (h : RepresentsRen ρ r) : RepresentsRen (liftRen ρ) (Untyped.upRen r) := by
+  intro i
+  refine Fin.cases ?_ (fun j => ?_) i
+  · rfl
+  · simp [liftRen, Untyped.upRen, h j]
+
+theorem erase_rename_of_represents {ρ : Fin n → Fin m} {r : Nat → Nat}
+    (h : RepresentsRen ρ r) (t : Tm n) :
+    erase (rename ρ t) = Untyped.rename r (erase t) := by
+  induction t generalizing m r with
+  | var i => simp [rename, erase, Untyped.rename, h i]
+  | app p q ihp ihq =>
+    simp [rename, erase, Untyped.rename, ihp h, ihq h]
+  | lam b ih =>
+    simp only [rename, erase, Untyped.rename]
+    exact congrArg Untyped.Tm.lam (ih (ρ := liftRen ρ)
+      (r := Untyped.upRen r) h.lift)
+
+theorem erase_rename (ρ : Fin n → Fin m) (t : Tm n) :
+    erase (rename ρ t) = Untyped.rename (eraseRen ρ) (erase t) :=
+  erase_rename_of_represents (fun i => eraseRen_fin ρ i) t
+
 end ProjectBeth.Syntax.Bounded
