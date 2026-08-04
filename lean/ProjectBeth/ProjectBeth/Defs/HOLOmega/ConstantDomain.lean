@@ -87,8 +87,17 @@ structure Compositional (Q : Quotation U D) where
     ∃ fd : D → D, (∀ a, fd (Q.quote A a) = Q.quote B (f a)) ∧
       lam fd = Q.quote (U.arr A B) ((U.arrEquiv A B).symm f)
   bool_quote : ∀ b, bool b = Q.quote U.boolCode (U.boolEquiv.symm b)
-  all_app : Prop
-  all_lam : Prop
+  allApp : ∀ (I : Type u) (F : I → U.Code), D → I → D
+  allLam : ∀ (I : Type u) (F : I → U.Code), (I → D) → D
+  allApp_quote : ∀ (I : Type u) (F : I → U.Code)
+      (f : (X : I) → U.El (F X)) (X : I),
+    allApp I F
+        (Q.quote (U.allCode I F) ((U.allEquiv I F).symm f)) X =
+      Q.quote (F X) (f X)
+  allLam_quote : ∀ (I : Type u) (F : I → U.Code)
+      (f : (X : I) → U.El (F X)),
+    allLam I F (fun X => Q.quote (F X) (f X)) =
+      Q.quote (U.allCode I F) ((U.allEquiv I F).symm f)
 
 end Quotation
 

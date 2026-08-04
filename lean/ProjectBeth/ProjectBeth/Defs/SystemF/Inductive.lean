@@ -536,8 +536,16 @@ structure Typed (Δ : Nat) (Γ : List Ty) (A : Ty) where
 inductive TypedStep : Typed Δ Γ A → Typed Δ Γ A → Prop
   | ofSmallStep (s t : Typed Δ Γ A) : SmallStep s.term t.term → TypedStep s t
 
-theorem subject_reduction {s t : Typed Δ Γ A} (_h : TypedStep s t) :
+/-- A `TypedStep` stores an already typed target.  This accessor is distinct
+from the genuine preservation theorem for raw `SmallStep`, proved in
+`SystemF.ContextMorphisms`. -/
+theorem TypedStep.target_hasType {s t : Typed Δ Γ A} (_h : TypedStep s t) :
     HasType Δ Γ t.term A := t.typing
+
+/-- Compatibility name for `TypedStep.target_hasType`.  For genuine subject
+reduction from source typing and a raw step, use `hasType_preservation`. -/
+theorem subject_reduction {s t : Typed Δ Γ A} (h : TypedStep s t) :
+    HasType Δ Γ t.term A := h.target_hasType
 
 theorem TypedStep.syntax_square {s t : Typed Δ Γ A} (h : TypedStep s t) :
     SmallStep s.term t.term := by cases h with | ofSmallStep h => exact h

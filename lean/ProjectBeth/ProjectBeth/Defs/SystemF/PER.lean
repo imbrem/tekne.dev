@@ -56,10 +56,18 @@ def TermRel (M : PERModel U D) (t s : Tm U Γ A) : Prop :=
 genuine binary relation; unlike image-membership, both environments and both
 term denotations occur in the statement.  Parametricity of arbitrary shallow
 functions is supplied by `respects`. -/
-theorem fundamental_of_respects (M : PERModel U D) (t : Tm U Γ A)
+theorem termRel_of_respects (M : PERModel U D) (t : Tm U Γ A)
     (respects : ∀ ρ γ δ, EnvRel U D M Γ ρ γ δ →
       (M.interp (A ρ)).Rel (M.quote _ (t ρ γ)) (M.quote _ (t ρ δ))) :
     TermRel U D M t t := respects
+
+/-- Compatibility name.  This shallow theorem packages an explicit
+parametricity hypothesis; the syntax-directed fundamental theorem is
+`SystemF.Inductive.PERModel.fundamental_rel`. -/
+theorem fundamental_of_respects (M : PERModel U D) (t : Tm U Γ A)
+    (respects : ∀ ρ γ δ, EnvRel U D M Γ ρ γ δ →
+      (M.interp (A ρ)).Rel (M.quote _ (t ρ γ)) (M.quote _ (t ρ δ))) :
+    TermRel U D M t t := termRel_of_respects U D M t respects
 
 theorem closed_fundamental (M : PERModel U D) (t : Tm U [] A) (ρ) :
     (M.interp (A ρ)).Rel (M.quote _ (t ρ PUnit.unit))

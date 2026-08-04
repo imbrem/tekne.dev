@@ -273,7 +273,4 @@ theorem hasType_preservation (d : Inductive.HasType Δ Γ t A)
   obtain ⟨d'⟩ := preservation d h
   exact d'.toHasType
 
-@[simp] theorem Derivation.renameTm_term (d : Derivation Δ Γ t A)
-    (r : CtxRen Γ Γ' ρ) : (d.renameTm r).toHasType = (d.renameTm r).toHasType := rfl
-
 end ProjectBeth.SystemF.Inductive.Semantics

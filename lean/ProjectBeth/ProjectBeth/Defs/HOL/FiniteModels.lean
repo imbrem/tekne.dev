@@ -43,6 +43,10 @@ structure FinCode (U : ProjectBeth.HOLOmega.Kernel.Universe) (n : Nat) where
   code : U.Code
   equiv : U.El code ≃ Fin n
 
+/-- The constant HOLω type family denoted by a finite universe code. -/
+def finTy (U : ProjectBeth.HOLOmega.Kernel.Universe) (F : FinCode U n) :
+    ProjectBeth.HOLOmega.Kernel.Ty U Δ .star := fun _ => F.code
+
 theorem finCode_nonempty (U : ProjectBeth.HOLOmega.Kernel.Universe)
     (n : Nat) [NeZero n] (F : FinCode U n) : Nonempty (U.El F.code) :=
   ⟨F.equiv.symm ⟨0, Nat.pos_of_neZero n⟩⟩
@@ -56,19 +60,15 @@ theorem no_finCode_zero (U : ProjectBeth.HOLOmega.Kernel.Universe) :
 theorem choice_sound_fin
     (U : ProjectBeth.HOLOmega.Kernel.Universe) (n : Nat) [NeZero n]
     (F : FinCode U n) {Δ} {Γ : ProjectBeth.HOLOmega.Kernel.Ctx U Δ}
-    {A : ProjectBeth.HOLOmega.Kernel.Ty U Δ .star}
-    (hA : ∀ ρ, A ρ = F.code)
     (pred : ProjectBeth.HOLOmega.Kernel.Tm U Γ
-      (ProjectBeth.HOLOmega.Kernel.Ty.arr U A
+      (ProjectBeth.HOLOmega.Kernel.Ty.arr U (finTy U F)
         (ProjectBeth.HOLOmega.Kernel.Ty.boolCode U)))
-    (x : ProjectBeth.HOLOmega.Kernel.Tm U Γ A) {H}
+    (x : ProjectBeth.HOLOmega.Kernel.Tm U Γ (finTy U F)) {H}
     (d : ProjectBeth.HOLOmega.Kernel.Derives U H
       (ProjectBeth.HOLOmega.Kernel.Tm.app U pred x)) :
     ProjectBeth.HOLOmega.Kernel.Entails U H
       (ProjectBeth.HOLOmega.Kernel.Tm.app U pred
         (ProjectBeth.HOLOmega.Kernel.Tm.epsilon U pred)) := by
-  have _ := F
-  have _ := hA
   exact (ProjectBeth.HOLOmega.Kernel.Derives.choice pred x d).sound U
 
 theorem derives_sound

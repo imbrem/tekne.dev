@@ -135,8 +135,16 @@ theorem Reduces.sound (h : Reduces U t u) : t = u := by
   | lam _ ih => simp [ih]
   | beta => exact Tm.beta U _ _
 
+/-- In the shallow intrinsic kernel both endpoints have the same type by the
+index of `Reduces`; this is the typed target projection, not an inductive
+subject-reduction argument. -/
+def Reduces.typedTarget {n : Nat} {Γ : Ctx U n} {A : Ty U n}
+    {t u : Tm U Γ A} (_h : Reduces U t u) : Tm U Γ A := u
+
+/-- Compatibility name for `Reduces.typedTarget`.  The raw-syntax preservation
+proof lives in `SystemF.Inductive.Semantics.hasType_preservation`. -/
 def preservation {n : Nat} {Γ : Ctx U n} {A : Ty U n} {t u : Tm U Γ A}
-    (_h : Reduces U t u) : Tm U Γ A := u
+    (h : Reduces U t u) : Tm U Γ A := h.typedTarget U
 
 structure Quotation (D : Type v) where
   quote : ∀ A, U.El A → D
