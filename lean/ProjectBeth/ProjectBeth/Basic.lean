@@ -451,9 +451,12 @@ def ℶ.hi {n} (i : ℶ n) : ℶ (n + 1) := .set (Set.Ioi i)
 @[simp]
 theorem ℶ.toSet_hi {n} (i : ℶ n) : ℶ.toSet (ℶ.hi i) = Set.Ioi i := rfl
 
--- TODO: hi is mono as well
+theorem ℶ.hi_antitone {n} {i j : ℶ n} (h : i ≤ j) : ℶ.hi j ≤ ℶ.hi i :=
+  fun _ hx => lt_of_le_of_lt h hx
 
--- TODO: lo and hi are disjoint
+theorem ℶ.lo_hi_disjoint {n} (i : ℶ n) : Disjoint (ℶ.lo i).toSet (ℶ.hi i).toSet := by
+  rw [Set.disjoint_left]
+  exact fun _ hlt hgt => (not_lt_of_ge (le_of_lt hgt)) hlt
 
 def ℶ.toType : ∀{n}, ℶ n → Type
 | 0 => Fin
@@ -500,15 +503,6 @@ theorem ℶ.ix_toSet {n} (i : ℶ n) : ℶ.toSet (ℶ.ix i) = {i} := rfl
 theorem ℶ.lo_inj_0 : Function.Injective (ℶ.lo : ℶ 0 → ℶ 1)
   := by apply Set.Iio_injective
 
--- theorem ℶ.lo_inj_succ : Function.Injective (ℶ.lo : ℶ (n + 1) → ℶ (n + 2)) := by
---   intro a b h
---   apply Set.ext
---   intro x
---   constructor
---   · intro h
---     sorry
---   sorry
-
 instance ℶ.coeSucc {n} : CoeOut (ℶ n) (ℶ (n + 1)) where
   coe := lo
 
@@ -532,7 +526,8 @@ instance Canonℶ.nat : Canonℶ ℕ 0 where
 instance Canonℶ.refl {n} : Canonℶ (ℶ n) n where
   toCanon := inferInstanceAs (Canon (ℶ n) (ℶ n))
 
--- TODO: change to lo?
+/-- Canonical codes use singleton injection.  Unlike `lo`, this is injective at
+every level without requiring additional order-separation hypotheses. -/
 instance Canonℶ.succ {n} [Hn : Canonℶ α n] : Canonℶ α (n + 1) where
   code := ℶ.ix ∘ Hn.code
   code_inj := ℶ.ix_inj.comp Hn.code_inj
