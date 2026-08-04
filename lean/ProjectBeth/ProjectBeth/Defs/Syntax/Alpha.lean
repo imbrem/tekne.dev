@@ -1,4 +1,5 @@
 import ProjectBeth.Defs.Syntax.Representations
+import Mathlib.Logic.Equiv.Defs
 
 universe u v
 
@@ -56,6 +57,10 @@ theorem aconv_false {t u : Tm Name} : aconv t u = false ↔ ¬Alpha t u := by
 theorem Alpha.trans {t u v : Tm Name} : Alpha t u → Alpha u v → Alpha t v :=
   Eq.trans
 
+instance alphaSetoid : Setoid (Tm Name) where
+  r := Alpha
+  iseqv := ⟨Alpha.refl, Alpha.symm, Alpha.trans⟩
+
 theorem alpha_lam_rename {x y : Name} {b c : Tm Name}
     (h : LocallyNameless.ofNamed [x] b = LocallyNameless.ofNamed [y] c) :
     Alpha (.lam x b) (.lam y c) := by
@@ -73,6 +78,53 @@ theorem represents_alpha {t u : Tm (Fin n)} {d : Bounded.Tm n}
 theorem aconv_of_represents {t u : Tm (Fin n)} {d : Bounded.Tm n}
     (ht : Represents t d) (hu : Represents u d) : aconv t u = true :=
   aconv_correct.mpr (represents_alpha ht hu)
+
+namespace AlphaQuotient
+
+/-- Raw named syntax modulo alpha-equivalence. -/
+abbrev Q (Name : Type u) [DecidableEq Name] := Quotient (alphaSetoid (Name := Name))
+
+/-- Fully nameless trees which arise from raw named syntax.  Binders are de Bruijn
+indices and free variables retain their names. -/
+abbrev ScopedNameless (Name : Type u) [DecidableEq Name] :=
+  {x : LocallyNameless.Tm Name // ∃ t : Tm Name, LocallyNameless.ofNamed [] t = x}
+
+def toScoped : Q Name → ScopedNameless Name :=
+  Quotient.lift (fun t : Tm Name => ⟨LocallyNameless.ofNamed [] t, ⟨t, rfl⟩⟩)
+    (fun _ _ h => Subtype.ext h)
+
+noncomputable def ofScoped : ScopedNameless Name → Q Name :=
+  fun t => Quotient.mk _ (Classical.choose t.property)
+
+noncomputable def equivScoped : Equiv (Q Name) (ScopedNameless Name) where
+  toFun := toScoped
+  invFun := ofScoped
+  left_inv q := by
+    induction q using Quotient.inductionOn with
+    | _ t =>
+      apply Quotient.sound
+      exact (Classical.choose_spec
+        (show ∃ a, LocallyNameless.ofNamed [] a = LocallyNameless.ofNamed [] t from
+          (toScoped (Quotient.mk _ t)).property)).trans rfl
+  right_inv t := by
+    apply Subtype.ext
+    exact Classical.choose_spec t.property
+
+/-- Any semantics defined on the nameless representation lifts canonically to the
+alpha quotient. -/
+def eval (sem : LocallyNameless.Tm Name → S) : Q Name → S :=
+  fun q => sem (toScoped q).1
+
+@[simp] theorem eval_mk (sem : LocallyNameless.Tm Name → S) (t : Tm Name) :
+    eval sem (Quotient.mk _ t) = sem (LocallyNameless.ofNamed [] t) := rfl
+
+theorem eval_eq_of_aconv (sem : LocallyNameless.Tm Name → S) {t u : Tm Name}
+    (h : aconv t u = true) :
+    eval sem (Quotient.mk _ t) = eval sem (Quotient.mk _ u) := by
+  change sem (LocallyNameless.ofNamed [] t) = sem (LocallyNameless.ofNamed [] u)
+  exact congrArg sem (aconv_correct.mp h)
+
+end AlphaQuotient
 
 end Named
 
