@@ -10,6 +10,7 @@ import ProjectBeth.Defs.FixedPointClosure
 import ProjectBeth.Defs.HOL.Syntax
 import ProjectBeth.Defs.HOL.Semantics
 import ProjectBeth.Defs.HOL.Kernel
+import ProjectBeth.Defs.HOL.KernelLaws
 import ProjectBeth.Defs.HOL.Contexts
 import ProjectBeth.Defs.HOL.Entailment
 import ProjectBeth.Defs.HOL.TheoryVariants
@@ -19,6 +20,7 @@ import ProjectBeth.Defs.HOLOmega.Substitution
 import ProjectBeth.Defs.HOLOmega.Soundness
 import ProjectBeth.Defs.HOLOmega.Kernel
 import ProjectBeth.Defs.HOLOmega.Bridge
+import ProjectBeth.Defs.HOLOmega.ConstantDomain
 import ProjectBeth.Defs.STLC.Core
 import ProjectBeth.Defs.STLC.Variants
 import ProjectBeth.Defs.STLC.FixedPoints
@@ -26,10 +28,18 @@ import ProjectBeth.Defs.STLC.ExtendedVariants
 import ProjectBeth.Defs.STLC.Extenders
 import ProjectBeth.Defs.STLC.Semantics
 import ProjectBeth.Defs.STLC.BethSemantics
+import ProjectBeth.Defs.STLC.ConstantDomain
+import ProjectBeth.Defs.STLC.Relational
+import ProjectBeth.Defs.STLC.UntypedCompilation
 import ProjectBeth.Defs.Syntax.Representations
 import ProjectBeth.Defs.Syntax.Alpha
 import ProjectBeth.Defs.Syntax.LanguageEnums
+import ProjectBeth.Defs.Syntax.Substitution
+import ProjectBeth.Defs.Syntax.LocallyNamelessLaws
+import ProjectBeth.Defs.Syntax.BoundedLaws
+import ProjectBeth.Defs.SystemF.Kernel
 import ProjectBeth.Defs.Translations
+import ProjectBeth.Defs.Untyped.Reduction
 import ProjectBeth.Snapshots.A06
 import ProjectBeth.Snapshots.A07
 import ProjectBeth.Snapshots.A08
