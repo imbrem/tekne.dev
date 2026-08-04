@@ -183,7 +183,7 @@ def churchRoll (base : Const → Ty) (P : Poly Const) (layer : Tm) : Tm :=
       (fmapTm (fun c => (base c).lift) P (churchMuTy base P).lift (.var 0)
         (.lam (churchMuTy base P).lift
           (churchFold (.var 0) (.var 0) (.var 1)))
-        (layer.rename Nat.succ))))
+        ((layer.renameTy Nat.succ).rename Nat.succ))))
 
 /-- `∃X. X × (X → P X)`, encoded impredicatively as
 `∀R. (∀X. X → (X → P X) → R) → R`. -/
@@ -200,8 +200,8 @@ def coPack (base : Const → Ty) (P : Poly Const)
     (.all (.arr (.var 0)
       (.arr (.arr (.var 0)
         (polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1))))
-    (.app (.app (.tyApp (.var 0) X.lift) (seed.rename Nat.succ))
-      (step.rename Nat.succ)))
+    (.app (.app (.tyApp (.var 0) X.lift) ((seed.renameTy Nat.succ).rename Nat.succ))
+      ((step.renameTy Nat.succ).rename Nat.succ)))
 
 def coElim (co : Tm) (R : Ty) (handler : Tm) : Tm :=
   .app (.tyApp co R) handler
@@ -256,8 +256,9 @@ theorem coElim_pack_typeBeta (base : Const → Ty) (P : Poly Const)
           (.all (.arr (.var 0)
             (.arr (.arr (.var 0)
               (polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1))))
-          (Tm.app (Tm.app (.tyApp (.var 0) X.lift) (seed.rename Nat.succ))
-            (step.rename Nat.succ))).instantiateTy R)
+          (Tm.app (Tm.app (.tyApp (.var 0) X.lift)
+            ((seed.renameTy Nat.succ).rename Nat.succ))
+            ((step.renameTy Nat.succ).rename Nat.succ))).instantiateTy R)
         handler) := by
   exact SmallStep.app_left SmallStep.tyBeta
 
@@ -272,8 +273,9 @@ theorem erase_coElim_pack_steps (S : ProjectBeth.Untyped.Signature)
             (.all (.arr (.var 0)
               (.arr (.arr (.var 0)
                 (polyTy (fun c => ((base c).lift).lift) P (.var 0))) (.var 1))))
-            (Tm.app (Tm.app (.tyApp (.var 0) X.lift) (seed.rename Nat.succ))
-              (step.rename Nat.succ))).instantiateTy R)
+            (Tm.app (Tm.app (.tyApp (.var 0) X.lift)
+              ((seed.renameTy Nat.succ).rename Nat.succ))
+              ((step.renameTy Nat.succ).rename Nat.succ))).instantiateTy R)
           handler))) :=
   Inductive.Untyped.smallStep_steps S
     (coElim_pack_typeBeta base P X R seed step handler)
