@@ -142,6 +142,7 @@ inductive Eqv : Tm Γ A → Tm Γ A → Type 2
   | symm : Eqv s t → Eqv t s
   | trans : Eqv r s → Eqv s t → Eqv r t
   | app : Eqv f g → Eqv x y → Eqv (.app f x) (.app g y)
+  | conj : Eqv p p' → Eqv q q' → Eqv (.conj p q) (.conj p' q')
   | lam : Eqv s t → Eqv (.lam s) (.lam t)
   | beta (t : Tm (A :: Γ) B) (x : Tm Γ A) : Eqv (.app (.lam t) x) (t.subst0 x)
   | boolExt {p q : Tm Γ Ty.bool} :
@@ -163,6 +164,7 @@ theorem Eqv.valid {s t : Tm Γ A} (h : Eqv s t) (ρ : Env Γ) : s.eval ρ = t.ev
   | symm _ ih => exact (ih ρ).symm
   | trans _ _ ih₁ ih₂ => exact (ih₁ ρ).trans (ih₂ ρ)
   | app _ _ ihf ihx => simp [Tm.eval, ihf ρ, ihx ρ]
+  | conj _ _ ihp ihq => simp [Tm.eval, ihp ρ, ihq ρ]
   | lam _ ih => funext x; exact ih (Env.cons x ρ)
   | beta t x =>
       have he : (Sub.env (Sub.single x) ρ : Env (_ :: _)) =
