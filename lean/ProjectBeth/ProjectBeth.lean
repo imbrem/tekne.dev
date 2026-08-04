@@ -33,6 +33,7 @@ import ProjectBeth.Defs.STLC.BethSemantics
 import ProjectBeth.Defs.STLC.ConstantDomain
 import ProjectBeth.Defs.STLC.Relational
 import ProjectBeth.Defs.STLC.UntypedCompilation
+import ProjectBeth.Defs.STLC.Syntax
 import ProjectBeth.Defs.Syntax.Representations
 import ProjectBeth.Defs.Syntax.Alpha
 import ProjectBeth.Defs.Syntax.LanguageEnums
@@ -52,6 +53,7 @@ import ProjectBeth.Defs.SystemF.ContextMorphisms
 import ProjectBeth.Defs.SystemF.Polynomial
 import ProjectBeth.Defs.SystemF.PolynomialTyping
 import ProjectBeth.Defs.SystemF.HOLSystemFTranslation
+import ProjectBeth.Defs.SystemF.Syntax
 import ProjectBeth.Defs.Translations
 import ProjectBeth.Defs.Untyped.Reduction
 import ProjectBeth.Snapshots.A06
