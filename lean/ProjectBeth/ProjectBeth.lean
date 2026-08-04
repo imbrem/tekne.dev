@@ -37,6 +37,7 @@ import ProjectBeth.Defs.Syntax.LanguageEnums
 import ProjectBeth.Defs.Syntax.Substitution
 import ProjectBeth.Defs.Syntax.LocallyNamelessLaws
 import ProjectBeth.Defs.Syntax.BoundedLaws
+import ProjectBeth.Defs.Syntax.IntrinsicLaws
 import ProjectBeth.Defs.SystemF.Kernel
 import ProjectBeth.Defs.Translations
 import ProjectBeth.Defs.Untyped.Reduction
