@@ -43,12 +43,12 @@ structure PER (α : Type u) where
   symm : ∀ {x y}, rel x y → rel y x
   trans : ∀ {x y z}, rel x y → rel y z → rel x z
 
-def PER.Field (R : PER α) (x : α) : Prop := R.rel x x
+def PER.IsDefined (R : PER α) (x : α) : Prop := R.rel x x
 
-theorem PER.left_mem {R : PER α} (h : R.rel x y) : R.Field x :=
+theorem PER.left_defined {R : PER α} (h : R.rel x y) : R.IsDefined x :=
   R.trans h (R.symm h)
 
-theorem PER.right_mem {R : PER α} (h : R.rel x y) : R.Field y :=
+theorem PER.right_defined {R : PER α} (h : R.rel x y) : R.IsDefined y :=
   R.trans (R.symm h) h
 
 def PER.id (α : Type u) : PER α where

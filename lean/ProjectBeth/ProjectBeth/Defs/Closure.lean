@@ -8,6 +8,8 @@ import Mathlib.Data.Fintype.Sum
 import Mathlib.Logic.Equiv.Prod
 import Mathlib.Logic.Equiv.Set
 
+/-! Separate embedding and exact closure interfaces for semantic universes. -/
+
 universe u v
 
 namespace ProjectBeth
