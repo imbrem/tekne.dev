@@ -112,6 +112,8 @@ theorem Reduces.sound (M : Model S D) {n : Nat} {t u : Tm S n}
 structure TypedSignature (Ty : Type u) (arr : Ty → Ty → Ty) extends Signature where
   constTy : Const → Ty
 
+variable {Ty : Type u} {arr : Ty → Ty → Ty} {D : Type v}
+
 inductive TypedTm (S : TypedSignature Ty arr) : List Ty → Ty → Type u
   | var : STLC.Var Γ A → TypedTm S Γ A
   | const : (c : S.Const) → TypedTm S Γ (S.constTy c)
