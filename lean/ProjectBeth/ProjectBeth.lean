@@ -32,6 +32,7 @@ import ProjectBeth.Defs.HOLOmega.Soundness
 import ProjectBeth.Defs.HOLOmega.Kernel
 import ProjectBeth.Defs.HOLOmega.Bridge
 import ProjectBeth.Defs.HOLOmega.ConstantDomain
+import ProjectBeth.Defs.HOLOmega.CovalenceSpec
 import ProjectBeth.Defs.STLC.Core
 import ProjectBeth.Defs.STLC.Variants
 import ProjectBeth.Defs.STLC.FixedPoints
