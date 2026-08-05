@@ -179,6 +179,16 @@ abbrev Entails (U : Universe) {Δ : List Kind} {Γ : HOLOmega.Kernel.Ctx U Δ}
     (p : HOLOmega.Kernel.Tm U Γ (HOLOmega.Kernel.Ty.boolCode U)) :=
   HOLOmega.Kernel.Entails U H p
 
+/-- `Equality` has exactly these constructors: reflexivity, symmetry,
+transitivity, application and abstraction congruence at both term and type
+levels, and term/type beta and eta. -/
+abbrev EqualityRules (U : Universe) := @HOLOmega.Kernel.EqTm U
+
+/-- `Proof` has exactly these constructors: assumption, truth, equality
+reflexivity and substitution, choice, conversion, equality introduction,
+Boolean antisymmetry, and both directions of the subtype isomorphism. -/
+abbrev ProofRules (U : Universe) := @HOLOmega.Kernel.Derives U
+
 /-- Every equality rule denotes actual equality in the standard model. -/
 theorem equalitySound {U : Universe} {Δ : List Kind}
     {Γ : HOLOmega.Kernel.Ctx U Δ} {A : HOLOmega.Kernel.Ty U Δ .star}
